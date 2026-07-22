@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "ade": {
+      "command": "pnpm",
+      "args": ["--filter", "@ade/mcp", "start"],
+      "workdir": "/Volumes/VibeCode/Architeture Decision Engine/ade"
+    }
+  }
+}

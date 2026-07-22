@@ -1,0 +1,9 @@
+name = "ade-api"
+main = "src/index.ts"
+compatibility_date = "2025-03-01"
+
+[env.production]
+name = "ade-api-prod"
+
+[vars]
+ENVIRONMENT = "production"
