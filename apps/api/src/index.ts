@@ -1,5 +1,5 @@
 import { generateArchitecture } from "@ade/core/ade"
-import type { ProjectInput } from "@ade/core/types"
+import { validate } from "@ade/core/validation"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,16 +15,6 @@ function json(body: unknown, status = 200) {
   })
 }
 
-function validate(input: unknown): input is ProjectInput {
-  if (typeof input !== "object" || input === null) return false
-  const obj = input as Record<string, unknown>
-  return (
-    typeof obj.description === "string" &&
-    typeof obj.domain === "string" &&
-    Array.isArray(obj.features)
-  )
-}
-
 export default {
   async fetch(request: Request): Promise<Response> {
     if (request.method === "OPTIONS") {
@@ -35,23 +25,19 @@ export default {
     const path = url.pathname.replace(/\/$/, "")
 
     if (request.method === "GET" && path === "/health") {
-      return json({ status: "ok", engine: "ade" })
+      return json({ status: "ok", engine: "ade", version: "0.1.0" })
     }
 
     if (request.method === "POST" && path === "/analyze") {
       try {
         const body = await request.json()
-
-        if (!validate(body)) {
-          return json(
-            { error: "Invalid input. Required: description (string), domain (string), features (string[])" },
-            400,
-          )
-        }
-
-        const result = generateArchitecture(body)
+        const input = validate(body)
+        const result = generateArchitecture(input)
         return json(result)
       } catch (err) {
+        if (err instanceof Error && err.name === "ValidationError") {
+          return json({ error: err.message, details: (err as any).errors }, 400)
+        }
         return json(
           { error: err instanceof Error ? err.message : "Internal error" },
           500,
@@ -63,10 +49,10 @@ export default {
       return json({
         endpoint: "POST /analyze",
         input: {
-          description: "string — project description",
-          domain: "string — project domain name",
-          features: "string[] — list of features",
-          users: "number (optional) — expected user count",
+          description: "string (min 3 chars) — project description",
+          domain: "string (min 2 chars) — project domain name",
+          features: "string[] (min 1) — list of features",
+          users: "number (optional, positive) — expected user count",
           blockchain: "boolean (optional)",
           auth: "boolean (optional)",
           upload: "boolean (optional)",
@@ -74,6 +60,16 @@ export default {
           payments: "boolean (optional)",
           ai: "boolean (optional)",
           aiMemory: "boolean (optional)",
+          teams: "boolean (optional)",
+          multiTenant: "boolean (optional)",
+          apiAccess: "boolean (optional)",
+          webhooks: "boolean (optional)",
+          sso: "boolean (optional)",
+          auditLog: "boolean (optional)",
+          featureFlags: "boolean (optional)",
+          onboarding: "boolean (optional)",
+          notifications: "boolean (optional)",
+          dataExport: "boolean (optional)",
         },
       })
     }

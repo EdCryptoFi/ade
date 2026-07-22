@@ -1,0 +1,71 @@
+import { z } from "zod"
+
+export const ProjectInputSchema = z.object({
+  description: z.string().min(3, "Descrição deve ter no mínimo 3 caracteres").max(2000),
+  domain: z.string().min(2, "Domínio deve ter no mínimo 2 caracteres").max(100),
+  features: z.array(z.string()).min(1, "Pelo menos uma feature é necessária"),
+  users: z.number().int().positive().optional(),
+  blockchain: z.boolean().optional().default(false),
+  auth: z.boolean().optional().default(false),
+  upload: z.boolean().optional().default(false),
+  realtime: z.boolean().optional().default(false),
+  payments: z.boolean().optional().default(false),
+  ai: z.boolean().optional().default(false),
+  aiMemory: z.boolean().optional().default(false),
+  teams: z.boolean().optional().default(false),
+  multiTenant: z.boolean().optional().default(false),
+  apiAccess: z.boolean().optional().default(false),
+  webhooks: z.boolean().optional().default(false),
+  sso: z.boolean().optional().default(false),
+  auditLog: z.boolean().optional().default(false),
+  featureFlags: z.boolean().optional().default(false),
+  onboarding: z.boolean().optional().default(false),
+  notifications: z.boolean().optional().default(false),
+  dataExport: z.boolean().optional().default(false),
+})
+
+export const PartialProjectInputSchema = z.object({
+  description: z.string().min(3).max(2000).optional(),
+  domain: z.string().min(2).max(100).optional(),
+  features: z.array(z.string()).optional(),
+  users: z.number().int().positive().optional(),
+  blockchain: z.boolean().optional(),
+  auth: z.boolean().optional(),
+  upload: z.boolean().optional(),
+  realtime: z.boolean().optional(),
+  payments: z.boolean().optional(),
+  ai: z.boolean().optional(),
+  aiMemory: z.boolean().optional(),
+  teams: z.boolean().optional(),
+  multiTenant: z.boolean().optional(),
+  apiAccess: z.boolean().optional(),
+  webhooks: z.boolean().optional(),
+  sso: z.boolean().optional(),
+  auditLog: z.boolean().optional(),
+  featureFlags: z.boolean().optional(),
+  onboarding: z.boolean().optional(),
+  notifications: z.boolean().optional(),
+  dataExport: z.boolean().optional(),
+})
+
+export function validate(input: unknown) {
+  const result = ProjectInputSchema.safeParse(input)
+  if (!result.success) {
+    const errors = result.error.issues.map(i => `${i.path.join(".")}: ${i.message}`)
+    throw new ValidationError(errors)
+  }
+  return result.data
+}
+
+export function validatePartial(input: unknown) {
+  return PartialProjectInputSchema.partial().parse(input)
+}
+
+export class ValidationError extends Error {
+  public readonly errors: string[]
+  constructor(errors: string[]) {
+    super(`Validation failed: ${errors.join("; ")}`)
+    this.name = "ValidationError"
+    this.errors = errors
+  }
+}
