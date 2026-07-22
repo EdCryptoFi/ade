@@ -293,6 +293,29 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["sessionId"],
       },
     },
+    {
+      name: "ade-wizard",
+      description: "Assistente passo-a-passo que guia o usuário da ideia ao projeto completo. Use step='start' para iniciar",
+      inputSchema: {
+        type: "object",
+        properties: {
+          sessionId: { type: "string", description: "ID da sessão (omitir para começar nova)" },
+          step: {
+            type: "string",
+            enum: ["start", "describe", "features", "settings", "plan", "next"],
+            description: "Etapa atual do wizard",
+          },
+          description: { type: "string", description: "Descrição do projeto" },
+          domain: { type: "string", description: "Domínio do projeto" },
+          features: {
+            type: "object",
+            description: "Features confirmadas (true=ativa, false=desativada)",
+          },
+          users: { type: "number", description: "Número estimado de usuários" },
+        },
+        required: ["step"],
+      },
+    },
   ],
 }))
 
@@ -361,6 +384,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           domain: String(args.domain ?? ""),
           features: [],
           confirmedSettings: {},
+          wizardStep: "describe",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         }
@@ -555,6 +579,138 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             text: `=== ${f.path} ===\n${f.content}`,
           })),
         }
+      }
+
+      case "ade-wizard": {
+        const step = String(args.step ?? "start")
+        const { generateSettings, analyzeTradeoffs } = await import("@ade/core/settings")
+        const { generateScaffold } = await import("@ade/core/scaffold")
+
+        if (step === "start" || (step === "next" && !args.sessionId)) {
+          const id = newId()
+          const session: ProjectSession = {
+            id, description: "", domain: "", features: [],
+            confirmedSettings: {}, wizardStep: "describe",
+            createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+          }
+          sessions.set(id, session)
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify({
+                sessionId: id,
+                wizardStep: "describe",
+                message: "Descreva seu projeto. Qual é o objetivo? Qual o domínio? (ex: marketplace, dashboard, saas)",
+                hint: "Ex: 'I want to build an NFT marketplace for digital art on Sui'",
+              }, null, 2),
+            }],
+          }
+        }
+
+        const sessionId = String(args.sessionId)
+        const session = sessions.get(sessionId)
+        if (!session) throw new Error(`Session ${sessionId} not found`)
+
+        if (step === "describe" || (step === "next" && session.wizardStep === "describe")) {
+          session.description = String(args.description ?? session.description)
+          session.domain = String(args.domain ?? session.domain)
+          session.wizardStep = "features"
+          session.updatedAt = new Date().toISOString()
+
+          const settings = generateSettings({
+            description: session.description,
+            domain: session.domain,
+          })
+
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify({
+                sessionId,
+                wizardStep: "features",
+                message: "Aqui estão as features recomendadas para seu projeto. Confirme quais você quer (true=sim, false=não).",
+                recommendedFeatures: settings.features,
+                users: { type: "number", description: "Quantos usuários esperados?" },
+                hint: "Passe um objeto features com { blockchain: true, auth: false, ... }",
+              }, null, 2),
+            }],
+          }
+        }
+
+        if (step === "features" || (step === "next" && session.wizardStep === "features")) {
+          const features = args.features as Record<string, boolean> | undefined
+          if (features) {
+            const activeFeatures = Object.entries(features).filter(([, v]) => v).map(([k]) => k)
+            session.features = activeFeatures
+          }
+          if (typeof args.users === "number") session.users = args.users
+          session.wizardStep = "settings"
+          session.updatedAt = new Date().toISOString()
+
+          const input = sessionToPartialInput(session)
+          const settings = generateSettings(input)
+          session.confirmedSettings = settings
+
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify({
+                sessionId,
+                wizardStep: "settings",
+                message: "Settings recomendados para seu projeto. Revise e confirme.",
+                settings,
+                tradeoffs: analyzeTradeoffs(input),
+                nextStep: "Chame ade-wizard com step='plan' ou step='next' para gerar o plano completo",
+              }, null, 2),
+            }],
+          }
+        }
+
+        if (step === "plan" || step === "next") {
+          session.wizardStep = "done"
+          session.updatedAt = new Date().toISOString()
+          const input = sessionToFullInput(session)
+          const { generateArchitecture } = await import("@ade/core/ade")
+          const plan = generateArchitecture(input)
+          const files = generateScaffold(plan)
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({
+                  sessionId,
+                  wizardStep: "done",
+                  message: "Plano de arquitetura completo!",
+                  summary: {
+                    domain: plan.domain,
+                    dataStructures: plan.data.structures,
+                    infrastructure: {
+                      frontend: plan.infrastructure.frontend,
+                      database: plan.infrastructure.database,
+                      auth: plan.infrastructure.auth,
+                      deploy: plan.infrastructure.deploy,
+                    },
+                    features: session.features,
+                    totalComponents: plan.components.tree.children?.length ?? 0,
+                  },
+                  nextSteps: [
+                    "Use ade-settings para ver recomendações detalhadas",
+                    "Use ade-tradeoffs para comparar alternativas",
+                    "Use ade-scaffold para gerar os arquivos do projeto",
+                    "Use ade-full-architecture para todos os documentos",
+                  ],
+                }, null, 2),
+              },
+              ...files.slice(0, 3).map(f => ({
+                type: "text" as const,
+                text: `=== ${f.path} ===\n${f.content}`,
+              })),
+            ],
+          }
+        }
+
+        throw new Error(`Unknown wizard step: ${step}`)
       }
 
       default:

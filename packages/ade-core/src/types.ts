@@ -196,6 +196,14 @@ export interface CostDecision {
   recommendations: string[]
 }
 
+export type WizardStep =
+  | "start"
+  | "describe"
+  | "features"
+  | "settings"
+  | "plan"
+  | "done"
+
 export interface ProjectSession {
   id: string
   description: string
@@ -203,6 +211,7 @@ export interface ProjectSession {
   features: string[]
   users?: number
   confirmedSettings: Partial<SettingsResult>
+  wizardStep: WizardStep
   createdAt: string
   updatedAt: string
 }
