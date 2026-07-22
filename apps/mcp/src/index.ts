@@ -282,6 +282,17 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["description", "domain", "features"],
       },
     },
+    {
+      name: "ade-scaffold",
+      description: "Gera os arquivos do projeto real (package.json, tsconfig, layout, prisma schema, .env.example) baseado no plano de arquitetura",
+      inputSchema: {
+        type: "object",
+        properties: {
+          sessionId: { type: "string" },
+        },
+        required: ["sessionId"],
+      },
+    },
   ],
 }))
 
@@ -526,6 +537,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             type: "text",
             text: JSON.stringify(analyzeTradeoffs(input), null, 2),
           }],
+        }
+      }
+
+      case "ade-scaffold": {
+        const sessionId = String(args.sessionId)
+        const session = sessions.get(sessionId)
+        if (!session) throw new Error(`Session ${sessionId} not found`)
+        const input = sessionToFullInput(session)
+        const { generateArchitecture } = await import("@ade/core/ade")
+        const { generateScaffold } = await import("@ade/core/scaffold")
+        const plan = generateArchitecture(input)
+        const files = generateScaffold(plan)
+        return {
+          content: files.map(f => ({
+            type: "text",
+            text: `=== ${f.path} ===\n${f.content}`,
+          })),
         }
       }
 
