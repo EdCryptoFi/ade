@@ -266,6 +266,22 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["sessionId"],
       },
     },
+    {
+      name: "ade-tradeoffs",
+      description: "Analisa alternativas para cada decisão de infraestrutura (frontend, database, auth, payments, deploy, AI)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          description: { type: "string" },
+          domain: { type: "string" },
+          features: { type: "array", items: { type: "string" } },
+          blockchain: { type: "boolean" },
+          auth: { type: "boolean" },
+          sso: { type: "boolean" },
+        },
+        required: ["description", "domain", "features"],
+      },
+    },
   ],
 }))
 
@@ -498,6 +514,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{
             type: "text",
             text: JSON.stringify(session, null, 2),
+          }],
+        }
+      }
+
+      case "ade-tradeoffs": {
+        const input = buildInput(args)
+        const { analyzeTradeoffs } = await import("@ade/core/settings")
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(analyzeTradeoffs(input), null, 2),
           }],
         }
       }

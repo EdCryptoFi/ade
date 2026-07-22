@@ -384,3 +384,5 @@ export function inputFromSettings(features: FeatureSuggestion[]): Partial<Projec
   }
   return result
 }
+
+export { analyzeAll as analyzeTradeoffs } from "./tradeoffs.ts"

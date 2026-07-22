@@ -142,6 +142,20 @@ export interface SettingsResult {
   cost: CostDecision
 }
 
+export interface TradeoffOption {
+  name: string
+  pros: string[]
+  cons: string[]
+  cost: "baixo" | "médio" | "alto"
+  quandoUsar: string
+}
+
+export interface TradeoffDecision {
+  category: string
+  selected: string
+  options: TradeoffOption[]
+}
+
 export interface DataRecommendation {
   structure: DataStructure
   selected: boolean
