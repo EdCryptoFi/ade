@@ -10,6 +10,17 @@ export interface ProjectInput {
   payments?: boolean
   ai?: boolean
   aiMemory?: boolean
+
+  teams?: boolean
+  multiTenant?: boolean
+  apiAccess?: boolean
+  webhooks?: boolean
+  sso?: boolean
+  auditLog?: boolean
+  featureFlags?: boolean
+  onboarding?: boolean
+  notifications?: boolean
+  dataExport?: boolean
 }
 
 export type DomainCategory =
@@ -32,6 +43,14 @@ export type DataStructure =
   | "set"
   | "heap"
   | "linked-list"
+  | "trie"
+  | "bloom-filter"
+  | "lru-cache"
+  | "segment-tree"
+  | "disjoint-set"
+  | "circular-buffer"
+  | "merkle-tree"
+  | "skip-list"
 
 export interface DataDecision {
   structures: DataStructure[]
@@ -159,7 +178,7 @@ export interface MonitoringDecision {
 
 export interface CostDecision {
   estimatedMonthly: string
-  breakdown: Record<string, string>
+  breakdown: Record<string, number>
   recommendations: string[]
 }
 

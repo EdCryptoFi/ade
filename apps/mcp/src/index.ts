@@ -65,6 +65,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
               payments: { type: "boolean" },
               ai: { type: "boolean" },
               aiMemory: { type: "boolean" },
+              teams: { type: "boolean" },
+              multiTenant: { type: "boolean" },
+              apiAccess: { type: "boolean" },
+              webhooks: { type: "boolean" },
+              sso: { type: "boolean" },
+              auditLog: { type: "boolean" },
+              featureFlags: { type: "boolean" },
+              onboarding: { type: "boolean" },
+              notifications: { type: "boolean" },
+              dataExport: { type: "boolean" },
             },
           },
           users: { type: "number", description: "Número estimado de usuários" },
@@ -141,6 +151,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           ai: { type: "boolean" },
           aiMemory: { type: "boolean" },
           payments: { type: "boolean" },
+          teams: { type: "boolean" },
+          multiTenant: { type: "boolean" },
+          apiAccess: { type: "boolean" },
+          webhooks: { type: "boolean" },
+          sso: { type: "boolean" },
+          auditLog: { type: "boolean" },
+          featureFlags: { type: "boolean" },
+          onboarding: { type: "boolean" },
+          notifications: { type: "boolean" },
+          dataExport: { type: "boolean" },
         },
         required: ["domain", "description", "features"],
       },
@@ -154,6 +174,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           description: { type: "string" },
           domain: { type: "string" },
           features: { type: "array", items: { type: "string" } },
+          blockchain: { type: "boolean" },
+          auth: { type: "boolean" },
+          teams: { type: "boolean" },
+          multiTenant: { type: "boolean" },
+          apiAccess: { type: "boolean" },
+          webhooks: { type: "boolean" },
+          sso: { type: "boolean" },
+          auditLog: { type: "boolean" },
+          featureFlags: { type: "boolean" },
+          onboarding: { type: "boolean" },
+          notifications: { type: "boolean" },
+          dataExport: { type: "boolean" },
         },
         required: ["description", "domain", "features"],
       },
@@ -174,6 +206,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           payments: { type: "boolean" },
           ai: { type: "boolean" },
           aiMemory: { type: "boolean" },
+          teams: { type: "boolean" },
+          multiTenant: { type: "boolean" },
+          apiAccess: { type: "boolean" },
+          webhooks: { type: "boolean" },
+          sso: { type: "boolean" },
+          auditLog: { type: "boolean" },
+          featureFlags: { type: "boolean" },
+          onboarding: { type: "boolean" },
+          notifications: { type: "boolean" },
+          dataExport: { type: "boolean" },
         },
         required: ["description", "domain", "features"],
       },
@@ -199,6 +241,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           payments: { type: "boolean" },
           ai: { type: "boolean" },
           aiMemory: { type: "boolean" },
+          teams: { type: "boolean" },
+          multiTenant: { type: "boolean" },
+          apiAccess: { type: "boolean" },
+          webhooks: { type: "boolean" },
+          sso: { type: "boolean" },
+          auditLog: { type: "boolean" },
+          featureFlags: { type: "boolean" },
+          onboarding: { type: "boolean" },
+          notifications: { type: "boolean" },
+          dataExport: { type: "boolean" },
         },
         required: ["description", "domain", "features"],
       },
@@ -230,7 +282,43 @@ function buildInput(params: Record<string, unknown>): ProjectInput {
     payments: !!params.payments,
     ai: !!params.ai,
     aiMemory: !!params.aiMemory,
+    teams: !!params.teams,
+    multiTenant: !!params.multiTenant,
+    apiAccess: !!params.apiAccess,
+    webhooks: !!params.webhooks,
+    sso: !!params.sso,
+    auditLog: !!params.auditLog,
+    featureFlags: !!params.featureFlags,
+    onboarding: !!params.onboarding,
+    notifications: !!params.notifications,
+    dataExport: !!params.dataExport,
   }
+}
+
+const featureKeys = [
+  "blockchain", "auth", "upload", "realtime", "payments", "ai", "aiMemory",
+  "teams", "multiTenant", "apiAccess", "webhooks", "sso", "auditLog",
+  "featureFlags", "onboarding", "notifications", "dataExport",
+] as const
+
+function sessionToPartialInput(session: ProjectSession): Partial<ProjectInput> {
+  const input: Partial<ProjectInput> = {
+    description: session.description,
+    domain: session.domain,
+    features: session.features,
+    users: session.users,
+  }
+  for (const key of featureKeys) {
+    (input as Record<string, unknown>)[key] = session.features.includes(key)
+  }
+  return input
+}
+
+function sessionToFullInput(session: ProjectSession): ProjectInput {
+  return {
+    ...sessionToPartialInput(session),
+    users: session.users ?? 0,
+  } as ProjectInput
 }
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
@@ -303,19 +391,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const session = sessions.get(sessionId)
         if (!session) throw new Error(`Session ${sessionId} not found`)
 
-        const input: Partial<ProjectInput> = {
-          description: session.description,
-          domain: session.domain,
-          features: session.features,
-          users: session.users,
-          blockchain: session.features.includes("blockchain"),
-          auth: session.features.includes("auth"),
-          upload: session.features.includes("upload"),
-          realtime: session.features.includes("realtime"),
-          payments: session.features.includes("payments"),
-          ai: session.features.includes("ai"),
-          aiMemory: session.features.includes("aiMemory"),
-        }
+        const input = sessionToPartialInput(session)
         const settings = generateSettings(input)
         session.confirmedSettings = settings
         session.updatedAt = new Date().toISOString()
@@ -333,19 +409,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const session = sessions.get(sessionId)
         if (!session) throw new Error(`Session ${sessionId} not found`)
 
-        const input: ProjectInput = {
-          description: session.description,
-          domain: session.domain,
-          features: session.features,
-          users: session.users ?? 0,
-          blockchain: session.features.includes("blockchain"),
-          auth: session.features.includes("auth"),
-          upload: session.features.includes("upload"),
-          realtime: session.features.includes("realtime"),
-          payments: session.features.includes("payments"),
-          ai: session.features.includes("ai"),
-          aiMemory: session.features.includes("aiMemory"),
-        }
+        const input = sessionToFullInput(session)
         const plan = generateArchitecture(input)
 
         return {

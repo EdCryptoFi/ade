@@ -32,10 +32,38 @@ const domainTemplates: Record<DomainCategory, ComponentNode> = {
   saas: {
     name: "App",
     children: [
-      { name: "LandingPage", children: [{ name: "Hero" }, { name: "Pricing" }, { name: "Features" }] },
-      { name: "Auth", children: [{ name: "LoginForm" }, { name: "RegisterForm" }, { name: "PasswordReset" }] },
-      { name: "Dashboard", children: [{ name: "SubscriptionStatus" }, { name: "UsageMetrics" }] },
-      { name: "BillingPage", children: [{ name: "PlanSelector" }, { name: "PaymentMethod" }, { name: "InvoiceHistory" }] },
+      {
+        name: "PublicPages",
+        children: [
+          { name: "LandingPage", children: [{ name: "Hero" }, { name: "Features" }, { name: "PricingSection" }] },
+          { name: "Auth", children: [{ name: "LoginForm" }, { name: "RegisterForm" }, { name: "PasswordReset" }, { name: "SSOButton" }] },
+        ],
+      },
+      {
+        name: "AppLayout",
+        children: [
+          { name: "TopNav", children: [{ name: "WorkspaceSwitcher" }, { name: "UserMenu" }, { name: "NotificationBell" }] },
+          { name: "Sidebar", children: [{ name: "NavMenu" }, { name: "QuickActions" }] },
+        ],
+      },
+      {
+        name: "Dashboard",
+        children: [
+          { name: "Home", children: [{ name: "WelcomeHero" }, { name: "MetricCards" }, { name: "RecentActivity" }] },
+          { name: "Analytics", children: [{ name: "ChartWidget" }, { name: "DateRangePicker" }, { name: "ExportButton" }] },
+          { name: "UsagePage", children: [{ name: "UsageChart" }, { name: "QuotaBar" }] },
+        ],
+      },
+      {
+        name: "Billing",
+        children: [
+          { name: "PlanSelector", children: [{ name: "PlanCard" }, { name: "FeatureComparison" }] },
+          { name: "PaymentMethod", children: [{ name: "CardForm" }, { name: "PaymentHistory" }] },
+          { name: "InvoiceHistory", children: [{ name: "InvoiceList" }, { name: "InvoiceDetail" }] },
+          { name: "SubscriptionStatus" },
+        ],
+      },
+      { name: "Settings", children: [{ name: "ProfileForm" }, { name: "PreferencesForm" }, { name: "NotificationPreferences" }] },
     ],
   },
   crm: {
@@ -95,10 +123,107 @@ const domainTemplates: Record<DomainCategory, ComponentNode> = {
   },
 }
 
+function addConditionalChildren(tree: ComponentNode, input: ProjectInput): void {
+  const settings = tree.children
+  if (!settings) return
+
+  // Teams / multi-tenant
+  if (input.teams || input.multiTenant) {
+    settings.push({
+      name: "TeamManagement",
+      children: [
+        { name: "TeamList" },
+        { name: "InviteForm", children: [{ name: "InviteByEmail" }, { name: "InviteByLink" }] },
+        { name: "RoleManager", children: [{ name: "RoleList" }, { name: "PermissionEditor" }] },
+        { name: "MemberProfile" },
+      ],
+    })
+  }
+
+  if (input.multiTenant) {
+    settings.push({
+      name: "TenantAdmin",
+      children: [
+        { name: "TenantList" },
+        { name: "TenantSettings", children: [{ name: "BrandingConfig" }, { name: "DomainConfig" }, { name: "SSOConfig" }] },
+        { name: "UsagePerTenant" },
+      ],
+    })
+  }
+
+  // API access
+  if (input.apiAccess) {
+    settings.push({
+      name: "Developer",
+      children: [
+        { name: "ApiKeys", children: [{ name: "KeyList" }, { name: "CreateKeyModal" }, { name: "KeyPermissions" }] },
+        { name: "ApiDocs", children: [{ name: "EndpointList" }, { name: "Playground" }, { name: "CodeSnippets" }] },
+        { name: "WebhookManagement", children: [{ name: "WebhookList" }, { name: "WebhookForm" }, { name: "DeliveryLogs" }] },
+      ],
+    })
+  }
+
+  // Webhooks (if separate from API)
+  if (input.webhooks && !input.apiAccess) {
+    settings.push({
+      name: "WebhookManagement",
+      children: [{ name: "WebhookList" }, { name: "WebhookForm" }, { name: "DeliveryLogs" }, { name: "RetryConfig" }],
+    })
+  }
+
+  // SSO
+  if (input.sso) {
+    settings.push({
+      name: "SSOConfig",
+      children: [{ name: "IdentityProviderList" }, { name: "SAMLConfig" }, { name: "OIDCConfig" }, { name: "DomainVerification" }],
+    })
+  }
+
+  // Audit log
+  if (input.auditLog) {
+    settings.push({
+      name: "AuditLog",
+      children: [{ name: "LogTimeline" }, { name: "LogFilters" }, { name: "LogExport" }, { name: "ComplianceReport" }],
+    })
+  }
+
+  // Feature flags
+  if (input.featureFlags) {
+    settings.push({
+      name: "FeatureFlags",
+      children: [{ name: "FlagList" }, { name: "FlagEditor" }, { name: "TargetingRules" }, { name: "RolloutDashboard" }],
+    })
+  }
+
+  // Onboarding
+  if (input.onboarding) {
+    settings.push({
+      name: "Onboarding",
+      children: [{ name: "WelcomeWizard" }, { name: "SetupSteps" }, { name: "ProgressTracker" }, { name: "CompletionChecklist" }],
+    })
+  }
+
+  // Data export
+  if (input.dataExport) {
+    settings.push({
+      name: "DataTools",
+      children: [{ name: "ExportPage", children: [{ name: "ExportForm" }, { name: "ExportHistory" }, { name: "DownloadButton" }] },
+      { name: "ImportPage", children: [{ name: "UploadZone" }, { name: "MappingConfig" }, { name: "ImportPreview" }] }],
+    })
+  }
+}
+
 export function decideComponents(input: ProjectInput, domain: DomainCategory): ComponentDecision {
-  const tree = domainTemplates[domain]
+  const tree = structuredClone(domainTemplates[domain])
+  addConditionalChildren(tree, input)
   return {
     tree,
-    reasoning: `Template de componentes para domínio ${domain} aplicado com base nas features: ${input.features.join(", ")}`,
+    reasoning: `Template ${domain} com ${countNodes(tree)} componentes baseado em: ${input.features.join(", ")}`,
   }
+}
+
+function countNodes(node: ComponentNode): number {
+  let count = 1
+  if (node.children) for (const c of node.children) count += countNodes(c)
+  return count
 }

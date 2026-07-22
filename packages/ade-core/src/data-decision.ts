@@ -3,63 +3,38 @@ import type { DataDecision, DataStructure, ProjectInput } from "./types.ts"
 export function decideDataStructures(input: ProjectInput): DataDecision {
   const selected: DataStructure[] = []
   const reasons: string[] = []
-  const text = `${input.domain} ${input.description} ${input.features.join(" ")}`
+  const text = `${input.domain} ${input.description} ${input.features.join(" ")}`.toLowerCase()
 
-  const needsList = /list|feed|dashboard|histórico|history|produtos?|products?|coleção|collection|grid|table/i.test(text)
-  if (needsList) {
-    selected.push("array")
-    reasons.push("Listas e coleções identificadas → Array")
-  }
+  const checks: [DataStructure, RegExp, string, boolean?][] = [
+    ["array", /list|feed|dashboard|histórico|history|produtos?|products?|coleção|collection|grid|table|tabela|resultados|results|logs/i, "Listas e coleções"],
+    ["hash-map", /usuário|user|wallet|sessão|session|token|config|settings|cache|key.value|busca|lookup|dicionário|dictionary/i, "Busca por chave", !!input.auth],
+    ["graph", /relacionamento|relationship|conexão|connection|fluxo|flow|agente|agent|permissão|permission|blockchain|rede|network|social|seguir|follow|recomendação|recommendation|conhecimento|knowledge|grafo/i, "Relacionamentos entre entidades", !!input.blockchain],
+    ["tree", /categoria|category|organograma|hierarquia|hierarchy|árvore|tree|menu|navegação|navigation|diretório|directory|subcategoria|subcategory|tag|comentário|comment|reply|resposta|thread/i, "Dados hierárquicos"],
+    ["stack-queue", /undo|redo|histórico|history|pilha|stack|fila|queue|processamento|processing|job|task|webhook|pipeline|rate.limit|scheduling|agendamento|fifo|lifo|retry|dead.letter/i, "Processamento sequencial ou filas"],
+    ["set", /permissão|permission|tag|unique|único|whitelist|blacklist|filtro|filter|duplicata|duplicate|interseção|intersection|união|union|distinct|dedup|role|grupo|group/i, "Garantia de unicidade"],
+    ["heap", /prioridade|priority|notificação|notification|timer|agendamento|scheduling|leaderboard|ranking|top|maior|menor|urgente|deadline|fila.prioritária|priority.queue/i, "Priorização de elementos"],
+    ["linked-list", /playlist|editor|navegação.entre.elementos|elementos.conectados|blockchain.chain|bloco|block|fragmentação|sequência|sequencia|encadeada|linked|undo.redo.chain|histórico.navegação/i, "Inserção/remoção frequente no meio"],
+    ["trie", /autocomplete|autocompletar|sugestão|suggestion|busca.texto|text.search|prefixo|prefix|busca.por.prefixo|search.suggest|palavra|word|dicionário|dictionary|routing|roteamento|url.match/i, "Busca por prefixo e autocomplete"],
+    ["bloom-filter", /spam|cache|dedup|deduplicação|filtro|filter|blockchain.light|light.client|probabilístico|probabilistic|membership|existe|exists|rapido|fast.lookup|prevenção|prevention/i, "Membership test probabilístico (rápido e econômico)"],
+    ["lru-cache", /cache|lru|session|sessão|token.refresh|api.rate|rate.limit|thumbnail|miniatura|hot.data|dados.quentes|frequente|frequent|recursos.recentes|recent|temporary/i, "Cache de dados frequentemente acessados"],
+    ["segment-tree", /range|intervalo|interval|analytics|métrica|metric|agregação|aggregation|sum|soma|média|average|mediana|median|percentil|percentile|dashboard|kpi|chart|gráfico|histograma|histogram/i, "Consultas de range e agregação"],
+    ["disjoint-set", /permissão|permission|grupo|group|clustering|agrupamento|social.graph|rede.social|amigo|friend|conexão|connection|rbac|role|acesso|access|comunidade|community|componentes.conexos|connected.components/i, "Agrupamento e conectividade"],
+    ["circular-buffer", /log|logging|stream|evento|event|métrica|metric|tempo.real|realtime|telemetria|telemetry|sensor|analytics.tempo.real|rolling.window|janela.deslizante|buffer|recent|últimos|ultimos/i, "Buffers circulares para streaming e logs"],
+    ["merkle-tree", /blockchain|nft|integridade|integrity|verificação|verification|prova|proof|merkle|árvore.de.merkle|consistência|consistency|data.verification|versão|version|snapshot|sync|sincronização|file.integrity/i, "Verificação de integridade de dados"],
+    ["skip-list", /leaderboard|ranking|ordenação|sorting|sorted|score|pontuação|nível|level|game|jogo|rank|classe|class|grade|tier|nível|level|concorrência|concurrency/i, "Listas ordenadas concorrentes"],
+  ]
 
-  const needsLookup = /usuário|user|wallet|sessão|session|token|config|settings|cache|key.value|busca/i.test(text) || !!input.auth
-  if (needsLookup) {
-    selected.push("hash-map")
-    reasons.push("Busca por chave necessária → Hash Map")
-  }
-
-  const needsRelations = /relacionamento|relationship|conexão|connection|fluxo|flow|agente|agent|permissão|permission|blockchain|rede|network|social|seguir|follow|recomendação|recommendation|conhecimento|knowledge/i.test(text) || !!input.blockchain
-  if (needsRelations) {
-    selected.push("graph")
-    reasons.push("Relacionamentos identificados → Graph")
-  }
-
-  const needsHierarchy = /categoria|category|organograma|hierarquia|hierarchy|árvore|tree|menu|navegação|navigation|diretório|directory|subcategoria|subcategory/i.test(text)
-  if (needsHierarchy) {
-    selected.push("tree")
-    reasons.push("Dados hierárquicos → Tree")
-  }
-
-  const needsOrdering = /undo|redo|histórico|history|pilha|stack|fila|queue|processamento|processing|job|task|webhook|pipeline|rate.limit|scheduling|agendamento/i.test(text)
-  if (needsOrdering) {
-    selected.push("stack-queue")
-    reasons.push("Processamento sequencial → Stack/Queue")
-  }
-
-  const needsUniqueness = /permissão|permission|tag|unique|único|whitelist|blacklist|filtro|filter|duplicata|duplicate|interseção|intersection|união|union/i.test(text)
-  if (needsUniqueness) {
-    selected.push("set")
-    reasons.push("Garantia de unicidade → Set")
-  }
-
-  const needsPriority = /prioridade|priority|notificação|notification|timer|agendamento|scheduling|leaderboard|ranking|top|maior|menor|urgente/i.test(text)
-  if (needsPriority) {
-    selected.push("heap")
-    reasons.push("Priorização necessária → Heap")
-  }
-
-  const needsSequence = /playlist|editor|navegação.entre.elementos|elementos.conectados|blockchain.chain|bloco|block|fragmentação|sequência|sequencia|encadeada|linked/i.test(text)
-  if (needsSequence) {
-    selected.push("linked-list")
-    reasons.push("Inserção/remoção frequente → Linked List")
+  for (const [struct, regex, reason, force] of checks) {
+    if (force || regex.test(text)) {
+      selected.push(struct)
+      reasons.push(`${reason} → ${struct}`)
+    }
   }
 
   if (selected.length === 0) {
     selected.push("array")
-    reasons.push("Estrutura padrão para coleções simples → Array")
+    reasons.push("Estrutura padrão para coleções simples → array")
   }
 
-  return {
-    structures: selected,
-    reasoning: reasons.join("; "),
-  }
+  return { structures: selected, reasoning: reasons.join("; ") }
 }
