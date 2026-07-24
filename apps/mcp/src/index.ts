@@ -4,12 +4,39 @@ import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js"
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs"
+import { join, dirname } from "node:path"
+import { fileURLToPath } from "node:url"
 
 import { generateArchitecture } from "@ade/core/ade"
 import { generateSettings } from "@ade/core/settings"
 import type { ProjectInput, ProjectSession } from "@ade/core/types"
 
-const sessions = new Map<string, ProjectSession>()
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const SESSIONS_PATH = join(__dirname, "..", "sessions.json")
+
+function loadSessions(): Map<string, ProjectSession> {
+  try {
+    if (existsSync(SESSIONS_PATH)) {
+      const data = JSON.parse(readFileSync(SESSIONS_PATH, "utf-8"))
+      return new Map(Object.entries(data))
+    }
+  } catch { /* ignore corrupt file */ }
+  return new Map()
+}
+
+function saveSessions(sessions: Map<string, ProjectSession>) {
+  try {
+    mkdirSync(dirname(SESSIONS_PATH), { recursive: true })
+    writeFileSync(SESSIONS_PATH, JSON.stringify(Object.fromEntries(sessions), null, 2))
+  } catch (e) {
+    console.error("Failed to save sessions:", e)
+  }
+}
+
+const sessions = loadSessions()
+
+function persist() { saveSessions(sessions) }
 
 function newId(): string {
   return `proj_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
@@ -389,6 +416,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           updatedAt: new Date().toISOString(),
         }
         sessions.set(id, session)
+        persist()
 
         const settings = generateSettings({
           description: session.description,
@@ -428,6 +456,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           .map(([k]) => k)
         session.users = typeof args.users === "number" ? args.users : undefined
         session.updatedAt = new Date().toISOString()
+        persist()
 
         return {
           content: [{
@@ -446,6 +475,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const settings = generateSettings(input)
         session.confirmedSettings = settings
         session.updatedAt = new Date().toISOString()
+        persist()
 
         return {
           content: [{
@@ -594,6 +624,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
           }
           sessions.set(id, session)
+          persist()
           return {
             content: [{
               type: "text",
@@ -616,6 +647,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           session.domain = String(args.domain ?? session.domain)
           session.wizardStep = "features"
           session.updatedAt = new Date().toISOString()
+          persist()
 
           const settings = generateSettings({
             description: session.description,
@@ -646,6 +678,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           if (typeof args.users === "number") session.users = args.users
           session.wizardStep = "settings"
           session.updatedAt = new Date().toISOString()
+          persist()
 
           const input = sessionToPartialInput(session)
           const settings = generateSettings(input)
@@ -669,6 +702,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (step === "plan" || step === "next") {
           session.wizardStep = "done"
           session.updatedAt = new Date().toISOString()
+          persist()
           const input = sessionToFullInput(session)
           const { generateArchitecture } = await import("@ade/core/ade")
           const plan = generateArchitecture(input)
