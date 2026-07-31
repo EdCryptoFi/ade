@@ -2,6 +2,11 @@
 
 Camada de arquitetura para Vibe Coding. Decide a arquitetura **antes** do código ser escrito.
 
+## Links de produção
+
+- **Playground:** https://site-gules-six-63.vercel.app
+- **API (Cloudflare Worker):** https://ade-api.cryptolairbr.workers.dev (`POST /analyze`, `GET /health`, `GET /schema`)
+
 ## Quick Start
 
 ```bash
