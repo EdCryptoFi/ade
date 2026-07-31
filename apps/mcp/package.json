@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@ade/core": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.10.0"
+    "@modelcontextprotocol/sdk": "^1.30.0"
   },
   "devDependencies": {
     "tsx": "^4.19.0",
