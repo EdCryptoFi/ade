@@ -66,7 +66,7 @@ export default function Playground() {
     }
 
     try {
-      const res = await fetch("https://ade-api.your-username.workers.dev/analyze", {
+      const res = await fetch("https://ade-api.cryptolairbr.workers.dev/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

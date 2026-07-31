@@ -27,7 +27,7 @@ export default function Home() {
               Testar ADE
             </a>
             <a
-              href="https://github.com/your-org/ade"
+              href="https://github.com/EdCryptoFi/ade"
               className="inline-flex items-center px-6 py-3 rounded-lg border border-zinc-800 text-zinc-300 font-medium hover:bg-zinc-900 transition-colors"
             >
               GitHub →
