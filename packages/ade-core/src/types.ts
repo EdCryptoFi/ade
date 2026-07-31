@@ -21,6 +21,10 @@ export interface ProjectInput {
   onboarding?: boolean
   notifications?: boolean
   dataExport?: boolean
+
+  search?: boolean
+  backgroundJobs?: boolean
+  cms?: boolean
 }
 
 export type DomainCategory =

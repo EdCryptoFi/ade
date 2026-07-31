@@ -116,6 +116,24 @@ export function recommendFeatures(input: Partial<ProjectInput>): FeatureSuggesti
       recommended: /export|exportação|import|importação|csv|pdf|relatório|report|backup|download.dados|data.portability|portabilidade|extrair|extract|migração|migration|planilha|spreadsheet/i.test(text),
       reason: "Portabilidade e relatórios",
     },
+    {
+      feature: "Search / Busca",
+      key: "search",
+      recommended: /busca|search|find|pesquisa|procurar|algolia|elasticsearch|meilisearch|typesense|fulltext|full.text|text.search|índice|index|autocomplete|sugestão|suggestion|filtro|filter/i.test(text),
+      reason: "Busca textual ou full-text search",
+    },
+    {
+      feature: "Background Jobs / Filas",
+      key: "backgroundJobs",
+      recommended: /fila|queue|job|background|cron|agendamento|scheduling|processamento.assíncrono|async|tarefa|task|workflow|batch|processamento.em.lote|bull|bullmq|temporal|inngest|trigger/i.test(text),
+      reason: "Processamento assíncrono ou agendado",
+    },
+    {
+      feature: "CMS / Gerenciamento de Conteúdo",
+      key: "cms",
+      recommended: /cms|conteúdo|content|blog|blogging|páginas|pages|artigo|article|post|publicação|publishing|headless|cms|sanity|stripe|strapi|contentful|payload/i.test(text),
+      reason: "Gerenciamento de conteúdo ou blog",
+    },
   ]
 }
 
@@ -210,6 +228,18 @@ export function recommendInfrastructure(input: Partial<ProjectInput>): Infrastru
   const hasDashboard = /dashboard|chart|gráfico|graph|analytics|kpi|métrica|metric|admin/i.test(`${input.domain} ${input.description ?? ""}`)
   const isSaaS = input.multiTenant || input.teams || /saas|assinatura|subscription|tenant|billing/i.test(`${input.domain} ${input.description ?? ""}`)
 
+  const searchService = input.search
+    ? "Meilisearch / Typesense (auto-hospedado) ou Algolia (SaaS)"
+    : "Nenhum"
+
+  const jobsService = input.backgroundJobs
+    ? "BullMQ + Redis (auto-hospedado) ou Inngest / Trigger.dev (SaaS)"
+    : "Nenhum"
+
+  const cmsService = input.cms
+    ? "Sanity / Strapi (headless CMS)"
+    : "Nenhum"
+
   return {
     frontend: hasDashboard ? "Next.js + shadcn/ui" : "Next.js",
     backend: isSaaS ? "Next.js API Routes + tRPC" : "Next.js API Routes",
@@ -234,6 +264,9 @@ export function recommendInfrastructure(input: Partial<ProjectInput>): Infrastru
       blockchain: input.blockchain ? "Blockchain detectado → Sui + Walrus" : "Sem blockchain",
       ai: input.ai ? "IA detectada → OpenAI" : "Sem IA",
       memory: input.aiMemory ? "Memória para IA → Walrus + Vector Database" : "Sem necessidade de memória",
+      search: input.search ? `Busca textual → ${searchService}` : "Sem busca textual",
+      backgroundJobs: input.backgroundJobs ? `Jobs async → ${jobsService}` : "Sem jobs em background",
+      cms: input.cms ? `CMS → ${cmsService}` : "Sem CMS",
     },
   }
 }
@@ -273,6 +306,9 @@ export function recommendSecurity(input: Partial<ProjectInput>): SecurityDecisio
       ...(input.webhooks ? ["Verificar assinatura HMAC dos webhooks", "Retry com backoff + dead letter queue"] : []),
       ...(input.auditLog ? ["Registrar todas as ações de admin", "Logs imutáveis (append-only)"] : []),
       ...(input.sso ? ["Validar emissor do token (iss)", "Suportar múltiplos IdPs"] : []),
+      ...(input.search ? ["Proteger endpoint de busca contra abuso (rate limit)", "Nunca expor índices diretamente ao cliente"] : []),
+      ...(input.backgroundJobs ? ["Validar payload de jobs", "Implementar retry com backoff exponencial + dead letter queue"] : []),
+      ...(input.cms ? ["Sanitizar HTML de conteúdo gerado por usuários", "Proteger rotas de admin do CMS"] : []),
       "Validar todas as entradas com Zod",
       "Configurar CORS por origem",
     ],
@@ -297,6 +333,9 @@ export function recommendTesting(input: Partial<ProjectInput>): TestingDecision 
       ...(input.blockchain ? ["Testes de contrato em testnet"] : []),
       ...(input.webhooks ? ["Testes de entrega e retry de webhooks"] : []),
       ...(input.apiAccess ? ["Testes de rate limiting e scopes de API key"] : []),
+      ...(input.search ? ["Testes de relevância de busca", "Testes de indexing e sync"] : []),
+      ...(input.backgroundJobs ? ["Testes de fila: encadeamento, retry, dead letter", "Testes de concorrência de jobs"] : []),
+      ...(input.cms ? ["Testes de workflow de conteúdo (rascunho → revisão → publicação)", "Testes de permissão por role de conteúdo"] : []),
       ...(needsLoad ? ["Testes de carga com k6"] : []),
       ...(input.auditLog ? ["Testes de integridade do audit log"] : []),
       "E2E com Playwright para fluxos críticos",
@@ -316,6 +355,9 @@ export function recommendMonitoring(input: Partial<ProjectInput>): MonitoringDec
       "PostHog (analytics + session replay)",
       "Sentry (error tracking)",
       "Vercel Analytics (performance)",
+      ...(input.search ? ["Monitoramento de performance de busca (latência P50/P95/P99)"] : []),
+      ...(input.backgroundJobs ? ["Métricas de fila: tamanho, taxa de processamento, taxa de falha", "Alerta de fila crescente (backlog)"] : []),
+      ...(input.cms ? ["Métricas de conteúdo: publicações, versões, média de atualizações"] : []),
       ...(input.blockchain || input.realtime || input.ai || input.multiTenant ? ["OpenTelemetry + Grafana (tracing + métricas)"] : []),
       ...(input.auditLog ? ["Logs estruturados + SIEM (opcional)"] : []),
       ...(input.payments ? ["Monitoramento de falhas de pagamento", "Alerta de queda de receita"] : []),
@@ -342,6 +384,9 @@ export function recommendCost(input: Partial<ProjectInput>): CostDecision {
   if (input.webhooks) items["Webhook Infrastructure"] = 15
   if (input.auditLog) items["Audit Log Storage"] = 10
   if (input.notifications) items.Emails = 20
+  if (input.search) items["Search Service"] = 30
+  if (input.backgroundJobs) items["Background Jobs (Redis + Worker)"] = 25
+  if (input.cms) items["CMS Headless"] = 30
   if (input.featureFlags) items["Feature Flags"] = 0
   if ((input.users ?? 0) > 100000) items["Escala (Redis + CDN)"] = 200
   else if ((input.users ?? 0) > 10000) items["Escala (Redis)"] = 100
