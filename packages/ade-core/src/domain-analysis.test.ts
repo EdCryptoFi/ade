@@ -11,6 +11,14 @@ describe("analyzeDomain", () => {
     expect(analyzeDomain(input("shop", "ecommerce platform", ["cart"]))).toBe("marketplace")
   })
 
+  it("detects marketplace when the word marketplace is used", () => {
+    expect(analyzeDomain(input("marketplace", "NFT marketplace for digital art", ["nft", "wallet"]))).toBe("marketplace")
+  })
+
+  it("prefers marketplace over social-network when a feed mentions marketplace", () => {
+    expect(analyzeDomain(input("marketplace", "NFT marketplace with live transaction feed", ["feed", "nft"]))).toBe("marketplace")
+  })
+
   it("detects dashboard", () => {
     expect(analyzeDomain(input("admin", "analytics dashboard with KPIs", ["charts"]))).toBe("dashboard")
     expect(analyzeDomain(input("panel", "metric monitoring", ["graph"]))).toBe("dashboard")

@@ -69,7 +69,7 @@ describe("runSecurityAudit", () => {
   it("scores zero when no sensitive features", () => {
     const result = runSecurityAudit(input())
     expect(result.scorecard.grade).toBeDefined()
-    expect(result.scorecard.summary).toContain("nota")
+    expect(result.scorecard.summary).toContain("grade")
   })
 
   it("produces top actions, red team and blue team", () => {

@@ -1,9 +1,9 @@
 import { z } from "zod"
 
 export const ProjectInputSchema = z.object({
-  description: z.string().min(3, "Descrição deve ter no mínimo 3 caracteres").max(2000),
-  domain: z.string().min(2, "Domínio deve ter no mínimo 2 caracteres").max(100),
-  features: z.array(z.string()).min(1, "Pelo menos uma feature é necessária"),
+  description: z.string().min(3, "Description must have at least 3 characters").max(2000),
+  domain: z.string().min(2, "Domain must have at least 2 characters").max(100),
+  features: z.array(z.string()).min(1, "At least one feature is required"),
   users: z.number().int().positive().optional(),
   blockchain: z.boolean().optional().default(false),
   auth: z.boolean().optional().default(false),

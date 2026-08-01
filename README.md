@@ -1,8 +1,8 @@
 # ADE — Architecture Decision Engine
 
-Camada de arquitetura para Vibe Coding. Decide a arquitetura **antes** do código ser escrito.
+An architecture layer for Product Engineering. Decides the architecture **before** the code is written — by humans or by AI.
 
-## Links de produção
+## Production Links
 
 - **Playground:** https://ade-vibe.vercel.app
 - **API (Cloudflare Worker):** https://ade-api.cryptolairbr.workers.dev (`POST /analyze`, `POST /audit`, `GET /health`, `GET /schema`)
@@ -14,9 +14,9 @@ pnpm install
 pnpm --filter @ade/core test
 ```
 
-## MCP Server (recomendado)
+## MCP Server (recommended)
 
-Configure no `.opencode.json` ou `claude_desktop_config.json`:
+Configure in `.opencode.json` or `claude_desktop_config.json`:
 
 ```json
 {
@@ -24,40 +24,40 @@ Configure no `.opencode.json` ou `claude_desktop_config.json`:
     "ade": {
       "command": "pnpm",
       "args": ["--filter", "@ade/mcp", "start"],
-      "workdir": "/caminho/para/ade"
+      "workdir": "/path/to/ade"
     }
   }
 }
 ```
 
-16 ferramentas MCP: wizard, tradeoffs, scaffold, settings, plan, security audit, e análises individuais.
+16 MCP tools: wizard, tradeoffs, scaffold, settings, plan, security audit, and individual analyses.
 
-## Estrutura
+## Structure
 
 ```
 apps/api/     → Cloudflare Worker (POST /analyze, POST /audit)
-apps/mcp/     → MCP Server (16 tools, wizard 4 passos, security audit)
+apps/mcp/     → MCP Server (16 tools, 4-step wizard, security audit)
 apps/site/    → Next.js playground
-packages/ade-core/ → Engine principal (zero deps runtime, Zod + Vitest)
+packages/ade-core/ → Core engine (zero runtime deps, Zod + Vitest)
 ```
 
 ## Security Audit
 
-`POST /audit` e a tool MCP `ade-security-audit` executam uma auditoria Zero-Trust Universal:
+`POST /audit` and the `ade-security-audit` MCP tool run a Universal Zero-Trust audit:
 
-- **15 Leis Imutáveis** organizadas em 4 camadas (perímetro, identidade, negócio, infraestrutura)
-- **12 Vetores de Ataque** (IDOR, race conditions, SSRF, injection, secrets, RLS...)
-- **10 Anti-Padrões de Vibe Coding** (A1-A10) — segurança só no cliente, auth removido, RLS desabilitado, middleware fantasma...
-- **Scorecard** (nota A-F) + Top 3 ações prioritárias
-- **Security TDD** — testes gerados para cada vulnerabilidade aplicável
+- **15 Immutable Laws** organized in 4 layers (perimeter, identity, business, infrastructure)
+- **12 Attack Vectors** (IDOR, race conditions, SSRF, injection, secrets, RLS...)
+- **10 Vibe Coding Anti-Patterns** (A1-A10) — client-only security, removed auth, disabled RLS, phantom middleware...
+- **Scorecard** (A-F grade) + Top 3 priority actions
+- **Security TDD** — tests generated for every applicable vulnerability
 
-Cada check inclui classificação (OWASP + CWE), exploit Red Team, mitigação Blue Team e testes.
+Each check includes classification (OWASP + CWE), Red Team exploit, Blue Team mitigation and tests.
 
 ## Stack
 
 Turborepo | TypeScript | Zod | Vitest | Prettier
 Next.js | Supabase | Vercel | MCP SDK | Cloudflare Workers
 
-## Licença
+## License
 
 MIT

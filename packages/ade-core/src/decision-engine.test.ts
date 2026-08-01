@@ -74,22 +74,40 @@ describe("runDecisionEngine", () => {
     expect(result.components).toContain("SSO Provider Adapter")
   })
 
+  it("adds search components", () => {
+    const result = runDecisionEngine(input({ search: true }))
+    expect(result.components).toContain("Search Service (Meilisearch/Typesense/Algolia)")
+    expect(result.components).toContain("Indexer")
+  })
+
+  it("adds background jobs components", () => {
+    const result = runDecisionEngine(input({ backgroundJobs: true }))
+    expect(result.components).toContain("Job Worker")
+    expect(result.components).toContain("Queue (BullMQ/Inngest)")
+  })
+
+  it("adds cms components", () => {
+    const result = runDecisionEngine(input({ cms: true }))
+    expect(result.components).toContain("CMS Admin")
+    expect(result.components).toContain("Draft/Review/Publish Workflow")
+  })
+
   it("generates warning when ai without memory", () => {
     const result = runDecisionEngine(input({ ai: true }))
     expect(result.warnings.length).toBeGreaterThan(0)
-    expect(result.warnings[0]).toContain("IA sem memória")
+    expect(result.warnings[0]).toContain("AI without memory")
   })
 
   it("generates warning for blockchain without auth", () => {
     const result = runDecisionEngine(input({ blockchain: true }))
     expect(result.warnings.length).toBeGreaterThan(0)
-    expect(result.warnings[0]).toContain("Blockchain sem auth")
+    expect(result.warnings[0]).toContain("Blockchain without auth")
   })
 
   it("generates warning for payments without auth", () => {
     const result = runDecisionEngine(input({ payments: true }))
     expect(result.warnings.length).toBeGreaterThan(0)
-    expect(result.warnings.some(w => w.includes("Pagamentos sem auth"))).toBe(true)
+    expect(result.warnings.some(w => w.includes("Payments without auth"))).toBe(true)
   })
 
   it("adds multi-gateway for payments + large scale", () => {

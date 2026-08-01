@@ -3,7 +3,7 @@ import type { ReactNode } from "react"
 
 export const metadata = {
   title: "ADE — Architecture Decision Engine",
-  description: "An architecture layer for Vibe Coding. Architectural decisions before implementation.",
+  description: "An architecture layer for product engineering. Architectural decisions before implementation.",
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {

@@ -16,8 +16,9 @@ export default function Home() {
             <span className="text-zinc-500">the code.</span>
           </h2>
           <p className="text-lg text-zinc-400 max-w-2xl">
-            ADE is an architecture layer for Vibe Coding. Instead of going straight from idea to prompt,
-            you run through a decision engine that defines domain, data, infrastructure, components, and plan.
+            ADE is an architecture layer for product engineering. Instead of inventing the architecture
+            inside a prompt, you run through a decision engine that defines domain, data, infrastructure,
+            components, and plan — before any code is written.
           </p>
           <div className="flex gap-4 pt-4">
             <a

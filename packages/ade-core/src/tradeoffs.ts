@@ -4,8 +4,8 @@ export interface TradeoffOption {
   name: string
   pros: string[]
   cons: string[]
-  cost: "baixo" | "médio" | "alto"
-  quandoUsar: string
+  cost: "low" | "medium" | "high"
+  whenToUse: string
 }
 
 export interface TradeoffDecision {
@@ -22,31 +22,31 @@ export function analyzeFrontend(input: Partial<ProjectInput>): TradeoffDecision 
     options: [
       {
         name: "Next.js",
-        pros: ["App Router", "SSR/SSG/ISR", "Ecossistema React", "Vercel nativo", "API Routes integradas"],
-        cons: ["Bundle size", "Server components curva de aprendizado", "Vendor lock-in com Vercel"],
-        cost: "médio",
-        quandoUsar: "Projetos que precisam de SEO, performance, ou full-stack integrado",
+        pros: ["App Router", "SSR/SSG/ISR", "React ecosystem", "Vercel native", "Integrated API Routes"],
+        cons: ["Bundle size", "Server components learning curve", "Vercel vendor lock-in"],
+        cost: "medium",
+        whenToUse: "Projects that need SEO, performance, or integrated full-stack",
       },
       {
         name: "Astro",
-        pros: ["Zero JS por padrão", "Ilhas de hidratação", "Performance nativa", "Qualquer framework UI"],
-        cons: ["Menos ecossistema que React", "APIs precisam de backend separado", "Menos recursos dinâmicos"],
-        cost: "baixo",
-        quandoUsar: "Landing pages, blogs, sites de conteúdo, dashboards simples",
+        pros: ["Zero JS by default", "Islands of hydration", "Native performance", "Any UI framework"],
+        cons: ["Smaller ecosystem than React", "APIs need a separate backend", "Fewer dynamic features"],
+        cost: "low",
+        whenToUse: "Landing pages, blogs, content sites, simple dashboards",
       },
       {
         name: "Remix",
-        pros: ["Web standards first", "Nested routes", "Form actions nativos", "Error boundaries"],
-        cons: ["Menos popular", "Menos templates", "Debugging mais complexo"],
-        cost: "médio",
-        quandoUsar: "Aplicações com formulários complexos e navegação aninhada",
+        pros: ["Web standards first", "Nested routes", "Native form actions", "Error boundaries"],
+        cons: ["Less popular", "Fewer templates", "More complex debugging"],
+        cost: "medium",
+        whenToUse: "Applications with complex forms and nested navigation",
       },
       {
         name: "SvelteKit",
-        pros: ["Bundle size mínimo", "Reatividade simples", "Performance excelente", "Curva baixa"],
-        cons: ["Ecossistema menor", "Menos bibliotecas", "Contratação mais difícil"],
-        cost: "baixo",
-        quandoUsar: "Times pequenos, protótipos, projetos que priorizam performance",
+        pros: ["Minimal bundle size", "Simple reactivity", "Excellent performance", "Low learning curve"],
+        cons: ["Smaller ecosystem", "Fewer libraries", "Harder to hire"],
+        cost: "low",
+        whenToUse: "Small teams, prototypes, performance-first projects",
       },
     ],
   }
@@ -60,31 +60,31 @@ export function analyzeDatabase(input: Partial<ProjectInput>): TradeoffDecision 
     options: [
       {
         name: "Supabase PostgreSQL",
-        pros: ["PostgreSQL completo", "RLS nativo", "Auth + Storage + Realtime", "Dashboard incluso"],
-        cons: ["Vendor lock-in parcial", "Limites do free tier", "Menos controle de infra"],
-        cost: "médio",
-        quandoUsar: "Projetos que precisam de backend pronto com auth, realtime e storage",
+        pros: ["Full PostgreSQL", "Native RLS", "Auth + Storage + Realtime", "Dashboard included"],
+        cons: ["Partial vendor lock-in", "Free tier limits", "Less infra control"],
+        cost: "medium",
+        whenToUse: "Projects that need a ready backend with auth, realtime and storage",
       },
       {
         name: "Neon",
-        pros: ["Serverless PostgreSQL", "Branching de DB", "Cold start rápido", "Pricing por uso"],
-        cons: ["Sem RLS built-in", "Sem auth embutido", "Sem storage/realtime"],
-        cost: "médio",
-        quandoUsar: "Projetos serverless que precisam de branching e escalabilidade horizontal",
+        pros: ["Serverless PostgreSQL", "DB branching", "Fast cold start", "Usage-based pricing"],
+        cons: ["No built-in RLS", "No embedded auth", "No storage/realtime"],
+        cost: "medium",
+        whenToUse: "Serverless projects that need branching and horizontal scalability",
       },
       {
         name: "Prisma Postgres",
-        pros: ["Type-safe queries", "Migrações declarativas", "ORM maduro", "Integração Next.js"],
-        cons: ["Camada extra de abstração", "Performance overhead", "Curva de aprendizado"],
-        cost: "médio",
-        quandoUsar: "Times que priorizam type safety e DX com TypeScript",
+        pros: ["Type-safe queries", "Declarative migrations", "Mature ORM", "Next.js integration"],
+        cons: ["Extra abstraction layer", "Performance overhead", "Learning curve"],
+        cost: "medium",
+        whenToUse: "Teams that prioritize type safety and TypeScript DX",
       },
       {
         name: "PlanetScale",
-        pros: ["MySQL compatível", "Branching poderoso", "Deploy sem downtime", "Escala automática"],
-        cons: ["MySQL (não PostgreSQL)", "Sem RLS", "Sem funções nativas"],
-        cost: "alto",
-        quandoUsar: "Projetos com alta escala que precisam de branching e zero-downtime deploy",
+        pros: ["MySQL compatible", "Powerful branching", "Zero-downtime deploy", "Automatic scaling"],
+        cons: ["MySQL (not PostgreSQL)", "No RLS", "No native functions"],
+        cost: "high",
+        whenToUse: "High-scale projects that need branching and zero-downtime deploys",
       },
     ],
   }
@@ -92,36 +92,36 @@ export function analyzeDatabase(input: Partial<ProjectInput>): TradeoffDecision 
 
 export function analyzeAuth(input: Partial<ProjectInput>): TradeoffDecision {
   return {
-    category: "Autenticação",
+    category: "Authentication",
     selected: input.sso ? "NextAuth (Auth.js)" : "Supabase Auth",
     options: [
       {
         name: "Supabase Auth",
-        pros: ["Integrado ao banco", "RLS automático", "Mágica de email", "Gratuito no início"],
-        cons: ["Menos providers SSO", "Customização limitada", "Depende do Supabase"],
-        cost: "baixo",
-        quandoUsar: "Projetos que já usam Supabase e precisam de auth simples",
+        pros: ["Integrated with the database", "Automatic RLS", "Email magic links", "Free to start"],
+        cons: ["Fewer SSO providers", "Limited customization", "Depends on Supabase"],
+        cost: "low",
+        whenToUse: "Projects already using Supabase that need simple auth",
       },
       {
         name: "NextAuth (Auth.js)",
-        pros: ["Muitos providers", "SSO/SAML/OIDC", "Database agnóstico", "Self-hosted"],
-        cons: ["Configuração mais complexa", "Documentação densa", "Middleware pode confundir"],
-        cost: "médio",
-        quandoUsar: "Projetos que precisam de SSO, múltiplos providers, ou auth corporativo",
+        pros: ["Many providers", "SSO/SAML/OIDC", "Database agnostic", "Self-hosted"],
+        cons: ["More complex setup", "Dense documentation", "Middleware can be confusing"],
+        cost: "medium",
+        whenToUse: "Projects that need SSO, multiple providers, or corporate auth",
       },
       {
         name: "Clerk",
-        pros: ["UI pronta", "Multi-tenant nativo", "MFA fácil", "Ótima DX"],
-        cons: ["Vendor lock-in", "Preço escala rápido", "Self-host limitado"],
-        cost: "alto",
-        quandoUsar: "Startups que querem auth funcionando em minutos sem se preocupar com infra",
+        pros: ["Ready UI", "Native multi-tenant", "Easy MFA", "Great DX"],
+        cons: ["Vendor lock-in", "Price scales fast", "Limited self-host"],
+        cost: "high",
+        whenToUse: "Startups that want auth working in minutes without infra concerns",
       },
       {
         name: "Auth0",
         pros: ["Enterprise-ready", "MFA + SSO + AD", "Audit logs", "SLAs"],
-        cons: ["Caro em escala", "Setup demorado", "UI genérica"],
-        cost: "alto",
-        quandoUsar: "Empresas que precisam de compliance, SSO corporativo e SLAs",
+        cons: ["Expensive at scale", "Slow setup", "Generic UI"],
+        cost: "high",
+        whenToUse: "Companies that need compliance, corporate SSO and SLAs",
       },
     ],
   }
@@ -129,29 +129,29 @@ export function analyzeAuth(input: Partial<ProjectInput>): TradeoffDecision {
 
 export function analyzePayments(): TradeoffDecision {
   return {
-    category: "Pagamentos",
+    category: "Payments",
     selected: "Stripe",
     options: [
       {
         name: "Stripe",
-        pros: ["API completa", "Checkout embeddable", "Billing + subscriptions", "Global"],
-        cons: ["Complexo para iniciantes", "Taxas altas em micropagamentos", "Suporte lento no free"],
-        cost: "médio",
-        quandoUsar: "Maioria dos projetos SaaS — Stripe é o padrão da indústria",
+        pros: ["Complete API", "Embeddable checkout", "Billing + subscriptions", "Global"],
+        cons: ["Complex for beginners", "High fees on micropayments", "Slow free-tier support"],
+        cost: "medium",
+        whenToUse: "Most SaaS projects — Stripe is the industry standard",
       },
       {
         name: "Paddle",
-        pros: ["Vendor de registro (MoR)", "Lida com IVA/taxas globais", "Subscription nativo"],
-        cons: ["Checkout menos customizável", "Catálogo de produtos obrigatório", "Suporte limitado"],
-        cost: "médio",
-        quandoUsar: "SaaS global que quer terceirizar compliance fiscal",
+        pros: ["Merchant of Record (MoR)", "Handles VAT/global taxes", "Native subscriptions"],
+        cons: ["Less customizable checkout", "Product catalog required", "Limited support"],
+        cost: "medium",
+        whenToUse: "Global SaaS that wants to outsource tax compliance",
       },
       {
         name: "Lemon Squeezy",
-        pros: ["MoR + Stripe por baixo", "Checkout bonito", "Licensing nativo"],
-        cons: ["Plataforma nova", "Menos recursos que Stripe", "Sem suporte a vários gateways"],
-        cost: "médio",
-        quandoUsar: "Produtos digitais e softwares que precisam de licensing + MoR",
+        pros: ["MoR + Stripe underneath", "Nice checkout", "Native licensing"],
+        cons: ["New platform", "Fewer features than Stripe", "No multi-gateway support"],
+        cost: "medium",
+        whenToUse: "Digital products and software that need licensing + MoR",
       },
     ],
   }
@@ -164,31 +164,31 @@ export function analyzeDeploy(input: Partial<ProjectInput>): TradeoffDecision {
     options: [
       {
         name: "Vercel",
-        pros: ["Next.js nativo", "Preview deploys", "Edge Functions", "Analytics incluso"],
-        cons: ["Vendor lock-in", "Preço em escala alta", "Limites de serverless"],
-        cost: "médio",
-        quandoUsar: "Projetos Next.js — é o deploy mais integrado possível",
+        pros: ["Native Next.js", "Preview deploys", "Edge Functions", "Analytics included"],
+        cons: ["Vendor lock-in", "Price at high scale", "Serverless limits"],
+        cost: "medium",
+        whenToUse: "Next.js projects — the most integrated deploy possible",
       },
       {
         name: "Cloudflare Pages",
-        pros: ["Edge global", "Preço baixo", "Workers poderosos", "Rede de CDN"],
-        cons: ["Sem SSR nativo (precisa Workers)", "Menos integrações", "Debugging difícil"],
-        cost: "baixo",
-        quandoUsar: "Sites estáticos, apps com Workers, ou times com budget limitado",
+        pros: ["Global edge", "Low price", "Powerful Workers", "CDN network"],
+        cons: ["No native SSR (needs Workers)", "Fewer integrations", "Hard debugging"],
+        cost: "low",
+        whenToUse: "Static sites, apps with Workers, or limited-budget teams",
       },
       {
         name: "Railway",
-        pros: ["Deploy simples", "DB embutido", "Docker nativo", "Pricing previsível"],
-        cons: ["Menos recursos de edge", "Infra compartilhada", "Sem preview deploy nativo"],
-        cost: "médio",
-        quandoUsar: "Projetos que precisam de backend tradicional com deploy simplificado",
+        pros: ["Simple deploys", "Embedded DB", "Native Docker", "Predictable pricing"],
+        cons: ["Fewer edge features", "Shared infra", "No native preview deploys"],
+        cost: "medium",
+        whenToUse: "Projects that need a traditional backend with simplified deploys",
       },
       {
         name: "Fly.io",
-        pros: ["Edge compute real", "PostgreSQL global", "Docker puro", "Firecracker VMs"],
-        cons: ["Setup manual", "Documentação técnica", "Mais caro que alternativas serverless"],
-        cost: "alto",
-        quandoUsar: "Aplicações que precisam de computação near-edge com bancos distribuídos",
+        pros: ["Real edge compute", "Global PostgreSQL", "Pure Docker", "Firecracker VMs"],
+        cons: ["Manual setup", "Technical documentation", "More expensive than serverless alternatives"],
+        cost: "high",
+        whenToUse: "Applications that need near-edge compute with distributed databases",
       },
     ],
   }
@@ -196,36 +196,36 @@ export function analyzeDeploy(input: Partial<ProjectInput>): TradeoffDecision {
 
 export function analyzeAI(): TradeoffDecision {
   return {
-    category: "Provedor de IA",
+    category: "AI Provider",
     selected: "OpenAI",
     options: [
       {
         name: "OpenAI",
-        pros: ["GPT-4 líder", "API estável", "Function calling", "Maior ecossistema"],
-        cons: ["Preço alto", "Latência", "Sem fine-tuning fácil"],
-        cost: "alto",
-        quandoUsar: "Qualidade máxima de resposta, agentes complexos, ou chains",
+        pros: ["Leading GPT-4", "Stable API", "Function calling", "Largest ecosystem"],
+        cons: ["High price", "Latency", "No easy fine-tuning"],
+        cost: "high",
+        whenToUse: "Maximum response quality, complex agents, or chains",
       },
       {
         name: "Claude (Anthropic)",
-        pros: ["Contexto longo (200k)", "Menos alucinação", "Código excelente", "Safety por design"],
-        cons: ["API rate limit menor", "Menos ferramentas", "Ecossistema menor"],
-        cost: "alto",
-        quandoUsar: "Análise de documentos longos, código, ou aplicações que precisam de safety",
+        pros: ["Long context (200k)", "Less hallucination", "Excellent code", "Safety by design"],
+        cons: ["Lower API rate limits", "Fewer tools", "Smaller ecosystem"],
+        cost: "high",
+        whenToUse: "Long document analysis, code, or safety-critical applications",
       },
       {
         name: "Google Gemini",
-        pros: ["Contexto de 1M tokens", "Preço baixo", "Multimodal nativo", "Integração Google"],
-        cons: ["Qualidade inferior em tarefas complexas", "API changing", "Menos adoção"],
-        cost: "baixo",
-        quandoUsar: "Análise de documentos muito longos, vídeos, ou budget limitado",
+        pros: ["1M token context", "Low price", "Native multimodal", "Google integration"],
+        cons: ["Lower quality on complex tasks", "API changes", "Less adoption"],
+        cost: "low",
+        whenToUse: "Very long document analysis, videos, or limited budgets",
       },
       {
         name: "Local (Ollama)",
-        pros: ["Sem custo de API", "Privacidade total", "Offline", "Fine-tuning livre"],
-        cons: ["Qualidade inferior", "Requer hardware", "Setup complexo", "Manutenção contínua"],
-        cost: "baixo",
-        quandoUsar: "Dados sensíveis, prototipação, ou aplicações 100% offline",
+        pros: ["No API cost", "Total privacy", "Offline", "Free fine-tuning"],
+        cons: ["Lower quality", "Requires hardware", "Complex setup", "Ongoing maintenance"],
+        cost: "low",
+        whenToUse: "Sensitive data, prototyping, or 100% offline applications",
       },
     ],
   }

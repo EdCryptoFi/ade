@@ -8,10 +8,10 @@ import type {
 } from "../types.ts"
 
 const LAYER_LABEL: Record<SecurityLayer, string> = {
-  perimeter: "Camada 1 — Perímetro e Entrada",
-  identity: "Camada 2 — Identidade e Autorização",
-  business: "Camada 3 — Lógica de Negócio e Dados",
-  infrastructure: "Camada 4 — Infraestrutura e Supply Chain",
+  perimeter: "Layer 1 — Perimeter and Entry",
+  identity: "Layer 2 — Identity and Authorization",
+  business: "Layer 3 — Business Logic and Data",
+  infrastructure: "Layer 4 — Infrastructure and Supply Chain",
 }
 
 function generateVision(plan: PlanData): string {
@@ -206,6 +206,9 @@ function generateTechStack(plan: PlanData): string {
 ${plan.infrastructure.blockchain ? `## Blockchain\n- ${plan.infrastructure.blockchain}\n` : ""}
 ${plan.infrastructure.ai ? `## AI\n- ${plan.infrastructure.ai}\n` : ""}
 ${plan.infrastructure.memory ? `## Memory\n- ${plan.infrastructure.memory}\n` : ""}
+${plan.infrastructure.search !== "None" ? `## Search\n- ${plan.infrastructure.search}\n` : ""}
+${plan.infrastructure.backgroundJobs !== "None" ? `## Background Jobs\n- ${plan.infrastructure.backgroundJobs}\n` : ""}
+${plan.infrastructure.cms !== "None" ? `## CMS\n- ${plan.infrastructure.cms}\n` : ""}
 `
 }
 
@@ -229,7 +232,7 @@ ${plan.domain === "marketplace" ? `- \`GET /products\` — List products
 - \`DELETE /items/:id\` — Delete item`}
 
 ## Authentication
-${plan.infrastructure.auth !== "Nenhum (público)" ? "JWT via Supabase Auth" : "Public (no auth required)"}
+${plan.infrastructure.auth !== "None (public)" ? "JWT via Supabase Auth" : "Public (no auth required)"}
 `
 }
 
@@ -246,7 +249,7 @@ function generateSecurity(plan: PlanData): string {
 - CSRF tokens for mutations
 
 ## Auth
-${plan.infrastructure.auth !== "Nenhum (público)" ? "- JWT-based authentication\n- Row Level Security (RLS) on Supabase" : "- Public endpoints"}
+${plan.infrastructure.auth !== "None (public)" ? "- JWT-based authentication\n- Row Level Security (RLS) on Supabase" : "- Public endpoints"}
 
 ## Blockchain
 ${plan.infrastructure.blockchain ? "- Private key management via wallet adapter\n- Transaction signing verification\n- Smart contract audit requirements" : "- N/A"}
@@ -311,20 +314,20 @@ ${sprint.tasks.map(t => `- [ ] ${t}`).join("\n")}`).join("\n\n")}
 
 function renderChecks(checks: SecurityCheck[]): string {
   const applicable = checks.filter((c) => c.applicable)
-  if (!applicable.length) return "- Nenhuma aplicável ao escopo.\n"
+  if (!applicable.length) return "- None applicable to the scope.\n"
   return applicable
     .map((c) => {
       const lines = [
         `### ${c.id} — ${c.title}`,
-        `- **Lei/Vetor**: ${c.law}`,
-        `- **Camada**: ${LAYER_LABEL[c.layer]}`,
-        `- **Severidade**: ${c.severity}`,
-        `- **Classificação**: ${c.owasp} | ${c.cwe}`,
-        `- **Descrição**: ${c.description}`,
+        `- **Law/Vector**: ${c.law}`,
+        `- **Layer**: ${LAYER_LABEL[c.layer]}`,
+        `- **Severity**: ${c.severity}`,
+        `- **Classification**: ${c.owasp} | ${c.cwe}`,
+        `- **Description**: ${c.description}`,
         `- **Exploit (Red Team)**: ${c.exploit}`,
-        `- **Impacto**: ${c.impact}`,
-        `- **Mitigação (Blue Team)**: ${c.mitigation}`,
-        `- **Testes (Security TDD)**:`,
+        `- **Impact**: ${c.impact}`,
+        `- **Mitigation (Blue Team)**: ${c.mitigation}`,
+        `- **Tests (Security TDD)**:`,
         ...c.tests.map((t) => `  - [ ] ${t}`),
       ]
       return lines.join("\n")
@@ -340,26 +343,26 @@ function generateSecurityAudit(audit: SecurityAuditResult): string {
 
 ## Scorecard
 
-| Métrica | Valor |
-|---------|-------|
-| Vulnerabilidades CRÍTICAS | ${s.critical} |
-| Vulnerabilidades ALTAS | ${s.high} |
-| Vulnerabilidades MÉDIAS | ${s.medium} |
-| Vulnerabilidades BAIXAS | ${s.low} |
-| Anti-Padrões de Vibe Coding | ${s.vibeAntiPatterns.join(", ") || "nenhum"} |
-| Nota geral | **${s.grade}** |
+| Metric | Value |
+|--------|-------|
+| CRITICAL vulnerabilities | ${s.critical} |
+| HIGH vulnerabilities | ${s.high} |
+| MEDIUM vulnerabilities | ${s.medium} |
+| LOW vulnerabilities | ${s.low} |
+| Vibe Coding anti-patterns | ${s.vibeAntiPatterns.join(", ") || "none"} |
+| Overall grade | **${s.grade}** |
 
 ${s.summary}
 
-## Top 3 Ações Prioritárias
+## Top 3 Priority Actions
 
 ${audit.topActions.map((a, i) => `${i + 1}. ${a}`).join("\n")}
 
-## Visão do Atacante (Red Team)
+## Attacker View (Red Team)
 
-${audit.redTeam.map((e) => `- ${e}`).join("\n") || "- Nenhum vetor crítico/alto aplicável."}
+${audit.redTeam.map((e) => `- ${e}`).join("\n") || "- No critical/high vector applicable."}
 
-## Código Blindado (Blue Team)
+## Hardened Code (Blue Team)
 
 ${audit.blueTeam.map((m) => `- ${m}`).join("\n")}
 
@@ -369,7 +372,7 @@ ${audit.blueTeam.map((m) => `- ${m}`).join("\n")}
 ${audit.securityTests.join("\n")}
 \`\`\`
 
-## As 15 Leis Imutáveis
+## The 15 Immutable Laws
 
 ${layerOrder
   .map((layer) => {
@@ -378,11 +381,11 @@ ${layerOrder
   })
   .join("\n\n")}
 
-## Vetores de Ataque
+## Attack Vectors
 
 ${renderChecks(audit.attackVectors)}
 
-## Anti-Padrões de Vibe Coding
+## Vibe Coding Anti-Patterns
 
 ${renderChecks(audit.antiPatterns)}
 `

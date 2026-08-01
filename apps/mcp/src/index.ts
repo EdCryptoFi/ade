@@ -51,39 +51,39 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
       name: "ade-new-session",
-      description: "Inicia uma nova sessão de avaliação de projeto",
+      description: "Starts a new project evaluation session",
       inputSchema: {
         type: "object",
         properties: {
-          description: { type: "string", description: "Descrição do projeto" },
-          domain: { type: "string", description: "Domínio principal (ex: marketplace, dashboard, saas)" },
+          description: { type: "string", description: "Project description" },
+          domain: { type: "string", description: "Main domain (e.g. marketplace, dashboard, saas)" },
         },
         required: ["description", "domain"],
       },
     },
     {
       name: "ade-recommend-features",
-      description: "Recomenda features com base na descrição do projeto",
+      description: "Recommends features based on the project description",
       inputSchema: {
         type: "object",
         properties: {
           sessionId: { type: "string" },
-          description: { type: "string", description: "Descrição do projeto" },
-          domain: { type: "string", description: "Domínio do projeto" },
+          description: { type: "string", description: "Project description" },
+          domain: { type: "string", description: "Project domain" },
         },
         required: ["sessionId", "description", "domain"],
       },
     },
     {
       name: "ade-confirm-features",
-      description: "Confirma/rejeita features recomendadas e define o projeto",
+      description: "Confirms/rejects recommended features and defines the project",
       inputSchema: {
         type: "object",
         properties: {
           sessionId: { type: "string" },
           features: {
             type: "object",
-            description: "Features confirmadas (true = ativa, false = desativada)",
+            description: "Confirmed features (true = active, false = disabled)",
             properties: {
               blockchain: { type: "boolean" },
               auth: { type: "boolean" },
@@ -102,16 +102,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
               onboarding: { type: "boolean" },
               notifications: { type: "boolean" },
               dataExport: { type: "boolean" },
+              search: { type: "boolean" },
+              backgroundJobs: { type: "boolean" },
+              cms: { type: "boolean" },
             },
           },
-          users: { type: "number", description: "Número estimado de usuários" },
+          users: { type: "number", description: "Estimated number of users" },
         },
         required: ["sessionId", "features"],
       },
     },
     {
       name: "ade-settings",
-      description: "Retorna todas as recomendações de settings (data, infra, security, testing, monitoring, cost)",
+      description: "Returns all settings recommendations (data, infra, security, testing, monitoring, cost)",
       inputSchema: {
         type: "object",
         properties: {
@@ -122,7 +125,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "ade-generate-plan",
-      description: "Gera o plano completo de arquitetura com todos os documentos",
+      description: "Generates the complete architecture plan with all documents",
       inputSchema: {
         type: "object",
         properties: {
@@ -133,16 +136,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "ade-analyze-domain",
-      description: "Analisa o domínio do projeto com base na descrição",
+      description: "Analyzes the project domain based on the description",
       inputSchema: {
         type: "object",
         properties: {
-          description: { type: "string", description: "Descrição do projeto" },
-          domain: { type: "string", description: "Domínio sugerido" },
+          description: { type: "string", description: "Project description" },
+          domain: { type: "string", description: "Suggested domain" },
           features: {
             type: "array",
             items: { type: "string" },
-            description: "Lista de features",
+            description: "Feature list",
           },
         },
         required: ["description", "domain", "features"],
@@ -150,7 +153,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "ade-decide-data",
-      description: "Decide quais estruturas de dados usar",
+      description: "Decides which data structures to use",
       inputSchema: {
         type: "object",
         properties: {
@@ -165,7 +168,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "ade-decide-infrastructure",
-      description: "Recomenda stack de infraestrutura",
+      description: "Recommends infrastructure stack",
       inputSchema: {
         type: "object",
         properties: {
@@ -194,7 +197,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "ade-decide-components",
-      description: "Gera árvore de componentes baseada no domínio",
+      description: "Generates component tree based on the domain",
       inputSchema: {
         type: "object",
         properties: {
@@ -213,13 +216,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           onboarding: { type: "boolean" },
           notifications: { type: "boolean" },
           dataExport: { type: "boolean" },
+          search: { type: "boolean" },
+          backgroundJobs: { type: "boolean" },
+          cms: { type: "boolean" },
         },
         required: ["description", "domain", "features"],
       },
     },
     {
       name: "ade-development-plan",
-      description: "Gera plano de desenvolvimento com sprints",
+      description: "Generates development plan with sprints",
       inputSchema: {
         type: "object",
         properties: {
@@ -243,24 +249,27 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           onboarding: { type: "boolean" },
           notifications: { type: "boolean" },
           dataExport: { type: "boolean" },
+          search: { type: "boolean" },
+          backgroundJobs: { type: "boolean" },
+          cms: { type: "boolean" },
         },
         required: ["description", "domain", "features"],
       },
     },
     {
       name: "ade-full-architecture",
-      description: "Gera arquitetura completa em um único passo",
+      description: "Generates complete architecture in a single step",
       inputSchema: {
         type: "object",
         properties: {
-          description: { type: "string", description: "Descrição do projeto" },
-          domain: { type: "string", description: "Domínio do projeto" },
+          description: { type: "string", description: "Project description" },
+          domain: { type: "string", description: "Project domain" },
           features: {
             type: "array",
             items: { type: "string" },
             description: "Features do projeto",
           },
-          users: { type: "number", description: "Número estimado de usuários" },
+          users: { type: "number", description: "Estimated number of users" },
           blockchain: { type: "boolean" },
           auth: { type: "boolean" },
           upload: { type: "boolean" },
@@ -278,6 +287,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           onboarding: { type: "boolean" },
           notifications: { type: "boolean" },
           dataExport: { type: "boolean" },
+          search: { type: "boolean" },
+          backgroundJobs: { type: "boolean" },
+          cms: { type: "boolean" },
         },
         required: ["description", "domain", "features"],
       },
@@ -288,10 +300,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
-          description: { type: "string", description: "Descrição do projeto" },
-          domain: { type: "string", description: "Domínio do projeto" },
+          description: { type: "string", description: "Project description" },
+          domain: { type: "string", description: "Project domain" },
           features: { type: "array", items: { type: "string" }, description: "Features do projeto" },
-          users: { type: "number", description: "Número estimado de usuários" },
+          users: { type: "number", description: "Estimated number of users" },
           blockchain: { type: "boolean" },
           auth: { type: "boolean" },
           upload: { type: "boolean" },
@@ -318,7 +330,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "ade-session-status",
-      description: "Retorna o estado atual da sessão",
+      description: "Returns the current session state",
       inputSchema: {
         type: "object",
         properties: {
@@ -329,7 +341,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "ade-tradeoffs",
-      description: "Analisa alternativas para cada decisão de infraestrutura (frontend, database, auth, payments, deploy, AI)",
+      description: "Analyzes alternatives for each infrastructure decision (frontend, database, auth, payments, deploy, AI)",
       inputSchema: {
         type: "object",
         properties: {
@@ -345,7 +357,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "ade-scaffold",
-      description: "Gera os arquivos do projeto real (package.json, tsconfig, layout, prisma schema, .env.example) baseado no plano de arquitetura",
+      description: "Generates the real project files (package.json, tsconfig, layout, prisma schema, .env.example) based on the architecture plan",
       inputSchema: {
         type: "object",
         properties: {
@@ -356,23 +368,23 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "ade-wizard",
-      description: "Assistente passo-a-passo que guia o usuário da ideia ao projeto completo. Use step='start' para iniciar",
+      description: "Step-by-step assistant that guides the user from idea to complete project. Use step='start' to begin",
       inputSchema: {
         type: "object",
         properties: {
-          sessionId: { type: "string", description: "ID da sessão (omitir para começar nova)" },
+          sessionId: { type: "string", description: "Session ID (omit to start a new one)" },
           step: {
             type: "string",
             enum: ["start", "describe", "features", "settings", "plan", "next"],
-            description: "Etapa atual do wizard",
+            description: "Current wizard step",
           },
-          description: { type: "string", description: "Descrição do projeto" },
-          domain: { type: "string", description: "Domínio do projeto" },
+          description: { type: "string", description: "Project description" },
+          domain: { type: "string", description: "Project domain" },
           features: {
             type: "object",
-            description: "Features confirmadas (true=ativa, false=desativada)",
+            description: "Confirmed features (true=active, false=disabled)",
           },
-          users: { type: "number", description: "Número estimado de usuários" },
+          users: { type: "number", description: "Estimated number of users" },
         },
         required: ["step"],
       },
@@ -403,6 +415,9 @@ function buildInput(params: Record<string, unknown>): ProjectInput {
     onboarding: !!params.onboarding,
     notifications: !!params.notifications,
     dataExport: !!params.dataExport,
+    search: !!params.search,
+    backgroundJobs: !!params.backgroundJobs,
+    cms: !!params.cms,
   }
 }
 
@@ -410,6 +425,7 @@ const featureKeys = [
   "blockchain", "auth", "upload", "realtime", "payments", "ai", "aiMemory",
   "teams", "multiTenant", "apiAccess", "webhooks", "sso", "auditLog",
   "featureFlags", "onboarding", "notifications", "dataExport",
+  "search", "backgroundJobs", "cms",
 ] as const
 
 function sessionToPartialInput(session: ProjectSession): Partial<ProjectInput> {
@@ -677,7 +693,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: JSON.stringify({
                 sessionId: id,
                 wizardStep: "describe",
-                message: "Descreva seu projeto. Qual é o objetivo? Qual o domínio? (ex: marketplace, dashboard, saas)",
+                message: "Describe your project. What is the goal? What is the domain? (e.g. marketplace, dashboard, saas)",
                 hint: "Ex: 'I want to build an NFT marketplace for digital art on Sui'",
               }, null, 2),
             }],
@@ -706,9 +722,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: JSON.stringify({
                 sessionId,
                 wizardStep: "features",
-                message: "Aqui estão as features recomendadas para seu projeto. Confirme quais você quer (true=sim, false=não).",
+                message: "Here are the recommended features for your project. Confirm which ones you want (true=yes, false=no).",
                 recommendedFeatures: settings.features,
-                users: { type: "number", description: "Quantos usuários esperados?" },
+                users: { type: "number", description: "How many users do you expect?" },
                 hint: "Passe um objeto features com { blockchain: true, auth: false, ... }",
               }, null, 2),
             }],
@@ -736,10 +752,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: JSON.stringify({
                 sessionId,
                 wizardStep: "settings",
-                message: "Settings recomendados para seu projeto. Revise e confirme.",
+                message: "Recommended settings for your project. Review and confirm.",
                 settings,
                 tradeoffs: analyzeTradeoffs(input),
-                nextStep: "Chame ade-wizard com step='plan' ou step='next' para gerar o plano completo",
+                nextStep: "Call ade-wizard with step='plan' or step='next' to generate the complete plan",
               }, null, 2),
             }],
           }
@@ -761,7 +777,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 text: JSON.stringify({
                   sessionId,
                   wizardStep: "done",
-                  message: "Plano de arquitetura completo!",
+                  message: "Complete architecture plan!",
                   summary: {
                     domain: plan.domain,
                     dataStructures: plan.data.structures,
@@ -775,10 +791,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     totalComponents: plan.components.tree.children?.length ?? 0,
                   },
                   nextSteps: [
-                    "Use ade-settings para ver recomendações detalhadas",
-                    "Use ade-tradeoffs para comparar alternativas",
-                    "Use ade-scaffold para gerar os arquivos do projeto",
-                    "Use ade-full-architecture para todos os documentos",
+                    "Use ade-settings to view detailed recommendations",
+                    "Use ade-tradeoffs to compare alternatives",
+                    "Use ade-scaffold to generate the project files",
+                    "Use ade-full-architecture for all documents",
                   ],
                 }, null, 2),
               },

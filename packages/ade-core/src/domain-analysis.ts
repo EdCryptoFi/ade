@@ -1,7 +1,7 @@
 import type { DomainCategory, ProjectInput } from "./types.ts"
 
 const domainPatterns: Record<string, string[]> = {
-  marketplace: ["produto", "product", "comprar", "buy", "sell", "vender", "listing", "anúncio", "shop", "loja"],
+  marketplace: ["marketplace", "produto", "product", "comprar", "buy", "sell", "vender", "listing", "anúncio", "shop", "loja"],
   dashboard: ["dashboard", "painel", "métrica", "metric", "analytics", "gráfico", "chart", "kpi", "monitor"],
   saas: ["saas", "subscription", "assinatura", "tenant", "multi-tenant", "plano", "plan"],
   crm: ["crm", "customer", "cliente", "lead", "funil", "funnel", "pipeline", "venda", "sales"],

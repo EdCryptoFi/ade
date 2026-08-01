@@ -73,6 +73,9 @@ export interface InfrastructureDecision {
   blockchain: string | null
   ai: string | null
   memory: string | null
+  search: string
+  backgroundJobs: string
+  cms: string
   reasoning: Record<string, string>
 }
 
@@ -151,8 +154,8 @@ export interface TradeoffOption {
   name: string
   pros: string[]
   cons: string[]
-  cost: "baixo" | "médio" | "alto"
-  quandoUsar: string
+  cost: "low" | "medium" | "high"
+  whenToUse: string
 }
 
 export interface TradeoffDecision {
@@ -183,7 +186,7 @@ export type SecurityLayer =
   | "business"
   | "infrastructure"
 
-export type SecuritySeverity = "CRITICA" | "ALTA" | "MEDIA" | "BAIXA"
+export type SecuritySeverity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW"
 
 export interface SecurityCheck {
   id: string

@@ -77,6 +77,18 @@ const rules: DecisionRule[] = [
     condition: (i) => !!i.dataExport,
     then: ["Data Export Engine", "Import Parser", "CSV/PDF Generator"],
   },
+  {
+    condition: (i) => !!i.search,
+    then: ["Search Service (Meilisearch/Typesense/Algolia)", "Indexer", "Search UI", "Relevance Tuning"],
+  },
+  {
+    condition: (i) => !!i.backgroundJobs,
+    then: ["Job Worker", "Queue (BullMQ/Inngest)", "Scheduler (cron)", "Retry + Dead Letter Queue"],
+  },
+  {
+    condition: (i) => !!i.cms,
+    then: ["CMS Admin", "Content API", "Draft/Review/Publish Workflow", "Content Versioning"],
+  },
 ]
 
 export interface EngineResult {
@@ -96,37 +108,37 @@ export function runDecisionEngine(input: ProjectInput): EngineResult {
   }
 
   if (input.ai && !input.aiMemory) {
-    warnings.push("IA sem memória — considere banco vetorial para contexto persistente (RAG)")
+    warnings.push("AI without memory — consider a vector database for persistent context (RAG)")
   }
   if (input.blockchain && !input.auth) {
-    warnings.push("Blockchain sem auth — associe wallets a usuários")
+    warnings.push("Blockchain without auth — associate wallets with users")
   }
   if (input.payments && !input.auth) {
-    warnings.push("Pagamentos sem auth — usuários precisam de identidade")
+    warnings.push("Payments without auth — users need identity")
   }
   if (input.payments && !input.realtime) {
-    warnings.push("Pagamentos sem tempo real — considere WebSocket para status ao vivo")
+    warnings.push("Payments without realtime — consider WebSocket for live status")
   }
   if (input.blockchain && input.users && input.users > 10000) {
-    warnings.push("Blockchain + alta escala — considere L2 ou sidechain para reduzir gas")
+    warnings.push("Blockchain + high scale — consider L2 or sidechain to reduce gas")
   }
   if (input.multiTenant && !input.teams) {
-    warnings.push("Multi-tenant sem teams — times são necessários para gerenciar tenants")
+    warnings.push("Multi-tenant without teams — teams are needed to manage tenants")
   }
   if (input.apiAccess && !input.auth) {
-    warnings.push("API pública sem auth — API keys são essenciais")
+    warnings.push("Public API without auth — API keys are essential")
   }
   if (input.webhooks && !input.realtime) {
-    warnings.push("Webhooks sem tempo real — considere WebSocket para baixa latência")
+    warnings.push("Webhooks without realtime — consider WebSocket for low latency")
   }
   if (input.sso && !input.auth) {
-    warnings.push("SSO sem auth base — configure auth primária primeiro")
+    warnings.push("SSO without base auth — set up primary auth first")
   }
   if (input.notifications && !input.auth) {
-    warnings.push("Notificações sem auth — usuários precisam estar identificados")
+    warnings.push("Notifications without auth — users need to be identified")
   }
   if (input.dataExport && !input.auth) {
-    warnings.push("Exportação de dados sem auth — risco de vazamento")
+    warnings.push("Data export without auth — leak risk")
   }
 
   return { components, warnings }

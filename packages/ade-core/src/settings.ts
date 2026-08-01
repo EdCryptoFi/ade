@@ -18,121 +18,121 @@ export function recommendFeatures(input: Partial<ProjectInput>): FeatureSuggesti
       feature: "Blockchain",
       key: "blockchain",
       recommended: /blockchain|nft|token|wallet|crypto|web3|sui|ethereum|solana|contrato|smart.contract|defi|dex|bridge|stake|mining|mina|onchain|on-chain/i.test(text),
-      reason: "Blockchain, tokens, NFTs ou smart contracts",
+      reason: "Blockchain, tokens, NFTs or smart contracts",
     },
     {
-      feature: "Autenticação",
+      feature: "Authentication",
       key: "auth",
       recommended: /auth|login|user|usuário|conta|account|perfil|profile|signup|register|logar|entrar|sessão|session|logar|registro/i.test(text),
-      reason: "Identidade de usuário",
+      reason: "User identity",
     },
     {
-      feature: "Upload de Arquivos",
+      feature: "File Upload",
       key: "upload",
       recommended: /upload|file|image|imagem|foto|photo|documento|document|anexo|attachment|mídia|media|avatar|thumbnail|miniatura|arquivo|dropbox|drive/i.test(text),
-      reason: "Armazenamento de arquivos ou mídia",
+      reason: "File or media storage",
     },
     {
-      feature: "Tempo Real",
+      feature: "Realtime",
       key: "realtime",
       recommended: /realtime|tempo.real|live|notificação|notification|chat|mensagem|message|websocket|stream|ao.vivo|colaboração|collaboration|cursor|presença|presence|atualização.live|live.update/i.test(text),
-      reason: "Funcionalidades em tempo real",
+      reason: "Realtime features",
     },
     {
-      feature: "Pagamentos",
+      feature: "Payments",
       key: "payments",
       recommended: /pagamento|payment|pagar|buy|comprar|checkout|cobrança|billing|subscription|plano|plan|stripe|paddle|preço|price|venda|sell|fatura|invoice|transação|transaction|receber|receivable/i.test(text),
-      reason: "Transações financeiras ou assinaturas",
+      reason: "Financial transactions or subscriptions",
     },
     {
-      feature: "Inteligência Artificial",
+      feature: "Artificial Intelligence",
       key: "ai",
       recommended: /ai|ia|inteligência|inteligencia|llm|gpt|chat|claude|openai|recomendação|recommendation|agente|agent|automation|automação|chatbot|assistente|assistant|copilot|analise|análise|anomalia|anomaly/i.test(text),
-      reason: "IA, LLMs ou agentes autônomos",
+      reason: "AI, LLMs or autonomous agents",
     },
     {
-      feature: "Memória para IA",
+      feature: "AI Memory",
       key: "aiMemory",
       recommended: /memória|memory|contexto|context|histórico|history|embedding|vector|vetorial|rag|knowledge.graph|grafo.de.conhecimento|recuperação|retrieval/i.test(text),
-      reason: "IA precisa de memória persistente ou RAG",
+      reason: "AI needs persistent memory or RAG",
     },
     {
-      feature: "Times / Colaboração",
+      feature: "Teams / Collaboration",
       key: "teams",
       recommended: /team|time|colaboração|collaboration|workspace|espaço.de.trabalho|organização|organization|org|empresa|company|membro|member|convidar|invite|multi.usuário|multi-user|compartilhar|share/i.test(text),
-      reason: "Múltiplos usuários colaborando",
+      reason: "Multiple users collaborating",
     },
     {
       feature: "Multi-tenant",
       key: "multiTenant",
       recommended: /tenant|multi.tenant|saas|assinante|subscriber|cliente|customer|cada.cliente|cada.usuário|isolamento|isolation|white.label|whitelabel|marca.branca/i.test(text),
-      reason: "Isolamento de dados entre clientes",
+      reason: "Data isolation between customers",
     },
     {
-      feature: "API pública",
+      feature: "Public API",
       key: "apiAccess",
       recommended: /api|api.key|api key|integração|integration|webhook|terceiros|third.party|developer|desenvolvedor|rest|graphql|endpoint|sdk|biblioteca|library|plugin/i.test(text),
-      reason: "Integração com terceiros ou API pública",
+      reason: "Third-party integration or public API",
     },
     {
       feature: "Webhooks",
       key: "webhooks",
       recommended: /webhook|evento|event|callback|notificação|notification|gatilho|trigger|integração|integration|automação|automation|disparar|fire|payload/i.test(text),
-      reason: "Eventos disparando ações externas",
+      reason: "Events triggering external actions",
     },
     {
       feature: "SSO / SAML",
       key: "sso",
       recommended: /sso|saml|oidc|login.único|single.sign.on|google.login|github.login|enterprise|empresarial|ldap|active.directory|okta|azure.ad|keycloak|identity.provider|federação|federation/i.test(text),
-      reason: "Login corporativo ou federação de identidade",
+      reason: "Corporate login or identity federation",
     },
     {
       feature: "Audit Log",
       key: "auditLog",
       recommended: /audit|auditoria|log|rastreamento|tracking|registro|registrar|histórico.de.ações|action.history|compliance|conformidade|trilha|trail|rastro|trace/i.test(text),
-      reason: "Rastreamento de ações para compliance",
+      reason: "Action tracking for compliance",
     },
     {
       feature: "Feature Flags",
       key: "featureFlags",
       recommended: /feature.flag|feature flag|lançamento|release|rollout|beta|experimento|experiment|a.b.test|ab test|canary|toggle|alternar|flag|liberação.gradual|gradual.rollout/i.test(text),
-      reason: "Liberação gradual de funcionalidades",
+      reason: "Gradual feature rollout",
     },
     {
       feature: "Onboarding",
       key: "onboarding",
       recommended: /onboarding|tutorial|wizard|setup|configuração.inicial|initial.setup|primeiros.passos|getting.started|tour|guia|guide|boas.vindas|welcome|introdução|introduction/i.test(text),
-      reason: "Experiência de primeiro uso",
+      reason: "First-use experience",
     },
     {
-      feature: "Notificações",
+      feature: "Notifications",
       key: "notifications",
       recommended: /notificação|notification|email|sms|push|alerta|alert|aviso|warning|lembrete|reminder|newsletter|digest|resumo|in.app|in-app/i.test(text),
-      reason: "Comunicação com usuários",
+      reason: "User communication",
     },
     {
-      feature: "Exportação de Dados",
+      feature: "Data Export",
       key: "dataExport",
       recommended: /export|exportação|import|importação|csv|pdf|relatório|report|backup|download.dados|data.portability|portabilidade|extrair|extract|migração|migration|planilha|spreadsheet/i.test(text),
-      reason: "Portabilidade e relatórios",
+      reason: "Portability and reports",
     },
     {
-      feature: "Search / Busca",
+      feature: "Search",
       key: "search",
       recommended: /busca|search|find|pesquisa|procurar|algolia|elasticsearch|meilisearch|typesense|fulltext|full.text|text.search|índice|index|autocomplete|sugestão|suggestion|filtro|filter/i.test(text),
-      reason: "Busca textual ou full-text search",
+      reason: "Text or full-text search",
     },
     {
-      feature: "Background Jobs / Filas",
+      feature: "Background Jobs / Queues",
       key: "backgroundJobs",
       recommended: /fila|queue|job|background|cron|agendamento|scheduling|processamento.assíncrono|async|tarefa|task|workflow|batch|processamento.em.lote|bull|bullmq|temporal|inngest|trigger/i.test(text),
-      reason: "Processamento assíncrono ou agendado",
+      reason: "Async or scheduled processing",
     },
     {
-      feature: "CMS / Gerenciamento de Conteúdo",
+      feature: "CMS / Content Management",
       key: "cms",
       recommended: /cms|conteúdo|content|blog|blogging|páginas|pages|artigo|article|post|publicação|publishing|headless|cms|sanity|stripe|strapi|contentful|payload/i.test(text),
-      reason: "Gerenciamento de conteúdo ou blog",
+      reason: "Content management or blog",
     },
   ]
 }
@@ -144,82 +144,82 @@ export function recommendDataStructures(input: Partial<ProjectInput>): DataRecom
     {
       structure: "array",
       selected: /list|coleção|collection|feed|dashboard|produtos?|products?|histórico|history|grid|table|tabela|resultados|results|logs/i.test(text) || (input.features?.length ?? 0) > 0,
-      reason: "Listas e coleções são universais",
+      reason: "Lists and collections are universal",
     },
     {
       structure: "hash-map",
       selected: /usuário|user|wallet|sessão|session|token|config|settings|cache|key.value|busca|lookup|dicionário|dictionary/i.test(text) || !!input.auth,
-      reason: "Busca por chave necessária",
+      reason: "Key lookup needed",
     },
     {
       structure: "graph",
       selected: /relacionamento|relationship|conexão|connection|fluxo|flow|agente|agent|permissão|permission|blockchain|rede|network|social|seguir|follow|recomendação|recommendation|conhecimento|knowledge|grafo/i.test(text) || !!input.blockchain,
-      reason: "Relacionamentos e conexões entre entidades",
+      reason: "Relationships and connections between entities",
     },
     {
       structure: "tree",
       selected: /categoria|category|organograma|hierarquia|hierarchy|árvore|tree|menu|navegação|navigation|diretório|directory|subcategoria|subcategory|tag|comentário|comment|thread|reply/i.test(text),
-      reason: "Dados hierárquicos ou navegação",
+      reason: "Hierarchical data or navigation",
     },
     {
       structure: "stack-queue",
       selected: /undo|redo|histórico|history|pilha|stack|fila|queue|processamento|processing|job|task|webhook|pipeline|rate.limit|scheduling|agendamento|retry|dead.letter/i.test(text),
-      reason: "Processamento sequencial ou filas de tarefas",
+      reason: "Sequential processing or task queues",
     },
     {
       structure: "set",
       selected: /permissão|permission|tag|unique|único|whitelist|blacklist|filtro|filter|duplicata|duplicate|interseção|intersection|união|union|dedup|role|grupo|group|distinct/i.test(text),
-      reason: "Garantia de unicidade ou operações de conjunto",
+      reason: "Uniqueness guarantee or set operations",
     },
     {
       structure: "heap",
       selected: /prioridade|priority|notificação|notification|timer|agendamento|scheduling|leaderboard|ranking|top|maior|menor|urgente|deadline|priority.queue/i.test(text),
-      reason: "Priorização de elementos",
+      reason: "Element prioritization",
     },
     {
       structure: "linked-list",
       selected: /playlist|editor|navegação.entre.elementos|blockchain.chain|bloco|fragmentação|sequência|sequencia|encadeada|linked|undo.redo.chain|histórico.navegação/i.test(text),
-      reason: "Inserção/remoção frequente no meio da coleção",
+      reason: "Frequent insertion/removal in the middle of the collection",
     },
     {
       structure: "trie",
       selected: /autocomplete|sugestão|suggestion|busca.texto|text.search|prefixo|prefix|search.suggest|palavra|word|routing|roteamento|url.match|path/i.test(text),
-      reason: "Busca por prefixo e autocomplete",
+      reason: "Prefix search and autocomplete",
     },
     {
       structure: "bloom-filter",
       selected: /spam|cache|dedup|deduplicação|filtro|filter|membership|existe|exists|fast.lookup|prevenção|prevention|blockchain.light|light.client/i.test(text),
-      reason: "Membership test probabilístico (rápido)",
+      reason: "Probabilistic membership test (fast)",
     },
     {
       structure: "lru-cache",
       selected: /cache|lru|session|temp|temporary|hot.data|dados.quentes|frequente|frequent|recent|api.rate|rate.limit|thumbnail|miniatura/i.test(text) || (input.users ?? 0) > 10000,
-      reason: "Cache de dados frequentemente acessados",
+      reason: "Cache of frequently accessed data",
     },
     {
       structure: "segment-tree",
       selected: /range|intervalo|interval|analytics|métrica|metric|agregação|aggregation|sum|soma|média|average|mediana|median|percentil|percentile|kpi|chart|gráfico|histograma|dashboard/i.test(text),
-      reason: "Consultas de range e agregação",
+      reason: "Range queries and aggregation",
     },
     {
       structure: "disjoint-set",
       selected: /permissão|permission|grupo|group|clustering|social.graph|rede.social|amigo|friend|conexão|connection|rbac|role|acesso|access|comunidade|community|permissoes|permicoes/i.test(text) || !!input.featureFlags,
-      reason: "Agrupamento e conectividade",
+      reason: "Grouping and connectivity",
     },
     {
       structure: "circular-buffer",
       selected: /log|logging|stream|evento|event|telemetria|telemetry|sensor|rolling.window|janela.deslizante|buffer|recent|últimos|ultimos|realtime.analytics/i.test(text) || !!input.realtime,
-      reason: "Buffers para streaming e logs em tempo real",
+      reason: "Buffers for realtime streaming and logs",
     },
     {
       structure: "merkle-tree",
       selected: /blockchain|nft|integridade|integrity|verificação|verification|prova|proof|merkle|consistência|consistency|snapshot|sync|sincronização|data.verification|file.integrity|versão|version/i.test(text) || !!input.blockchain,
-      reason: "Verificação de integridade de dados",
+      reason: "Data integrity verification",
     },
     {
       structure: "skip-list",
       selected: /leaderboard|ranking|ordenação|sorting|sorted|score|pontuação|nível|level|game|rank|classe|grade|tier|concorrência|concurrency/i.test(text),
-      reason: "Listas ordenadas concorrentes",
+      reason: "Concurrent sorted lists",
     },
   ]
 }
@@ -229,44 +229,47 @@ export function recommendInfrastructure(input: Partial<ProjectInput>): Infrastru
   const isSaaS = input.multiTenant || input.teams || /saas|assinatura|subscription|tenant|billing/i.test(`${input.domain} ${input.description ?? ""}`)
 
   const searchService = input.search
-    ? "Meilisearch / Typesense (auto-hospedado) ou Algolia (SaaS)"
-    : "Nenhum"
+    ? "Meilisearch / Typesense (self-hosted) or Algolia (SaaS)"
+    : "None"
 
   const jobsService = input.backgroundJobs
-    ? "BullMQ + Redis (auto-hospedado) ou Inngest / Trigger.dev (SaaS)"
-    : "Nenhum"
+    ? "BullMQ + Redis (self-hosted) or Inngest / Trigger.dev (SaaS)"
+    : "None"
 
   const cmsService = input.cms
     ? "Sanity / Strapi (headless CMS)"
-    : "Nenhum"
+    : "None"
 
   return {
     frontend: hasDashboard ? "Next.js + shadcn/ui" : "Next.js",
     backend: isSaaS ? "Next.js API Routes + tRPC" : "Next.js API Routes",
-    database: input.blockchain ? "Supabase PostgreSQL + Indexer próprio" : "Supabase PostgreSQL",
-    storage: input.upload ? "Supabase Storage" : "Supabase Storage (se necessário)",
+    database: input.blockchain ? "Supabase PostgreSQL + Own indexer" : "Supabase PostgreSQL",
+    storage: input.upload ? "Supabase Storage" : "Supabase Storage (if needed)",
     deploy: "Vercel",
-    auth: input.auth ? "Supabase Auth + NextAuth (se SSO)" : "Nenhum (público)",
+    auth: input.auth ? "Supabase Auth + NextAuth (if SSO)" : "None (public)",
     analytics: "PostHog",
     emails: "Resend",
     blockchain: input.blockchain ? "Sui" : null,
     ai: input.ai ? "OpenAI" : null,
     memory: input.aiMemory ? "Walrus + Vector DB" : null,
+    search: searchService,
+    backgroundJobs: jobsService,
+    cms: cmsService,
     reasoning: {
-      frontend: hasDashboard ? "Dashboard com gráficos → Next.js + shadcn/ui" : "Stack padrão → Next.js",
-      backend: isSaaS ? "API padrão SaaS → Next.js + tRPC" : "Arquitetura simplificada → API Routes",
-      database: input.blockchain ? "Blockchain precisa de indexação → Supabase + Indexer" : "Banco padrão → Supabase PostgreSQL",
-      storage: input.upload ? "Upload detectado → Supabase Storage" : "Storage padrão",
-      deploy: "Deploy padrão → Vercel",
-      auth: input.sso ? "SSO detectado → NextAuth com providers" : input.auth ? "Login necessário → Supabase Auth" : "Sem autenticação",
-      analytics: "Analytics padrão → PostHog",
-      emails: "Email padrão → Resend",
-      blockchain: input.blockchain ? "Blockchain detectado → Sui + Walrus" : "Sem blockchain",
-      ai: input.ai ? "IA detectada → OpenAI" : "Sem IA",
-      memory: input.aiMemory ? "Memória para IA → Walrus + Vector Database" : "Sem necessidade de memória",
-      search: input.search ? `Busca textual → ${searchService}` : "Sem busca textual",
-      backgroundJobs: input.backgroundJobs ? `Jobs async → ${jobsService}` : "Sem jobs em background",
-      cms: input.cms ? `CMS → ${cmsService}` : "Sem CMS",
+      frontend: hasDashboard ? "Dashboard with charts → Next.js + shadcn/ui" : "Default stack → Next.js",
+      backend: isSaaS ? "Standard SaaS API → Next.js + tRPC" : "Simplified architecture → API Routes",
+      database: input.blockchain ? "Blockchain needs indexing → Supabase + Indexer" : "Default database → Supabase PostgreSQL",
+      storage: input.upload ? "Upload detected → Supabase Storage" : "Default storage",
+      deploy: "Default deploy → Vercel",
+      auth: input.sso ? "SSO detected → NextAuth with providers" : input.auth ? "Login needed → Supabase Auth" : "No authentication",
+      analytics: "Default analytics → PostHog",
+      emails: "Default email → Resend",
+      blockchain: input.blockchain ? "Blockchain detected → Sui + Walrus" : "No blockchain",
+      ai: input.ai ? "AI detected → OpenAI" : "No AI",
+      memory: input.aiMemory ? "AI memory → Walrus + Vector Database" : "No memory needed",
+      search: input.search ? `Text search → ${searchService}` : "No text search",
+      backgroundJobs: input.backgroundJobs ? `Async jobs → ${jobsService}` : "No background jobs",
+      cms: input.cms ? `CMS → ${cmsService}` : "No CMS",
     },
   }
 }
@@ -278,39 +281,39 @@ export function recommendSecurity(input: Partial<ProjectInput>): SecurityDecisio
   return {
     auth: {
       required: !!input.auth,
-      method: input.sso ? "NextAuth (OAuth + SAML + OIDC)" : input.auth ? "Supabase Auth / NextAuth / Clerk" : "Nenhum",
-      reason: input.sso ? "SSO corporativo com provedores externos" : input.auth ? "Autenticação de usuários" : "Sem autenticação",
+      method: input.sso ? "NextAuth (OAuth + SAML + OIDC)" : input.auth ? "Supabase Auth / NextAuth / Clerk" : "None",
+      reason: input.sso ? "Corporate SSO with external providers" : input.auth ? "User authentication" : "No authentication",
     },
     mfa: {
       required: !!input.payments || !!input.blockchain || !!input.sso,
-      reason: input.payments || input.blockchain ? "Transações financeiras ou blockchain" : input.sso ? "Segurança corporativa" : "Não necessário",
+      reason: input.payments || input.blockchain ? "Financial or blockchain transactions" : input.sso ? "Corporate security" : "Not needed",
     },
     encryption: {
       required: hasSensitive,
-      scope: hasSensitive ? "TLS 1.3 (trânsito) + AES-256 (repouso) + criptografia de campo para PII" : "TLS 1.3 (padrão)",
+      scope: hasSensitive ? "TLS 1.3 (in transit) + AES-256 (at rest) + field encryption for PII" : "TLS 1.3 (default)",
     },
     rateLimit: {
       required: true,
-      limit: input.apiAccess ? "100 req/min por IP, 1000 req/min por usuário, 10000 req/h por API key" : "100 req/min por IP, 1000 req/min por usuário",
+      limit: input.apiAccess ? "100 req/min per IP, 1000 req/min per user, 10000 req/h per API key" : "100 req/min per IP, 1000 req/min per user",
     },
     audit: {
       required: !!input.auditLog || needsCompliance,
-      reason: input.auditLog ? "Auditoria solicitada" : needsCompliance ? "Compliance requer trilha de auditoria" : "Recomendado",
+      reason: input.auditLog ? "Audit requested" : needsCompliance ? "Compliance requires audit trail" : "Recommended",
     },
     recommendations: [
-      ...(input.multiTenant ? ["Implementar Row Level Security (RLS) no Supabase para isolamento de tenants", "Cada tenant tem schema ou prefixo próprio"] : input.auth ? ["Implementar Row Level Security (RLS) no Supabase"] : []),
-      ...(input.upload ? ["Sanitizar arquivos (tipo, tamanho, virus scan)", "Usar URLs assinadas para acesso"] : []),
-      ...(input.payments ? ["Nunca confiar no frontend para validação", "Verificar assinatura de webhooks", "PCI-DSS compliance"] : []),
-      ...(input.blockchain ? ["Auditar smart contracts", "Multi-sig wallet para admin"] : []),
-      ...(input.apiAccess ? ["API Keys com scopes de permissão", "Rate limiting por key", "Registro de chamadas de API"] : []),
-      ...(input.webhooks ? ["Verificar assinatura HMAC dos webhooks", "Retry com backoff + dead letter queue"] : []),
-      ...(input.auditLog ? ["Registrar todas as ações de admin", "Logs imutáveis (append-only)"] : []),
-      ...(input.sso ? ["Validar emissor do token (iss)", "Suportar múltiplos IdPs"] : []),
-      ...(input.search ? ["Proteger endpoint de busca contra abuso (rate limit)", "Nunca expor índices diretamente ao cliente"] : []),
-      ...(input.backgroundJobs ? ["Validar payload de jobs", "Implementar retry com backoff exponencial + dead letter queue"] : []),
-      ...(input.cms ? ["Sanitizar HTML de conteúdo gerado por usuários", "Proteger rotas de admin do CMS"] : []),
-      "Validar todas as entradas com Zod",
-      "Configurar CORS por origem",
+      ...(input.multiTenant ? ["Implement Row Level Security (RLS) in Supabase for tenant isolation", "Each tenant has its own schema or prefix"] : input.auth ? ["Implement Row Level Security (RLS) in Supabase"] : []),
+      ...(input.upload ? ["Sanitize files (type, size, virus scan)", "Use signed URLs for access"] : []),
+      ...(input.payments ? ["Never trust the frontend for validation", "Verify webhook signatures", "PCI-DSS compliance"] : []),
+      ...(input.blockchain ? ["Audit smart contracts", "Multi-sig wallet for admin"] : []),
+      ...(input.apiAccess ? ["API Keys with permission scopes", "Rate limiting per key", "API call logging"] : []),
+      ...(input.webhooks ? ["Verify HMAC signature of webhooks", "Retry with backoff + dead letter queue"] : []),
+      ...(input.auditLog ? ["Log all admin actions", "Immutable logs (append-only)"] : []),
+      ...(input.sso ? ["Validate token issuer (iss)", "Support multiple IdPs"] : []),
+      ...(input.search ? ["Protect search endpoint against abuse (rate limit)", "Never expose indexes directly to the client"] : []),
+      ...(input.backgroundJobs ? ["Validate job payloads", "Implement retry with exponential backoff + dead letter queue"] : []),
+      ...(input.cms ? ["Sanitize HTML of user-generated content", "Protect CMS admin routes"] : []),
+      "Validate all inputs with Zod",
+      "Configure CORS per origin",
     ],
   }
 }
@@ -326,20 +329,20 @@ export function recommendTesting(input: Partial<ProjectInput>): TestingDecision 
     load: needsLoad,
     framework: "Vitest + Playwright",
     recommendations: [
-      "Testes unitários para toda lógica de negócio (Vitest)",
-      ...(input.auth ? ["Testes de integração para fluxo de autenticação"] : []),
-      ...(input.multiTenant ? ["Testes de isolamento entre tenants"] : []),
-      ...(input.payments ? ["Testes de webhook em sandbox", "Testes de ciclo de faturamento"] : []),
-      ...(input.blockchain ? ["Testes de contrato em testnet"] : []),
-      ...(input.webhooks ? ["Testes de entrega e retry de webhooks"] : []),
-      ...(input.apiAccess ? ["Testes de rate limiting e scopes de API key"] : []),
-      ...(input.search ? ["Testes de relevância de busca", "Testes de indexing e sync"] : []),
-      ...(input.backgroundJobs ? ["Testes de fila: encadeamento, retry, dead letter", "Testes de concorrência de jobs"] : []),
-      ...(input.cms ? ["Testes de workflow de conteúdo (rascunho → revisão → publicação)", "Testes de permissão por role de conteúdo"] : []),
-      ...(needsLoad ? ["Testes de carga com k6"] : []),
-      ...(input.auditLog ? ["Testes de integridade do audit log"] : []),
-      "E2E com Playwright para fluxos críticos",
-      "Cobertura mínima: 80%",
+      "Unit tests for all business logic (Vitest)",
+      ...(input.auth ? ["Integration tests for the authentication flow"] : []),
+      ...(input.multiTenant ? ["Tenant isolation tests"] : []),
+      ...(input.payments ? ["Webhook tests in sandbox", "Billing cycle tests"] : []),
+      ...(input.blockchain ? ["Contract tests in testnet"] : []),
+      ...(input.webhooks ? ["Webhook delivery and retry tests"] : []),
+      ...(input.apiAccess ? ["Rate limiting and API key scope tests"] : []),
+      ...(input.search ? ["Search relevance tests", "Indexing and sync tests"] : []),
+      ...(input.backgroundJobs ? ["Queue tests: chaining, retry, dead letter", "Job concurrency tests"] : []),
+      ...(input.cms ? ["Content workflow tests (draft → review → publish)", "Content role permission tests"] : []),
+      ...(needsLoad ? ["Load tests with k6"] : []),
+      ...(input.auditLog ? ["Audit log integrity tests"] : []),
+      "E2E with Playwright for critical flows",
+      "Minimum coverage: 80%",
     ],
   }
 }
@@ -355,13 +358,13 @@ export function recommendMonitoring(input: Partial<ProjectInput>): MonitoringDec
       "PostHog (analytics + session replay)",
       "Sentry (error tracking)",
       "Vercel Analytics (performance)",
-      ...(input.search ? ["Monitoramento de performance de busca (latência P50/P95/P99)"] : []),
-      ...(input.backgroundJobs ? ["Métricas de fila: tamanho, taxa de processamento, taxa de falha", "Alerta de fila crescente (backlog)"] : []),
-      ...(input.cms ? ["Métricas de conteúdo: publicações, versões, média de atualizações"] : []),
-      ...(input.blockchain || input.realtime || input.ai || input.multiTenant ? ["OpenTelemetry + Grafana (tracing + métricas)"] : []),
-      ...(input.auditLog ? ["Logs estruturados + SIEM (opcional)"] : []),
-      ...(input.payments ? ["Monitoramento de falhas de pagamento", "Alerta de queda de receita"] : []),
-      ...(input.multiTenant ? ["Métricas por tenant", "Alerta de tenant com uso anômalo"] : []),
+      ...(input.search ? ["Search performance monitoring (P50/P95/P99 latency)"] : []),
+      ...(input.backgroundJobs ? ["Queue metrics: size, processing rate, failure rate", "Growing queue alert (backlog)"] : []),
+      ...(input.cms ? ["Content metrics: publications, versions, average updates"] : []),
+      ...(input.blockchain || input.realtime || input.ai || input.multiTenant ? ["OpenTelemetry + Grafana (tracing + metrics)"] : []),
+      ...(input.auditLog ? ["Structured logs + SIEM (optional)"] : []),
+      ...(input.payments ? ["Payment failure monitoring", "Revenue drop alert"] : []),
+      ...(input.multiTenant ? ["Per-tenant metrics", "Alert for tenant with anomalous usage"] : []),
     ],
   }
 }
@@ -369,41 +372,41 @@ export function recommendMonitoring(input: Partial<ProjectInput>): MonitoringDec
 export function recommendCost(input: Partial<ProjectInput>): CostDecision {
   const base = 20
   const items: Record<string, number> = {
-    Hospedagem: 20,
-    Banco: 25,
+    Hosting: 20,
+    Database: 25,
   }
   if (input.auth) items.Auth = input.sso ? 50 : 25
   if (input.blockchain) items["Blockchain (RPC + Indexer)"] = 50
-  if (input.ai) items["API IA"] = 100
+  if (input.ai) items["AI API"] = 100
   if (input.aiMemory) items["Vector DB"] = 30
-  if (input.payments) items["Taxas de Pagamento"] = 30
+  if (input.payments) items["Payment Fees"] = 30
   if (input.upload) items.Storage = 10
   if (input.realtime) items.Realtime = 20
-  if (input.multiTenant) items["Infra Multi-tenant"] = 50
+  if (input.multiTenant) items["Multi-tenant Infra"] = 50
   if (input.apiAccess) items["API Gateway"] = 25
   if (input.webhooks) items["Webhook Infrastructure"] = 15
   if (input.auditLog) items["Audit Log Storage"] = 10
   if (input.notifications) items.Emails = 20
   if (input.search) items["Search Service"] = 30
   if (input.backgroundJobs) items["Background Jobs (Redis + Worker)"] = 25
-  if (input.cms) items["CMS Headless"] = 30
+  if (input.cms) items["Headless CMS"] = 30
   if (input.featureFlags) items["Feature Flags"] = 0
-  if ((input.users ?? 0) > 100000) items["Escala (Redis + CDN)"] = 200
-  else if ((input.users ?? 0) > 10000) items["Escala (Redis)"] = 100
+  if ((input.users ?? 0) > 100000) items["Scale (Redis + CDN)"] = 200
+  else if ((input.users ?? 0) > 10000) items["Scale (Redis)"] = 100
 
   const total = Object.values(items).reduce((a, b) => a + b, 0)
 
   return {
-    estimatedMonthly: `$${total}/mês (estimativa inicial)`,
+    estimatedMonthly: `$${total}/month (initial estimate)`,
     breakdown: items,
     recommendations: [
-      ...(total > 300 ? ["Considere reserved instances para reduzir custos"] : []),
-      ...(input.ai ? ["Cache de respostas de IA para reduzir chamadas"] : []),
-      ...(input.blockchain ? ["Usar testnet para desenvolvimento"] : []),
-      ...(input.multiTenant && (input.users ?? 0) > 50000 ? ["Considerar dedicated infra por tenant enterprise"] : []),
-      ...(input.notifications ? ["Usar batch de emails para reduzir custos"] : []),
-      "Configurar alertas de budget",
-      "Revisar custos mensalmente",
+      ...(total > 300 ? ["Consider reserved instances to reduce costs"] : []),
+      ...(input.ai ? ["Cache AI responses to reduce calls"] : []),
+      ...(input.blockchain ? ["Use testnet for development"] : []),
+      ...(input.multiTenant && (input.users ?? 0) > 50000 ? ["Consider dedicated infra per enterprise tenant"] : []),
+      ...(input.notifications ? ["Batch emails to reduce costs"] : []),
+      "Set budget alerts",
+      "Review costs monthly",
     ],
   }
 }
