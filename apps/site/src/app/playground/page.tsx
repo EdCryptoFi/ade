@@ -11,12 +11,12 @@ interface Feature {
 
 const features: Feature[] = [
   { id: "blockchain", label: "Blockchain", key: "blockchain", type: "boolean" },
-  { id: "auth", label: "Autenticação", key: "auth", type: "boolean" },
+  { id: "auth", label: "Authentication", key: "auth", type: "boolean" },
   { id: "upload", label: "Upload", key: "upload", type: "boolean" },
-  { id: "realtime", label: "Tempo real", key: "realtime", type: "boolean" },
-  { id: "payments", label: "Pagamentos", key: "payments", type: "boolean" },
-  { id: "ai", label: "IA", key: "ai", type: "boolean" },
-  { id: "aiMemory", label: "Memória para IA", key: "aiMemory", type: "boolean" },
+  { id: "realtime", label: "Real-time", key: "realtime", type: "boolean" },
+  { id: "payments", label: "Payments", key: "payments", type: "boolean" },
+  { id: "ai", label: "AI", key: "ai", type: "boolean" },
+  { id: "aiMemory", label: "AI Memory", key: "aiMemory", type: "boolean" },
 ]
 
 function flattenResult(obj: unknown, prefix = ""): Record<string, string> {
@@ -74,7 +74,7 @@ export default function Playground() {
 
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err.error || "Erro na requisição")
+        throw new Error(err.error || "Request failed")
       }
 
       const data = await res.json()
@@ -108,13 +108,13 @@ export default function Playground() {
           <div className="space-y-4">
             <div>
               <label htmlFor="description" className="block text-sm font-medium mb-2">
-                Descrição do projeto
+                Project description
               </label>
               <textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Ex: Marketplace de NFTs com dashboard, autenticação por wallet, feed em tempo real..."
+                placeholder="Ex: NFT marketplace with dashboard, wallet auth, real-time feed..."
                 rows={4}
                 className="w-full px-4 py-3 rounded-lg bg-zinc-900 border border-zinc-800 focus:border-zinc-600 focus:outline-none resize-none text-sm"
                 required
@@ -123,7 +123,7 @@ export default function Playground() {
 
             <div>
               <label htmlFor="domain" className="block text-sm font-medium mb-2">
-                Domínio (opcional)
+                Domain (optional)
               </label>
               <input
                 id="domain"
@@ -136,7 +136,7 @@ export default function Playground() {
           </div>
 
           <div className="space-y-3">
-            <span className="text-sm font-medium">Features adicionais</span>
+            <span className="text-sm font-medium">Additional features</span>
             <div className="flex flex-wrap gap-2">
               {features.map((f) => (
                 <button
@@ -160,7 +160,7 @@ export default function Playground() {
             disabled={loading}
             className="px-6 py-3 rounded-lg bg-zinc-100 text-zinc-900 font-medium hover:bg-zinc-200 transition-colors disabled:opacity-50"
           >
-            {loading ? "Analisando..." : "Executar ADE"}
+            {loading ? "Analyzing..." : "Run ADE"}
           </button>
         </form>
 
@@ -183,7 +183,7 @@ export default function Playground() {
                       : "text-zinc-500 hover:text-zinc-300"
                   }`}
                 >
-                  {key === "summary" ? "Resumo" : key.replace(".md", "")}
+                  {key === "summary" ? "Summary" : key.replace(".md", "")}
                 </button>
               ))}
             </div>
