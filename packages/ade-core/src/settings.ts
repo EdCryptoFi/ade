@@ -370,7 +370,6 @@ export function recommendMonitoring(input: Partial<ProjectInput>): MonitoringDec
 }
 
 export function recommendCost(input: Partial<ProjectInput>): CostDecision {
-  const base = 20
   const items: Record<string, number> = {
     Hosting: 20,
     Database: 25,
