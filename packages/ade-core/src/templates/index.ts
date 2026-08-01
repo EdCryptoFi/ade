@@ -1,4 +1,18 @@
-import type { ArchitectureFiles, ComponentNode, PlanData } from "../types.ts"
+import type {
+  ArchitectureFiles,
+  ComponentNode,
+  PlanData,
+  SecurityAuditResult,
+  SecurityCheck,
+  SecurityLayer,
+} from "../types.ts"
+
+const LAYER_LABEL: Record<SecurityLayer, string> = {
+  perimeter: "Camada 1 — Perímetro e Entrada",
+  identity: "Camada 2 — Identidade e Autorização",
+  business: "Camada 3 — Lógica de Negócio e Dados",
+  infrastructure: "Camada 4 — Infraestrutura e Supply Chain",
+}
 
 function generateVision(plan: PlanData): string {
   return `# Vision
@@ -295,7 +309,86 @@ ${sprint.tasks.map(t => `- [ ] ${t}`).join("\n")}`).join("\n\n")}
 `
 }
 
-export function generateAllFiles(plan: PlanData): ArchitectureFiles {
+function renderChecks(checks: SecurityCheck[]): string {
+  const applicable = checks.filter((c) => c.applicable)
+  if (!applicable.length) return "- Nenhuma aplicável ao escopo.\n"
+  return applicable
+    .map((c) => {
+      const lines = [
+        `### ${c.id} — ${c.title}`,
+        `- **Lei/Vetor**: ${c.law}`,
+        `- **Camada**: ${LAYER_LABEL[c.layer]}`,
+        `- **Severidade**: ${c.severity}`,
+        `- **Classificação**: ${c.owasp} | ${c.cwe}`,
+        `- **Descrição**: ${c.description}`,
+        `- **Exploit (Red Team)**: ${c.exploit}`,
+        `- **Impacto**: ${c.impact}`,
+        `- **Mitigação (Blue Team)**: ${c.mitigation}`,
+        `- **Testes (Security TDD)**:`,
+        ...c.tests.map((t) => `  - [ ] ${t}`),
+      ]
+      return lines.join("\n")
+    })
+    .join("\n\n")
+}
+
+function generateSecurityAudit(audit: SecurityAuditResult): string {
+  const s = audit.scorecard
+  const layerOrder: SecurityLayer[] = ["perimeter", "identity", "business", "infrastructure"]
+
+  return `# Security Audit — Zero-Trust Universal
+
+## Scorecard
+
+| Métrica | Valor |
+|---------|-------|
+| Vulnerabilidades CRÍTICAS | ${s.critical} |
+| Vulnerabilidades ALTAS | ${s.high} |
+| Vulnerabilidades MÉDIAS | ${s.medium} |
+| Vulnerabilidades BAIXAS | ${s.low} |
+| Anti-Padrões de Vibe Coding | ${s.vibeAntiPatterns.join(", ") || "nenhum"} |
+| Nota geral | **${s.grade}** |
+
+${s.summary}
+
+## Top 3 Ações Prioritárias
+
+${audit.topActions.map((a, i) => `${i + 1}. ${a}`).join("\n")}
+
+## Visão do Atacante (Red Team)
+
+${audit.redTeam.map((e) => `- ${e}`).join("\n") || "- Nenhum vetor crítico/alto aplicável."}
+
+## Código Blindado (Blue Team)
+
+${audit.blueTeam.map((m) => `- ${m}`).join("\n")}
+
+## Security TDD
+
+\`\`\`ts
+${audit.securityTests.join("\n")}
+\`\`\`
+
+## As 15 Leis Imutáveis
+
+${layerOrder
+  .map((layer) => {
+    const checks = audit.laws.filter((c) => c.layer === layer)
+    return `### ${LAYER_LABEL[layer]}\n\n${renderChecks(checks)}`
+  })
+  .join("\n\n")}
+
+## Vetores de Ataque
+
+${renderChecks(audit.attackVectors)}
+
+## Anti-Padrões de Vibe Coding
+
+${renderChecks(audit.antiPatterns)}
+`
+}
+
+export function generateAllFiles(plan: PlanData, audit: SecurityAuditResult): ArchitectureFiles {
   return {
     "vision.md": generateVision(plan),
     "requirements.md": generateRequirements(plan),
@@ -307,6 +400,7 @@ export function generateAllFiles(plan: PlanData): ArchitectureFiles {
     "tech-stack.md": generateTechStack(plan),
     "api-design.md": generateApiDesign(plan),
     "security.md": generateSecurity(plan),
+    "security-audit.md": generateSecurityAudit(audit),
     "deployment.md": generateDeployment(plan),
     "roadmap.md": generateRoadmap(plan),
     "tasks.md": generateTasks(plan),

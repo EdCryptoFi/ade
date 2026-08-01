@@ -283,6 +283,40 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "ade-security-audit",
+      description: "Auditoria de segurança Zero-Trust: 15 leis, 12 vetores de ataque, 10 anti-padrões de vibe coding, scorecard e Security TDD",
+      inputSchema: {
+        type: "object",
+        properties: {
+          description: { type: "string", description: "Descrição do projeto" },
+          domain: { type: "string", description: "Domínio do projeto" },
+          features: { type: "array", items: { type: "string" }, description: "Features do projeto" },
+          users: { type: "number", description: "Número estimado de usuários" },
+          blockchain: { type: "boolean" },
+          auth: { type: "boolean" },
+          upload: { type: "boolean" },
+          realtime: { type: "boolean" },
+          payments: { type: "boolean" },
+          ai: { type: "boolean" },
+          aiMemory: { type: "boolean" },
+          teams: { type: "boolean" },
+          multiTenant: { type: "boolean" },
+          apiAccess: { type: "boolean" },
+          webhooks: { type: "boolean" },
+          sso: { type: "boolean" },
+          auditLog: { type: "boolean" },
+          featureFlags: { type: "boolean" },
+          onboarding: { type: "boolean" },
+          notifications: { type: "boolean" },
+          dataExport: { type: "boolean" },
+          search: { type: "boolean" },
+          backgroundJobs: { type: "boolean" },
+          cms: { type: "boolean" },
+        },
+        required: ["description", "domain", "features"],
+      },
+    },
+    {
       name: "ade-session-status",
       description: "Retorna o estado atual da sessão",
       inputSchema: {
@@ -563,6 +597,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "ade-full-architecture": {
         const input = buildInput(args)
         const result = generateArchitecture(input)
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          }],
+        }
+      }
+
+      case "ade-security-audit": {
+        const input = buildInput(args)
+        const { runSecurityAudit } = await import("@ade/core/security-audit")
+        const result = runSecurityAudit(input)
         return {
           content: [{
             type: "text",

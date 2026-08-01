@@ -1,5 +1,6 @@
 import { generateArchitecture } from "@ade/core/ade"
 import { validate } from "@ade/core/validation"
+import { runSecurityAudit } from "@ade/core/security-audit"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -45,9 +46,31 @@ export default {
       }
     }
 
+    if (request.method === "POST" && path === "/audit") {
+      try {
+        const body = await request.json()
+        const input = validate(body)
+        const result = runSecurityAudit(input)
+        return json(result)
+      } catch (err) {
+        if (err instanceof Error && err.name === "ValidationError") {
+          return json({ error: err.message, details: (err as any).errors }, 400)
+        }
+        return json(
+          { error: err instanceof Error ? err.message : "Internal error" },
+          500,
+        )
+      }
+    }
+
     if (request.method === "GET" && path === "/schema") {
       return json({
-        endpoint: "POST /analyze",
+        endpoints: [
+          { method: "POST", path: "/analyze", description: "Gera arquitetura completa (plano + settings + security audit)" },
+          { method: "POST", path: "/audit", description: "Auditoria de segurança Zero-Trust (15 leis, vetores, anti-padrões, scorecard)" },
+          { method: "GET", path: "/health", description: "Health check" },
+          { method: "GET", path: "/schema", description: "Este documento" },
+        ],
         input: {
           description: "string (min 3 chars) — project description",
           domain: "string (min 2 chars) — project domain name",
@@ -70,6 +93,9 @@ export default {
           onboarding: "boolean (optional)",
           notifications: "boolean (optional)",
           dataExport: "boolean (optional)",
+          search: "boolean (optional)",
+          backgroundJobs: "boolean (optional)",
+          cms: "boolean (optional)",
         },
       })
     }

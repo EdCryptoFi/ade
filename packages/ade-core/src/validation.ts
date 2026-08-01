@@ -22,6 +22,9 @@ export const ProjectInputSchema = z.object({
   onboarding: z.boolean().optional().default(false),
   notifications: z.boolean().optional().default(false),
   dataExport: z.boolean().optional().default(false),
+  search: z.boolean().optional().default(false),
+  backgroundJobs: z.boolean().optional().default(false),
+  cms: z.boolean().optional().default(false),
 })
 
 export const PartialProjectInputSchema = z.object({
@@ -46,6 +49,9 @@ export const PartialProjectInputSchema = z.object({
   onboarding: z.boolean().optional(),
   notifications: z.boolean().optional(),
   dataExport: z.boolean().optional(),
+  search: z.boolean().optional(),
+  backgroundJobs: z.boolean().optional(),
+  cms: z.boolean().optional(),
 })
 
 export function validate(input: unknown) {

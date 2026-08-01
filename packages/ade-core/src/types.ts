@@ -119,6 +119,7 @@ export interface ArchitectureFiles {
   "tech-stack.md": string
   "api-design.md": string
   "security.md": string
+  "security-audit.md": string
   "deployment.md": string
   "roadmap.md": string
   "tasks.md": string
@@ -174,6 +175,52 @@ export interface SecurityDecision {
   rateLimit: { required: boolean; limit: string }
   audit: { required: boolean; reason: string }
   recommendations: string[]
+}
+
+export type SecurityLayer =
+  | "perimeter"
+  | "identity"
+  | "business"
+  | "infrastructure"
+
+export type SecuritySeverity = "CRITICA" | "ALTA" | "MEDIA" | "BAIXA"
+
+export interface SecurityCheck {
+  id: string
+  law: string
+  layer: SecurityLayer
+  title: string
+  description: string
+  severity: SecuritySeverity
+  owasp: string
+  cwe: string
+  applicable: boolean
+  exploit: string
+  impact: string
+  mitigation: string
+  tests: string[]
+}
+
+export interface SecurityScorecard {
+  critical: number
+  high: number
+  medium: number
+  low: number
+  vibeAntiPatterns: string[]
+  grade: "A" | "B" | "C" | "D" | "F"
+  summary: string
+}
+
+export interface SecurityAuditResult {
+  target: string
+  laws: SecurityCheck[]
+  attackVectors: SecurityCheck[]
+  antiPatterns: SecurityCheck[]
+  scorecard: SecurityScorecard
+  topActions: string[]
+  redTeam: string[]
+  blueTeam: string[]
+  securityTests: string[]
 }
 
 export interface TestingDecision {

@@ -8,6 +8,7 @@ import { runDecisionEngine } from "./decision-engine.ts"
 import { getKnowledgeGraph } from "./knowledge-graph.ts"
 import { generateAllFiles } from "./templates/index.ts"
 import { generateSettings } from "./settings.ts"
+import { runSecurityAudit } from "./security-audit.ts"
 
 export function generateArchitecture(input: ProjectInput) {
   const settings = generateSettings(input)
@@ -18,10 +19,11 @@ export function generateArchitecture(input: ProjectInput) {
   const plan = generatePlan(input, domain)
   const decisions = runDecisionEngine(input)
   const graph = getKnowledgeGraph(domain)
+  const securityAudit = runSecurityAudit(input)
 
   const base = { domain, data, infrastructure, components, plan }
 
-  const files: ArchitectureFiles = generateAllFiles(base)
+  const files: ArchitectureFiles = generateAllFiles(base, securityAudit)
 
   return {
     ...base,
@@ -29,5 +31,6 @@ export function generateArchitecture(input: ProjectInput) {
     files,
     decisions,
     graph,
+    securityAudit,
   }
 }
