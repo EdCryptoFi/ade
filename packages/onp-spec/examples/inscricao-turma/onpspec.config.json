@@ -1,5 +1,5 @@
 {
-  "testCommand": "node --test",
+  "testCommand": "node --test --test-reporter=tap",
   "reporter": "tap",
   "testGlobs": [
     "test/**",

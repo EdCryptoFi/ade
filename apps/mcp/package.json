@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ade/core": "workspace:*",
+    "@ade/onp-spec": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.30.0"
   },
   "devDependencies": {

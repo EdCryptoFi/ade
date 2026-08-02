@@ -226,13 +226,13 @@ function cmdInit(rootDir, flags) {
     console.log('· onpspec.config.json já existe — mantido');
   } else {
     const cfg = {
-      testCommand: 'node --test',
+      testCommand: 'node --test --test-reporter=tap',
       reporter: 'tap',
       testGlobs: DEFAULT_CONFIG.testGlobs,
       srcGlobs: DEFAULT_CONFIG.srcGlobs,
     };
     writeFileSync(configPath, `${JSON.stringify(cfg, null, 2)}\n`);
-    console.log('✔ onpspec.config.json criado (testCommand: "node --test" — ajuste à sua stack)');
+    console.log('✔ onpspec.config.json criado (testCommand: "node --test --test-reporter=tap" — ajuste à sua stack)');
   }
 
   const gitignorePath = path.join(specRoot, 'verification', '.gitkeep');

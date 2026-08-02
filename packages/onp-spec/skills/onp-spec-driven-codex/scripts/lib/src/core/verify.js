@@ -36,6 +36,18 @@ export function parseTap(output) {
   return tests;
 }
 
+// Formato "spec" (reporter default do node:test desde v23/v25): "✔ título" /
+// "✖ título (ms)". Fallback quando o testCommand não força --test-reporter=tap.
+export function parseSpecFormat(output) {
+  const tests = [];
+  for (const line of output.split(/\r?\n/)) {
+    const m = line.match(/^(\u2714|\u2716)\s+(.+?)(?:\s+\(\d+(?:\.\d+)?ms\))?$/u);
+    if (!m) continue;
+    tests.push({ title: m[2].trim(), pass: m[1] === '\u2714', skip: false });
+  }
+  return tests;
+}
+
 // vitest --reporter=json / jest --json (mesmo shape de assertionResults).
 // "skipped"/"pending"/"todo"/"disabled" não são prova.
 export function parseJsonReport(jsonText) {
@@ -136,6 +148,10 @@ export function runVerify(project, featureName) {
   let tests = [];
   if (config.reporter === 'tap') {
     tests = parseTap(output);
+    // node:test desde ~v23 trocou o reporter default para "spec" (✔/✖) —
+    // se o testCommand é só "node --test" sem --test-reporter=tap, o TAP não
+    // vem. Cai no spec como fallback em vez de ler 0 testes.
+    if (tests.length === 0) tests = parseSpecFormat(output);
   } else if (config.reporter === 'vitest-json' || config.reporter === 'jest-json') {
     let jsonText = null;
     if (config.reporterOutputFile) {
