@@ -1,17 +1,17 @@
-// Resumo geral de andamento — o texto que o agente posta no chat e o
-// executor imprime no terminal a cada ~1 minuto durante a execução.
+// General progress summary — the text the agent posts to the chat and the
+// executor prints to the terminal about every ~1 minute during execution.
 //
-// Duas origens, sempre rotuladas:
-//   'ia'    — escrito por um modelo (o executor headless chama `claude -p`,
-//             `codex exec` ou o CLI do Cursor `agent -p`; no Antigravity é
-//             o próprio agente que escreve) e gravado com
-//             `onp-spec resumo <feature> --gravar --texto "..."`
-//   'motor' — determinístico, montado da árvore do ledger. É o fallback
-//             sempre disponível: zero dependências, zero rede, zero modelo.
+// Two origins, always labeled:
+//   'ai'     — written by a model (the headless executor calls `claude -p`,
+//              `codex exec` or the Cursor CLI `agent -p`; on Antigravity it
+//              is the agent itself that writes it) and recorded with
+//              `onp-spec resumo <feature> --gravar --texto "..."`
+//   'engine' — deterministic, assembled from the ledger tree. The always
+//              available fallback: zero dependencies, zero network, zero model.
 //
-// Regra de frescor: só vale um resumo de IA com menos de 2 minutos; passado
-// disso (ou sem resumo gravado), vale o do motor — um resumo velho afirmando
-// "executando" seria mentira.
+// Freshness rule: only an AI summary younger than 2 minutes counts; past that
+// (or with no summary recorded), the engine's wins — a stale summary claiming
+// "running" would be a lie.
 
 import { openSync, closeSync, readSync, statSync, existsSync } from 'fs';
 import {
@@ -24,7 +24,7 @@ import {
 
 export const FRESCOR_IA_MS = 2 * 60 * 1000;
 
-// ── última ação de uma tarefa (tail barato do stream NDJSON) ───────────────
+// ── last action of a task (cheap tail of the NDJSON stream) ────────────────
 
 export function ultimaAcao(runId, chave, { maxBytes = 4096 } = {}) {
   const caminho = caminhoStream(runId, chave);
@@ -44,7 +44,7 @@ export function ultimaAcao(runId, chave, { maxBytes = 4096 } = {}) {
     return null;
   }
   const linhas = texto.split('\n').filter((l) => l.trim());
-  if (cortado && linhas.length) linhas.shift(); // primeira linha pode vir truncada
+  if (cortado && linhas.length) linhas.shift(); // first line may be truncated
   for (let i = linhas.length - 1; i >= 0; i--) {
     let e;
     try {
@@ -61,7 +61,7 @@ export function ultimaAcao(runId, chave, { maxBytes = 4096 } = {}) {
         }
       }
     }
-    // codex exec --json: item.started mostra o comando ainda em execução
+    // codex exec --json: item.started shows the command still in progress
     if ((e.type === 'item.completed' || e.type === 'item.started') && e.item) {
       const fer = resumoItemCodex(e.item);
       if (fer) return fer.resumo ? `${fer.nome}: ${fer.resumo}` : fer.nome;
@@ -70,7 +70,7 @@ export function ultimaAcao(runId, chave, { maxBytes = 4096 } = {}) {
         return t.length > 120 ? `${t.slice(0, 120)}…` : t;
       }
     }
-    // CLI do Cursor: tool_call started mostra a ferramenta ainda em execução
+    // Cursor CLI: tool_call started shows the tool still in progress
     if (e.type === 'tool_call' && e.tool_call) {
       const fer = resumoToolCallCursor(e.tool_call);
       if (fer) return fer.resumo ? `${fer.nome}: ${fer.resumo}` : fer.nome;
@@ -79,47 +79,47 @@ export function ultimaAcao(runId, chave, { maxBytes = 4096 } = {}) {
   return null;
 }
 
-// ── resumo determinístico (o motor conta o que vê no ledger) ───────────────
+// ── deterministic summary (the engine reports what it sees in the ledger) ──
 
 function fraseExecucao(ex) {
   const frases = [];
   const rotulo = `"${ex.feature}" (${ex.projeto})`;
-  frases.push(`${rotulo}: ${ex.concluidas} de ${ex.total} tarefa(s) concluída(s).`);
+  frases.push(`${rotulo}: ${ex.concluidas} of ${ex.total} task(s) done.`);
 
   const executando = [];
   for (const fx of ex.faixas) {
     for (const t of fx.tarefas) {
-      if (t.estado === 'executando') executando.push({ faixa: fx.id, t });
+      if (t.estado === 'running') executando.push({ faixa: fx.id, t });
     }
   }
   for (const t of ex.sequenciais) {
-    if (t.estado === 'executando') executando.push({ faixa: 'seq', t });
+    if (t.estado === 'running') executando.push({ faixa: 'seq', t });
   }
   for (const { faixa, t } of executando) {
     const acao = t.stream ? ultimaAcao(ex.runId, t.stream) : null;
     frases.push(
-      `Executando agora: ${t.id} (${t.titulo}) na ${faixa}${acao ? ` — última ação: ${acao}` : ''}.`
+      `Running now: ${t.id} (${t.titulo}) in ${faixa}${acao ? ` — last action: ${acao}` : ''}.`
     );
   }
 
-  const falhas = ex.faixas.filter((f) => f.estado === 'falhou' || f.estado === 'conflito');
+  const falhas = ex.faixas.filter((f) => f.estado === 'failed' || f.estado === 'conflict');
   for (const fx of falhas) {
     frases.push(
-      fx.estado === 'conflito'
-        ? `A ${fx.id} parou em CONFLITO de merge — precisa de resolução pelo agente ou por você.`
-        : `A ${fx.id} falhou — peça ao agente para reexecutá-la (--faixa ${fx.id}).`
+      fx.estado === 'conflict'
+        ? `Lane ${fx.id} stopped on a MERGE CONFLICT — needs resolution by the agent or by you.`
+        : `Lane ${fx.id} failed — ask the agent to re-run it (--faixa ${fx.id}).`
     );
   }
 
   if (!ex.rodando) {
     if (ex.fim === 0 && ex.gate.audit === 0 && !ex.gateDesatualizado) {
-      frases.push('Concluída: especificação e código alinhados (audit exit 0).');
+      frases.push('Done: spec and code aligned (audit exit 0).');
     } else if (ex.fim === 1) {
-      frases.push('Terminou com pendências — veja o gate e as faixas acima.');
+      frases.push('Finished with outstanding issues — see the gate and the lanes above.');
     } else if (ex.concluidas === ex.total && ex.total > 0 && ex.gate.audit == null) {
-      frases.push('Tarefas prontas, gate (verify + audit) ainda pendente.');
+      frases.push('Tasks done, gate (verify + audit) still pending.');
     } else if (!executando.length) {
-      frases.push('Parada no momento — nenhuma tarefa em execução.');
+      frases.push('Paused right now — no task running.');
     }
   }
   return frases;
@@ -128,26 +128,26 @@ function fraseExecucao(ex) {
 export function resumoDeterministico(projetos) {
   const execucoes = projetos.flatMap((p) => p.execucoes);
   if (!execucoes.length) {
-    return 'Nenhuma execução no ledger ainda. Gere um plano com `onp-spec plano <feature>` e peça ao agente para executar.';
+    return 'No execution in the ledger yet. Generate a plan with `onp-spec plano <feature>` and ask the agent to run it.';
   }
-  // relevância: tudo que roda; se nada roda, a execução mais recente
+  // relevance: everything running; if nothing runs, the most recent execution
   const rodando = execucoes.filter((ex) => ex.rodando);
   const alvo = rodando.length ? rodando : [execucoes[0]];
   return alvo.flatMap(fraseExecucao).join(' ');
 }
 
-// contexto mais rico para o modelo narrador (o `claude -p` do executor):
-// o resumo do motor + as últimas ações por tarefa em execução
+// richer context for the narrator model (the executor's `claude -p`):
+// the engine summary plus the last actions per task currently running
 export function contextoParaIa(projetos) {
-  const L = [`Estado mecânico: ${resumoDeterministico(projetos)}`];
+  const L = [`Mechanical state: ${resumoDeterministico(projetos)}`];
   for (const p of projetos) {
     for (const ex of p.execucoes) {
       if (!ex.rodando) continue;
       for (const fx of ex.faixas) {
-        L.push(`- ${ex.feature}/${fx.id}: ${fx.estado}${fx.tentativa > 1 ? ` (tentativa ${fx.tentativa})` : ''}`);
+        L.push(`- ${ex.feature}/${fx.id}: ${fx.estado}${fx.tentativa > 1 ? ` (attempt ${fx.tentativa})` : ''}`);
         for (const t of fx.tarefas) {
           const acao = t.stream ? ultimaAcao(ex.runId, t.stream) : null;
-          L.push(`  - ${t.id} [${t.estado}] ${t.titulo}${acao ? ` · última ação: ${acao}` : ''}`);
+          L.push(`  - ${t.id} [${t.estado}] ${t.titulo}${acao ? ` · last action: ${acao}` : ''}`);
         }
       }
       for (const t of ex.sequenciais) L.push(`  - seq ${t.id} [${t.estado}] ${t.titulo}`);
@@ -156,18 +156,18 @@ export function contextoParaIa(projetos) {
   return L.join('\n');
 }
 
-// ── tabela de andamento (markdown, pronta para o chat) ─────────────────────
+// ── progress table (markdown, ready for the chat) ──────────────────────────
 //
-// O agente posta ESTA tabela no chat a cada ~1 minuto enquanto a execução
-// roda: uma linha por tarefa, com onde ela roda (faixa/seq), o estado agora
-// e a última ação vista no stream. Célula é texto de UMA linha (pipes e
-// quebras são higienizados para não quebrar a tabela).
+// The agent posts THIS table in the chat about every ~1 minute while the
+// execution runs: one row per task, with where it runs (lane/seq), the state
+// right now and the last action seen in the stream. Cells are single-line
+// text (pipes and breaks are sanitized so the table doesn't break).
 
 const ICONE_ESTADO = {
-  pendente: '⏳',
-  executando: '▶️',
-  concluida: '✅',
-  falhou: '❌',
+  pending: '⏳',
+  running: '▶️',
+  done: '✅',
+  failed: '❌',
 };
 
 const celula = (s) =>
@@ -178,17 +178,17 @@ const celula = (s) =>
 
 function tabelaExecucao(ex) {
   const L = [];
-  const modo = ex.faixas.length ? `${ex.faixas.length} faixa(s) paralela(s)` : 'sequencial';
+  const modo = ex.faixas.length ? `${ex.faixas.length} lane(s) in parallel` : 'sequential';
   L.push(
-    `**${ex.feature}** (${ex.projeto}) — ${ex.concluidas} de ${ex.total} tarefa(s) concluída(s) · ${modo}` +
-      (ex.rodando ? ' · EM EXECUÇÃO' : '')
+    `**${ex.feature}** (${ex.projeto}) — ${ex.concluidas} of ${ex.total} task(s) done · ${modo}` +
+      (ex.rodando ? ' · RUNNING' : '')
   );
   L.push('');
-  L.push('| tarefa | título | onde | status | última ação |');
+  L.push('| task | title | where | status | last action |');
   L.push('|---|---|---|---|---|');
   const linha = (t, onde) => {
     const icone = ICONE_ESTADO[t.estado] || '·';
-    const acao = t.estado === 'executando' && t.stream ? ultimaAcao(ex.runId, t.stream) : null;
+    const acao = t.estado === 'running' && t.stream ? ultimaAcao(ex.runId, t.stream) : null;
     L.push(`| ${t.id} | ${celula(t.titulo)} | ${onde} | ${icone} ${t.estado} | ${celula(acao)} |`);
   };
   for (const fx of ex.faixas) for (const t of fx.tarefas) linha(t, fx.id);
@@ -196,11 +196,11 @@ function tabelaExecucao(ex) {
 
   const rodape = [];
   for (const fx of ex.faixas) {
-    if (fx.estado === 'conflito') rodape.push(`${fx.id} em CONFLITO de merge`);
-    else if (fx.estado === 'falhou') rodape.push(`${fx.id} falhou (reexecute: --faixa ${fx.id})`);
+    if (fx.estado === 'conflict') rodape.push(`${fx.id} in MERGE CONFLICT`);
+    else if (fx.estado === 'failed') rodape.push(`${fx.id} failed (re-run: --faixa ${fx.id})`);
   }
   if (ex.gate.verify != null) rodape.push(`verify exit ${ex.gate.verify}`);
-  if (ex.gate.audit != null) rodape.push(`audit exit ${ex.gate.audit}${ex.gateDesatualizado ? ' (desatualizado)' : ''}`);
+  if (ex.gate.audit != null) rodape.push(`audit exit ${ex.gate.audit}${ex.gateDesatualizado ? ' (outdated)' : ''}`);
   if (rodape.length) {
     L.push('');
     L.push(rodape.join(' · '));
@@ -211,15 +211,15 @@ function tabelaExecucao(ex) {
 export function tabelaAndamento(projetos) {
   const execucoes = projetos.flatMap((p) => p.execucoes);
   if (!execucoes.length) {
-    return 'Nenhuma execução no ledger ainda. Gere um plano com `onp-spec plano <feature>` e peça ao agente para executar.';
+    return 'No execution in the ledger yet. Generate a plan with `onp-spec plano <feature>` and ask the agent to run it.';
   }
-  // mesma relevância do resumo: tudo que roda; se nada roda, a mais recente
+  // same relevance as the summary: everything running; if nothing runs, the most recent one
   const rodando = execucoes.filter((ex) => ex.rodando);
   const alvo = rodando.length ? rodando : [execucoes[0]];
   return alvo.map(tabelaExecucao).join('\n\n');
 }
 
-// ── o resumo que vale AGORA (IA fresca > motor) ────────────────────────────
+// ── the summary that counts RIGHT NOW (fresh AI > engine) ──────────────────
 
 export function montarResumoAtual(projetos, { agora = Date.now() } = {}) {
   let ultimo = null;
@@ -228,27 +228,27 @@ export function montarResumoAtual(projetos, { agora = Date.now() } = {}) {
       if (ex.resumo && (!ultimo || ex.resumo.ts > ultimo.ts)) ultimo = ex.resumo;
     }
   }
-  if (ultimo && ultimo.origem === 'ia' && agora - new Date(ultimo.ts).getTime() < FRESCOR_IA_MS) {
+  if (ultimo && ultimo.origem === 'ai' && agora - new Date(ultimo.ts).getTime() < FRESCOR_IA_MS) {
     return ultimo;
   }
-  return { texto: resumoDeterministico(projetos), origem: 'motor', ts: new Date(agora).toISOString() };
+  return { texto: resumoDeterministico(projetos), origem: 'engine', ts: new Date(agora).toISOString() };
 }
 
-// ── gravação (usada pelo executor e pelos agentes) ─────────────────────────
+// ── recording (used by the executor and the agents) ────────────────────────
 
 const MAX_TEXTO = 1200;
 
-export function registrarResumo({ runId, texto, origem = 'motor' }) {
+export function registrarResumo({ runId, texto, origem = 'engine' }) {
   const limpo = String(texto || '')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, MAX_TEXTO);
-  if (!runId || !limpo) return { erro: 'resumo precisa de runId e texto' };
-  registrarEvento({ tipo: 'resumo', runId, texto: limpo, origem: origem === 'ia' ? 'ia' : 'motor' });
+  if (!runId || !limpo) return { erro: 'summary needs runId and text' };
+  registrarEvento({ tipo: 'resumo', runId, texto: limpo, origem: origem === 'ai' ? 'ai' : 'engine' });
   return { texto: limpo, origem };
 }
 
-// execução alvo para `--gravar` sem --run: a mais recente rodando no escopo
+// target execution for `--gravar` without --run: the most recent running in scope
 export function execucaoAlvo(projetos, { runId = null } = {}) {
   const execucoes = projetos.flatMap((p) => p.execucoes);
   if (runId) return execucoes.find((ex) => ex.runId === runId) || null;

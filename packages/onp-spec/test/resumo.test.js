@@ -1,6 +1,6 @@
-// Resumo geral de andamento: o motor conta o que vê (determinístico), a IA
-// grava por cima (--gravar --texto), e o frescor decide qual vale — um resumo
-// de IA velho afirmando "executando" seria mentira.
+// General progress summary: the engine reports what it sees (deterministic),
+// the AI records over it (--gravar --texto), and freshness decides which one
+// counts — a stale AI summary claiming "running" would be a lie.
 
 import { test, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
@@ -67,13 +67,13 @@ function plano(runId = 'run-r') {
   return runId;
 }
 
-test('vazio: o resumo do motor explica o próximo passo em vez de silêncio', () => {
-  assert.match(resumoDeterministico([]), /Nenhuma execução no ledger/);
+test('empty: the engine summary explains the next step instead of staying silent', () => {
+  assert.match(resumoDeterministico([]), /No execution in the ledger/);
 });
 
-test('motor narra: concluídas e tarefa em execução com a última ação do modelo', () => {
+test('engine narrates: done count and the running task with the model\'s last action', () => {
   const runId = plano();
-  registrarEvento({ tipo: 'tarefa', runId, faixa: 'faixa-1', tarefa: 'T-001', estado: 'executando', stream: 'faixa-1--T-001' });
+  registrarEvento({ tipo: 'tarefa', runId, faixa: 'faixa-1', tarefa: 'T-001', estado: 'running', stream: 'faixa-1--T-001' });
   mkdirSync(path.dirname(caminhoStream(runId, 'faixa-1--T-001')), { recursive: true });
   writeFileSync(
     caminhoStream(runId, 'faixa-1--T-001'),
@@ -81,52 +81,52 @@ test('motor narra: concluídas e tarefa em execução com a última ação do mo
   );
 
   const texto = resumoDeterministico(montarArvore(lerEventos()));
-  assert.match(texto, /"pagamentos" \(repo-a\): 0 de 2/);
-  assert.match(texto, /Executando agora: T-001 \(Modelo de cobrança\) na faixa-1/);
-  assert.match(texto, /última ação: Bash: npm test/);
+  assert.match(texto, /"pagamentos" \(repo-a\): 0 of 2/);
+  assert.match(texto, /Running now: T-001 \(Modelo de cobrança\) in faixa-1/);
+  assert.match(texto, /last action: Bash: npm test/);
 });
 
-test('motor não anuncia vitória sem audit: gate pendente é dito como pendente', () => {
+test('engine does not announce victory without the audit: a pending gate is told as pending', () => {
   const runId = plano();
-  registrarEvento({ tipo: 'tarefa', runId, faixa: 'faixa-1', tarefa: 'T-001', estado: 'concluida' });
-  registrarEvento({ tipo: 'tarefa', runId, faixa: 'faixa-2', tarefa: 'T-002', estado: 'concluida' });
+  registrarEvento({ tipo: 'tarefa', runId, faixa: 'faixa-1', tarefa: 'T-001', estado: 'done' });
+  registrarEvento({ tipo: 'tarefa', runId, faixa: 'faixa-2', tarefa: 'T-002', estado: 'done' });
   const texto = resumoDeterministico(montarArvore(lerEventos()));
-  assert.match(texto, /gate \(verify \+ audit\) ainda pendente/);
-  assert.doesNotMatch(texto, /alinhados/);
+  assert.match(texto, /gate \(verify \+ audit\) still pending/);
+  assert.doesNotMatch(texto, /aligned/);
 });
 
-test('falha pede o agente; conflito pede resolução', () => {
+test('a failure asks for the agent; a conflict asks for resolution', () => {
   const runId = plano();
-  registrarEvento({ tipo: 'faixa', runId, faixa: 'faixa-1', estado: 'falhou' });
-  registrarEvento({ tipo: 'faixa', runId, faixa: 'faixa-2', estado: 'conflito' });
-  registrarEvento({ tipo: 'fim', runId, exit: 1, escopo: 'tudo' });
+  registrarEvento({ tipo: 'faixa', runId, faixa: 'faixa-1', estado: 'failed' });
+  registrarEvento({ tipo: 'faixa', runId, faixa: 'faixa-2', estado: 'conflict' });
+  registrarEvento({ tipo: 'end', runId, exit: 1, escopo: 'all' });
   const texto = resumoDeterministico(montarArvore(lerEventos()));
-  assert.match(texto, /faixa-1 falhou — peça ao agente/);
-  assert.match(texto, /faixa-2 parou em CONFLITO/);
+  assert.match(texto, /Lane faixa-1 failed — ask the agent/);
+  assert.match(texto, /Lane faixa-2 stopped on a MERGE CONFLICT/);
 });
 
-test('montarResumoAtual: IA fresca vence; IA velha perde para o motor', () => {
+test('montarResumoAtual: fresh AI wins; stale AI loses to the engine', () => {
   const runId = plano();
-  registrarEvento({ tipo: 'tarefa', runId, faixa: 'faixa-1', tarefa: 'T-001', estado: 'executando' });
-  registrarEvento({ tipo: 'resumo', runId, texto: 'O modelo está corrigindo o webhook do PSP.', origem: 'ia' });
+  registrarEvento({ tipo: 'tarefa', runId, faixa: 'faixa-1', tarefa: 'T-001', estado: 'running' });
+  registrarEvento({ tipo: 'resumo', runId, texto: 'O modelo está corrigindo o webhook do PSP.', origem: 'ai' });
 
   const arvore = montarArvore(lerEventos());
   const fresco = montarResumoAtual(arvore);
-  assert.equal(fresco.origem, 'ia');
+  assert.equal(fresco.origem, 'ai');
   assert.match(fresco.texto, /webhook/);
 
   const depois = Date.now() + FRESCOR_IA_MS + 1000;
   const velho = montarResumoAtual(arvore, { agora: depois });
-  assert.equal(velho.origem, 'motor', 'resumo de IA velho não pode fingir tempo real');
+  assert.equal(velho.origem, 'engine', 'stale AI summary cannot pretend to be real time');
 });
 
-test('registrarResumo normaliza espaços, corta texto gigante e exige runId', () => {
+test('registrarResumo normalizes spaces, truncates huge text and requires runId', () => {
   const runId = plano();
-  const r = registrarResumo({ runId, texto: '  linha 1\n\nlinha   2  ', origem: 'ia' });
+  const r = registrarResumo({ runId, texto: '  linha 1\n\nlinha   2  ', origem: 'ai' });
   assert.equal(r.texto, 'linha 1 linha 2');
   const eventos = lerEventos().filter((e) => e.tipo === 'resumo');
   assert.equal(eventos.length, 1);
-  assert.equal(eventos[0].origem, 'ia');
+  assert.equal(eventos[0].origem, 'ai');
 
   const grande = registrarResumo({ runId, texto: 'x'.repeat(5000) });
   assert.equal(grande.texto.length, 1200);
@@ -134,20 +134,20 @@ test('registrarResumo normaliza espaços, corta texto gigante e exige runId', ()
   assert.ok(registrarResumo({ runId, texto: '   ' }).erro);
 });
 
-test('execucaoAlvo: prefere a que roda; --run força; vazio devolve null', () => {
+test('execucaoAlvo: prefers the running one; --run forces; empty returns null', () => {
   const a = plano('run-a');
-  registrarEvento({ tipo: 'fim', runId: a, exit: 0, escopo: 'tudo' });
+  registrarEvento({ tipo: 'end', runId: a, exit: 0, escopo: 'all' });
   const b = plano('run-b');
-  registrarEvento({ tipo: 'tarefa', runId: b, faixa: 'faixa-1', tarefa: 'T-001', estado: 'executando' });
+  registrarEvento({ tipo: 'tarefa', runId: b, faixa: 'faixa-1', tarefa: 'T-001', estado: 'running' });
 
   const arvore = montarArvore(lerEventos());
-  assert.equal(execucaoAlvo(arvore).runId, 'run-b', 'a execução rodando é o alvo natural');
+  assert.equal(execucaoAlvo(arvore).runId, 'run-b', 'the running execution is the natural target');
   assert.equal(execucaoAlvo(arvore, { runId: 'run-a' }).runId, 'run-a');
   assert.equal(execucaoAlvo(arvore, { runId: 'fantasma' }), null);
   assert.equal(execucaoAlvo([]), null);
 });
 
-test('ultimaAcao lê só a cauda do stream e tolera arquivo ausente', () => {
+test('ultimaAcao reads only the tail of the stream and tolerates a missing file', () => {
   const runId = plano();
   const chave = 'faixa-1--T-001';
   mkdirSync(path.dirname(caminhoStream(runId, chave)), { recursive: true });
@@ -162,7 +162,7 @@ test('ultimaAcao lê só a cauda do stream e tolera arquivo ausente', () => {
   assert.equal(ultimaAcao(runId, 'nao--existe'), null);
 });
 
-test('ultimaAcao entende o tool_call do CLI do Cursor (inclusive started, ainda em execução)', () => {
+test('ultimaAcao understands the Cursor CLI tool_call (including started, still running)', () => {
   const runId = plano();
   const chave = 'faixa-1--T-002';
   mkdirSync(path.dirname(caminhoStream(runId, chave)), { recursive: true });
@@ -173,7 +173,7 @@ test('ultimaAcao entende o tool_call do CLI do Cursor (inclusive started, ainda 
       '{"type":"tool_call","subtype":"started","call_id":"c1","tool_call":{"shellToolCall":{"args":{"command":"node --test"}}}}',
     ].join('\n')
   );
-  assert.equal(ultimaAcao(runId, chave), 'Bash: node --test', 'started mostra o que roda AGORA');
+  assert.equal(ultimaAcao(runId, chave), 'Bash: node --test', 'started shows what runs NOW');
 
   writeFileSync(
     caminhoStream(runId, chave),
@@ -182,9 +182,9 @@ test('ultimaAcao entende o tool_call do CLI do Cursor (inclusive started, ainda 
   assert.equal(ultimaAcao(runId, chave), 'Read: a/b/spec.md');
 });
 
-test('tabelaAndamento: uma linha por tarefa, com onde roda, status e última ação', () => {
+test('tabelaAndamento: one row per task, with where it runs, status and last action', () => {
   const runId = plano();
-  registrarEvento({ tipo: 'tarefa', runId, faixa: 'faixa-1', tarefa: 'T-001', estado: 'executando', stream: 'faixa-1--T-001' });
+  registrarEvento({ tipo: 'tarefa', runId, faixa: 'faixa-1', tarefa: 'T-001', estado: 'running', stream: 'faixa-1--T-001' });
   mkdirSync(path.dirname(caminhoStream(runId, 'faixa-1--T-001')), { recursive: true });
   writeFileSync(
     caminhoStream(runId, 'faixa-1--T-001'),
@@ -192,45 +192,45 @@ test('tabelaAndamento: uma linha por tarefa, com onde roda, status e última aç
   );
 
   const md = tabelaAndamento(montarArvore(lerEventos()));
-  assert.match(md, /\*\*pagamentos\*\* \(repo-a\) — 0 de 2 tarefa\(s\) concluída\(s\)/);
-  assert.match(md, /EM EXECUÇÃO/);
-  assert.match(md, /\| tarefa \| título \| onde \| status \| última ação \|/);
-  assert.match(md, /\| T-001 \| Modelo de cobrança \| faixa-1 \| ▶️ executando \| Bash: npm test \\\| tee log \|/, 'pipe da célula escapado');
-  assert.match(md, /\| T-002 \| Recibo \| faixa-2 \| ⏳ pendente \| — \|/);
+  assert.match(md, /\*\*pagamentos\*\* \(repo-a\) — 0 of 2 task\(s\) done/);
+  assert.match(md, /RUNNING/);
+  assert.match(md, /\| task \| title \| where \| status \| last action \|/);
+  assert.match(md, /\| T-001 \| Modelo de cobrança \| faixa-1 \| ▶️ running \| Bash: npm test \\\| tee log \|/, 'pipe in the cell is escaped');
+  assert.match(md, /\| T-002 \| Recibo \| faixa-2 \| ⏳ pending \| — \|/);
 });
 
-test('tabelaAndamento: concluída/falhou aparecem; rodapé traz faixa falhada e gate', () => {
+test('tabelaAndamento: done/failed appear; the footer brings the failed lane and the gate', () => {
   const runId = plano();
-  registrarEvento({ tipo: 'tarefa', runId, faixa: 'faixa-1', tarefa: 'T-001', estado: 'concluida' });
-  registrarEvento({ tipo: 'tarefa', runId, faixa: 'faixa-2', tarefa: 'T-002', estado: 'falhou' });
-  registrarEvento({ tipo: 'faixa', runId, faixa: 'faixa-2', estado: 'falhou' });
+  registrarEvento({ tipo: 'tarefa', runId, faixa: 'faixa-1', tarefa: 'T-001', estado: 'done' });
+  registrarEvento({ tipo: 'tarefa', runId, faixa: 'faixa-2', tarefa: 'T-002', estado: 'failed' });
+  registrarEvento({ tipo: 'faixa', runId, faixa: 'faixa-2', estado: 'failed' });
   registrarEvento({ tipo: 'gate', runId, etapa: 'verify', exit: 0 });
   registrarEvento({ tipo: 'gate', runId, etapa: 'audit', exit: 1 });
-  registrarEvento({ tipo: 'fim', runId, exit: 1, escopo: 'tudo' });
+  registrarEvento({ tipo: 'end', runId, exit: 1, escopo: 'all' });
 
   const md = tabelaAndamento(montarArvore(lerEventos()));
-  assert.match(md, /1 de 2 tarefa\(s\) concluída\(s\)/);
-  assert.match(md, /\| T-001 .* ✅ concluida /);
-  assert.match(md, /\| T-002 .* ❌ falhou /);
-  assert.match(md, /faixa-2 falhou \(reexecute: --faixa faixa-2\)/);
+  assert.match(md, /1 of 2 task\(s\) done/);
+  assert.match(md, /\| T-001 .* ✅ done /);
+  assert.match(md, /\| T-002 .* ❌ failed /);
+  assert.match(md, /faixa-2 failed \(re-run: --faixa faixa-2\)/);
   assert.match(md, /verify exit 0 · audit exit 1/);
-  assert.doesNotMatch(md, /EM EXECUÇÃO/);
+  assert.doesNotMatch(md, /RUNNING/);
 });
 
-test('tabelaAndamento: vazio explica o próximo passo; sem nada rodando mostra a mais recente', () => {
-  assert.match(tabelaAndamento([]), /Nenhuma execução no ledger/);
+test('tabelaAndamento: empty explains the next step; with nothing running shows the most recent', () => {
+  assert.match(tabelaAndamento([]), /No execution in the ledger/);
   const runId = plano();
-  registrarEvento({ tipo: 'fim', runId, exit: 0, escopo: 'tudo' });
+  registrarEvento({ tipo: 'end', runId, exit: 0, escopo: 'all' });
   const md = tabelaAndamento(montarArvore(lerEventos()));
-  assert.match(md, /\| T-001 \|/, 'a execução mais recente aparece mesmo parada');
+  assert.match(md, /\| T-001 \|/, 'the most recent execution appears even when stopped');
 });
 
-test('contextoParaIa lista faixas e tarefas da execução que roda', () => {
+test('contextoParaIa lists lanes and tasks of the running execution', () => {
   const runId = plano();
-  registrarEvento({ tipo: 'faixa', runId, faixa: 'faixa-1', estado: 'executando', tentativa: 1 });
-  registrarEvento({ tipo: 'tarefa', runId, faixa: 'faixa-1', tarefa: 'T-001', estado: 'executando' });
+  registrarEvento({ tipo: 'faixa', runId, faixa: 'faixa-1', estado: 'running', tentativa: 1 });
+  registrarEvento({ tipo: 'tarefa', runId, faixa: 'faixa-1', tarefa: 'T-001', estado: 'running' });
   const ctx = contextoParaIa(montarArvore(lerEventos()));
-  assert.match(ctx, /Estado mecânico:/);
-  assert.match(ctx, /pagamentos\/faixa-1: executando/);
-  assert.match(ctx, /T-001 \[executando\] Modelo de cobrança/);
+  assert.match(ctx, /Mechanical state:/);
+  assert.match(ctx, /pagamentos\/faixa-1: running/);
+  assert.match(ctx, /T-001 \[running\] Modelo de cobrança/);
 });

@@ -1,24 +1,24 @@
-// Parser de tasks.md — tarefas T-xxx com Refs (US/AC) e Arquivos.
+// Parser for tasks.md — T-xxx tasks with Refs (US/AC) and Files.
 //
-//   ## T-001 — Título [pendente|em-andamento|concluida]
+//   ## T-001 — Title [pending|in-progress|done]
 //   - Refs: US-001, AC-001, AC-002
-//   - Arquivos: src/models/entrega.js, src/routes/entrega.js
+//   - Files: src/models/entrega.js, src/routes/entrega.js
 //
-// Status é normalizado (minúsculas, sem acento): "[Concluída]" conta como
-// concluida. Token desconhecido em [...] vira TASK_STATUS_INVALIDO — nunca
-// degrada para "pendente" em silêncio (furaria o gate TASK_CONCLUIDA_SEM_PROVA).
+// Status is normalized (lowercase, no accents): "[Done]" counts as
+// done. Unknown token in [...] becomes TASK_STATUS_INVALIDO — never
+// silently degrades to "pending" (would break the TASK_CONCLUIDA_SEM_PROVA gate).
 
 import { DASH, splitLines, foldStatus } from '../util/text.js';
 
 const RE_TASK_ANY = new RegExp(`^##\\s+(T-\\d{3,})\\s*${DASH}\\s*(.+?)\\s*$`);
 const RE_STATUS_SUFFIX = /^(.*?)\s*\[([^\]]+)\]\s*$/;
 const RE_REFS = /^\s*[-*]\s*Refs\s*:\s*(.+?)\s*$/i;
-const RE_FILES = /^\s*[-*]\s*Arquivos\s*:\s*(.+?)\s*$/i;
-// campos opcionais usados pelo plano de execução (onp-spec plano)
-const RE_MODEL = /^\s*[-*]\s*Modelo\s*:\s*(.+?)\s*$/i;
-const RE_EFFORT = /^\s*[-*]\s*Esfor[cç]o\s*:\s*(.+?)\s*$/i;
+const RE_FILES = /^\s*[-*]\s*Files\s*:\s*(.+?)\s*$/i;
+// optional fields used by the execution plan (onp-spec plano)
+const RE_MODEL = /^\s*[-*]\s*Model\s*:\s*(.+?)\s*$/i;
+const RE_EFFORT = /^\s*[-*]\s*Effort\s*:\s*(.+?)\s*$/i;
 
-export const TASK_STATUSES = ['pendente', 'em-andamento', 'concluida'];
+export const TASK_STATUSES = ['pending', 'in-progress', 'done'];
 
 export function parseTasks(content, { file = 'tasks.md' } = {}) {
   const lines = splitLines(content);
@@ -41,19 +41,19 @@ export function parseTasks(content, { file = 'tasks.md' } = {}) {
           status = folded;
         } else {
           title = suffix[1].trim();
-          status = 'pendente';
+          status = 'pending';
           result.parseIssues.push({
             code: 'TASK_STATUS_INVALIDO',
             line: lineNo,
-            message: `${task[1]}: status "[${suffix[2]}]" não é um de: ${TASK_STATUSES.join(', ')}`,
+            message: `${task[1]}: status "[${suffix[2]}]" is not one of: ${TASK_STATUSES.join(', ')}`,
           });
         }
       } else {
-        status = 'pendente';
+        status = 'pending';
         result.parseIssues.push({
           code: 'TASK_SEM_STATUS',
           line: lineNo,
-          message: `${task[1]} sem status explícito — assumindo [pendente]`,
+          message: `${task[1]} without explicit status — assuming [pending]`,
         });
       }
       current = { id: task[1], title, status, line: lineNo, refs: [], files: [], model: null, esforco: null };
@@ -76,7 +76,7 @@ export function parseTasks(content, { file = 'tasks.md' } = {}) {
           result.parseIssues.push({
             code: 'REF_MALFORMADA',
             line: lineNo,
-            message: `${current.id}: ref "${id}" não é US-xxx nem AC-xxx`,
+            message: `${current.id}: ref "${id}" is neither US-xxx nor AC-xxx`,
           });
         }
       }
@@ -85,7 +85,7 @@ export function parseTasks(content, { file = 'tasks.md' } = {}) {
 
     const files = line.match(RE_FILES);
     if (files) {
-      // separa APENAS por vírgula: caminhos com espaço são válidos
+      // splits ONLY by comma: paths with spaces are valid
       const paths = files[1]
         .split(',')
         .map((s) => s.trim().replace(/^`|`$/g, ''))

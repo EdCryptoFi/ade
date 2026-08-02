@@ -1,27 +1,27 @@
-# Constituição — v1.1.0
+# Constitution — v1.1.0
 
 <!--
-  Princípios inegociáveis do projeto. Não são estilo: são restrições.
-  P-xxx = princípio (código de rastreio, como US/AC/T).
-  Níveis: [DEVE] obrigatório · [RECOMENDADO] forte · [PODE] permitido/explícito.
-  Todo [DEVE] precisa de verificação executável — senão o audit acusa
-  "princípio sem verificação" (PRINCIPIO_SEM_VERIFICACAO). Formatos:
-    - verificação(gate): satisfeita pelo próprio audit (só p/ princípios "meta")
-    - verificação(teste): @principle:P-xxx
-    - verificação(proibido): `regex` em `glob`
-    - verificação(obrigatório): `regex` em `glob`
+  Non-negotiable principles of the project. Not style: they are constraints.
+  P-xxx = principle (traceability code, like US/AC/T).
+  Levels: [MUST] mandatory · [SHOULD] strong · [MAY] permitted/explicit.
+  Every [MUST] needs an executable verification — otherwise the audit reports
+  "principle without verification" (PRINCIPIO_SEM_VERIFICACAO). Formats:
+    - verification(gate): satisfied by the audit itself (only for "meta" principles)
+    - verification(test): @principle:P-xxx
+    - verification(forbidden): `regex` in `glob`
+    - verification(required): `regex` in `glob`
 -->
 
-## P-001 [DEVE] Todo requisito tem prova executável
+## P-001 [MUST] Every requirement has executable proof
 
-Nenhuma feature é declarada pronta sem o audit em modo CI sair limpo (exit 0).
-Este princípio é verificado pelo próprio mecanismo do audit (AC_SEM_TESTE,
-AC_SEM_PROVA, TASK_CONCLUIDA_SEM_PROVA) — não precisa de teste extra seu.
+No feature is declared ready without the audit in CI mode exiting clean (exit 0).
+This principle is verified by the audit mechanism itself (AC_SEM_TESTE,
+AC_SEM_PROVA, TASK_CONCLUIDA_SEM_PROVA) — no extra test needed from you.
 
-- verificação(gate): intrínseca ao audit
+- verification(gate): intrinsic to the audit
 
-## P-002 [RECOMENDADO] Segredos nunca em código
+## P-002 [SHOULD] Secrets never in code
 
-Chaves e senhas vêm de variáveis de ambiente, nunca hard-coded.
+Keys and passwords come from environment variables, never hard-coded.
 
-- verificação(proibido): `(api[_-]?key|senha|password)\s*[:=]\s*['"][^'"]{8,}` em `src/**/*.js`
+- verification(forbidden): `(api[_-]?key|senha|password|secret)\s*[:=]\s*['"][^'"]{8,}` in `src/**/*.js`

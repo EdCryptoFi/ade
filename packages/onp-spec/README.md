@@ -1,152 +1,152 @@
 # onp-spec-driven
 
-**A especificação que continua verdadeira.** Você descreve a feature, o agente
-de IA especifica, planeja, executa em paralelo e **prova** que fez — com
-auditoria mecânica, não com promessa. Se a spec e o código desalinham, a
-máquina acusa.
+**The specification that stays true.** You describe the feature, the AI agent
+specifies it, plans it, runs it in parallel and **proves** it did — with
+mechanical auditing, not with promises. If the spec and the code drift apart,
+the machine calls it out.
 
 ```
-┌───────────┐  ┌────────┐  ┌───────┐  ┌───────┐  ┌────────┐  ┌───────┐
-│ESPECIFICAR│→ │PROJETAR│→ │TAREFAS│→ │ PLANO │→ │EXECUTAR│→ │AUDITAR│
-└───────────┘  └────────┘  └───────┘  └───────┘  └────────┘  └───────┘
-                                          ↑ paralelismo         ↑ o gate mecânico
+┌────────┐  ┌──────┐  ┌─────┐  ┌────┐  ┌───────┐  ┌─────┐
+│ESPECIFY│→ │DESIGN│→ │TASKS│→ │PLAN│→ │EXECUTE│→ │AUDIT│
+└────────┘  └──────┘  └─────┘  └────┘  └───────┘  └─────┘
+                                     ↑ parallel     ↑ the mechanical gate
 ```
 
-## Instalação (2 minutos)
+## Installation (2 minutes)
 
-A skill é **autossuficiente**: o motor mecânico já vem embarcado dentro dela
-(zero dependências — só precisa de Node.js ≥ 18 no ambiente, que seu agente já
-usa). Instalar é colocar uma pasta no lugar certo — e o comando abaixo faz
-isso por você. Escolha o seu agente:
+The skill is **self-contained**: the mechanical engine ships embedded inside it
+(zero dependencies — it just needs Node.js ≥ 18 in the environment, which your
+agent already uses). Installing means putting a folder in the right place — and
+the command below does that for you. Choose your agent:
 
 ### Claude Code
 
-Na **raiz do seu projeto**, rode:
+At the **root of your project**, run:
 
 ```bash
 npx @onovoprogramador/onp-spec init --agents claude
 ```
 
-O comando faz duas coisas:
+The command does two things:
 
-1. cria a estrutura `.spec/` do projeto (constituição de princípios + arquivo
-   de configuração — ambos editáveis, com defaults prontos);
-2. instala a skill em `.claude/skills/onp-spec-driven/` — o diretório de
-   skills que o Claude Code lê neste projeto.
+1. creates the project's `.spec/` structure (a constitution of principles +
+   a configuration file — both editable, with ready-made defaults);
+2. installs the skill in `.claude/skills/onp-spec-driven/` — the skills
+   directory that Claude Code reads in this project.
 
-**Para ativar:** abra uma conversa nova no Claude Code. A skill entra sozinha
-quando o pedido casa com ela ("especifica a feature X", "audita contra a
+**To activate:** open a new conversation in Claude Code. The skill engages on
+its own when the request matches it ("specify feature X", "audit against the
 spec"...).
 
 ### Codex
 
-Na **raiz do seu projeto**, rode:
+At the **root of your project**, run:
 
 ```bash
 npx @onovoprogramador/onp-spec init --agents codex
 ```
 
-O comando faz duas coisas:
+The command does two things:
 
-1. cria a estrutura `.spec/` do projeto;
-2. instala a skill em `.agents/skills/onp-spec-driven/` — o diretório de
-   skills que o Codex lê no repositório.
+1. creates the project's `.spec/` structure;
+2. installs the skill in `.agents/skills/onp-spec-driven/` — the skills
+   directory that Codex reads in the repository.
 
-**Para ativar:** abra uma conversa nova. A skill entra sozinha quando o
-pedido casa com ela, ou invoque explicitamente com `$onp-spec-driven`.
+**To activate:** open a new conversation. The skill engages on its own when the
+request matches it, or invoke it explicitly with `$onp-spec-driven`.
 
-> **Seus tokens, sua escolha:** antes de executar qualquer plano, o agente
-> mostra o **modelo e o esforço de cada tarefa** e pergunta se estão dentro
-> da sua licença. Você responde na conversa: manter, economizar em tudo,
-> ajustar uma tarefa específica ou propor o modelo que quiser — o agente
-> ajusta o plano por você. Sem a sua confirmação, nada roda.
+> **Your tokens, your choice:** before executing any plan, the agent shows the
+> **model and effort of each task** and asks whether they fit within your
+> license. You answer in the conversation: keep them, economize on everything,
+> adjust one specific task, or propose whatever model you want — the agent
+> adjusts the plan for you. Without your confirmation, nothing runs.
 
 ### Cursor
 
-Na **raiz do seu projeto**, rode:
+At the **root of your project**, run:
 
 ```bash
 npx @onovoprogramador/onp-spec init --agents cursor
 ```
 
-O comando faz duas coisas:
+The command does two things:
 
-1. cria a estrutura `.spec/` do projeto;
-2. instala a skill em `.cursor/skills/onp-spec-driven/` — o Cursor suporta
-   Agent Skills nativamente desde o 2.4, no editor e no CLI.
+1. creates the project's `.spec/` structure;
+2. installs the skill in `.cursor/skills/onp-spec-driven/` — Cursor supports
+   Agent Skills natively since 2.4, in the editor and in the CLI.
 
-**Para ativar:** abra uma conversa nova. A skill entra sozinha quando o
-pedido casa com ela, ou invoque explicitamente digitando `/onp-spec-driven`
-no chat do Agent.
+**To activate:** open a new conversation. The skill engages on its own when the
+request matches it, or invoke it explicitly by typing `/onp-spec-driven` in the
+Agent chat.
 
-**Para a execução paralela automática**, o executor usa o CLI do Cursor em
-modo headless. Se ainda não o tem, instale e faça login:
+**For automatic parallel execution**, the executor uses the Cursor CLI in
+headless mode. If you don't have it yet, install and log in:
 
 ```bash
 curl https://cursor.com/install -fsS | bash
 agent login
 ```
 
-Sem o CLI, o plano continua funcionando na rota manual: os prompts de cada
-faixa vêm prontos para você colar nos agentes paralelos da Agents Window.
+Without the CLI, the plan still works through the manual route: the prompts for
+each lane come ready for you to paste into the parallel agents of the Agents
+Window.
 
-> **Seus tokens, sua escolha:** no Cursor, modelos `claude-*`/`gpt-*` são
-> cobrados por uso e o `composer` (modelo da casa) tem uso incluído nos
-> planos pagos. Antes de executar qualquer plano, o agente mostra o
-> **modelo de cada tarefa** e pergunta se está dentro do seu plano — você
-> responde na conversa (manter, trocar tudo pelo `composer`, ajustar uma
-> tarefa ou propor outro modelo) e o agente ajusta por você. Sem a sua
-> confirmação, nada roda.
+> **Your tokens, your choice:** in Cursor, `claude-*`/`gpt-*` models are billed
+> per usage and `composer` (the house model) is included in paid plans. Before
+> executing any plan, the agent shows the **model of each task** and asks
+> whether it fits within your plan — you answer in the conversation (keep,
+> switch everything to `composer`, adjust one task, or propose another model)
+> and the agent adjusts it for you. Without your confirmation, nothing runs.
 
 ### Antigravity
 
-Na **raiz do seu projeto**, rode:
+At the **root of your project**, run:
 
 ```bash
 npx @onovoprogramador/onp-spec init --agents antigravity
 ```
 
-O comando faz duas coisas:
+The command does two things:
 
-1. cria a estrutura `.spec/` do projeto;
-2. instala a skill em `.agents/skills/onp-spec-driven/` — o diretório de
-   skills do workspace do Antigravity.
+1. creates the project's `.spec/` structure;
+2. installs the skill in `.agents/skills/onp-spec-driven/` — the skills
+   directory of the Antigravity workspace.
 
-**Para ativar:** abra uma conversa nova e pronto — a execução paralela usa
-os agentes nativos do Antigravity, sem depender de CLI nenhum.
+**To activate:** open a new conversation and you're done — parallel execution
+uses Antigravity's native agents, without depending on any CLI.
 
-### Sem npm/npx (instalação manual, por projeto)
+### Without npm/npx (manual installation, per project)
 
-Baixe o repositório uma vez e copie a pasta da skill do seu agente para
-dentro do projeto. A pasta de destino se chama **sempre** `onp-spec-driven`:
+Download the repository once and copy your agent's skill folder into the
+project. The destination folder is **always** called `onp-spec-driven`:
 
 ```bash
 git clone --depth 1 https://github.com/onovoprogramador/onp-spec-driven.git /tmp/onp-spec
 
-# Claude Code (neste projeto)
+# Claude Code (in this project)
 mkdir -p .claude/skills
 cp -r /tmp/onp-spec/skills/onp-spec-driven .claude/skills/onp-spec-driven
 
-# Codex (neste projeto)
+# Codex (in this project)
 mkdir -p .agents/skills
 cp -r /tmp/onp-spec/skills/onp-spec-driven-codex .agents/skills/onp-spec-driven
 
-# Cursor (neste projeto)
+# Cursor (in this project)
 mkdir -p .cursor/skills
 cp -r /tmp/onp-spec/skills/onp-spec-driven-cursor .cursor/skills/onp-spec-driven
 
-# Antigravity (neste workspace)
+# Antigravity (in this workspace)
 mkdir -p .agents/skills
 cp -r /tmp/onp-spec/skills/onp-spec-driven-antigravity .agents/skills/onp-spec-driven
 ```
 
-### Instalação global — a skill em todos os seus projetos
+### Global installation — the skill in all your projects
 
-Prefere instalar **uma vez só**, para todos os projetos? Copie a skill para o
-diretório global do seu agente (em vez do diretório do projeto). A regra é a
-mesma: **a pasta de destino se chama `onp-spec-driven`** — o Cursor, por
-exemplo, exige que o nome da pasta seja igual ao nome interno da skill, e
-copiar como `onp-spec-driven-cursor` a deixaria inválida.
+Prefer to install **once**, for all projects? Copy the skill to your agent's
+global directory (instead of the project's). The rule is the same: **the
+destination folder is called `onp-spec-driven`** — Cursor, for example,
+requires the folder name to equal the skill's internal name, and copying it as
+`onp-spec-driven-cursor` would leave it invalid.
 
 ```bash
 git clone --depth 1 https://github.com/onovoprogramador/onp-spec-driven.git /tmp/onp-spec
@@ -168,124 +168,127 @@ mkdir -p ~/.gemini/config/skills
 cp -r /tmp/onp-spec/skills/onp-spec-driven-antigravity ~/.gemini/config/skills/onp-spec-driven
 ```
 
-Com a skill global, a estrutura `.spec/` continua sendo por projeto — mas
-você não precisa rodar nada: na primeira conversa, peça *"inicializa o
-onp-spec aqui"* e o agente cria tudo (o motor embarcado da skill cuida
-disso).
+With the global skill, the `.spec/` structure stays per project — but you don't
+need to run anything: on the first conversation, ask *"initialize onp-spec
+here"* and the agent creates everything (the skill's embedded engine takes care
+of it).
 
-> **Importante:** cada agente tem a SUA skill — a do Claude Code executa o
-> plano com sessões headless paralelas do próprio Claude; a do Codex, com
-> sessões headless `codex exec`; a do Cursor, com sessões headless do CLI do
-> Cursor (`agent -p`); a do Antigravity usa os agentes paralelos nativos
-> dele. **Codex e Antigravity leem o mesmo diretório** (`.agents/skills/`),
-> então instale ali a skill do agente que você usa neste projeto — o `init`
-> se recusa a sobrescrever a skill de um agente pela do outro. **Atenção com
-> o Cursor:** além do diretório próprio (`.cursor/skills/`), o Cursor também
-> lê `.agents/skills/` nativamente e `.claude/skills/`/`.codex/skills/` por
-> compatibilidade — num projeto que já tem a skill de OUTRO agente
-> instalada, o Cursor enxergaria duas skills com o mesmo nome e poderia
-> carregar a errada. Use a skill de UM agente por projeto (o `init
-> --agents cursor` avisa se encontrar outra variante instalada).
+> **Important:** each agent has ITS OWN skill — the Claude Code one executes
+> the plan with parallel headless sessions of Claude itself; the Codex one,
+> with `codex exec` headless sessions; the Cursor one, with headless sessions
+> of the Cursor CLI (`agent -p`); the Antigravity one uses its native parallel
+> agents. **Codex and Antigravity read the same directory** (`.agents/skills/`),
+> so install there the skill of the agent you use in this project — `init`
+> refuses to overwrite one agent's skill with another's. **Watch out with
+> Cursor:** besides its own directory (`.cursor/skills/`), Cursor also reads
+> `.agents/skills/` natively and `.claude/skills/`/`.codex/skills/` for
+> compatibility — in a project that already has ANOTHER agent's skill
+> installed, Cursor would see two skills with the same name and could load the
+> wrong one. Use ONE agent's skill per project (`init --agents cursor` warns
+> you if it finds another variant installed).
 
-## Como usar — você fala, o agente prova
+## How to use — you talk, the agent proves
 
-Você **não precisa aprender comando nenhum**. Os comandos `onp-spec …` que
-aparecem pelo repositório são internos da skill: o agente os executa por você
-e cola a prova na conversa. Seu trabalho é conversar:
+You **don't need to learn any command**. The `onp-spec …` commands that appear
+throughout the repository are internal to the skill: the agent runs them for
+you and pastes the proof into the conversation. Your job is to chat:
 
-> *"Especifica a feature de inscrição de alunos."*
+> *"Specify the student enrollment feature."*
 >
-> *"Boa. Divide em tarefas e gera o plano de execução."*
+> *"Good. Split it into tasks and generate the execution plan."*
 >
-> *"Pode rodar em paralelo. Me atualiza a cada minuto."*
+> *"You can run it in parallel. Update me every minute."*
 >
-> *"A faixa 2 falhou — reexecuta só ela."*
+> *"Lane 2 failed — re-run just that one."*
 >
-> *"Audita o que foi feito contra a spec e me mostra a prova."*
+> *"Audit what was done against the spec and show me the proof."*
 
-O que você recebe de volta, sempre em português simples:
+What you get back, always in plain language:
 
-- **Especificação legível** em `.spec/features/<feature>/` — histórias de
-  usuário e critérios de aceite escritos para gente (o detalhe técnico vai
-  entre parênteses), mais as **suposições** e **perguntas em aberto** que o
-  agente é obrigado a confessar.
-- **Plano de execução com paralelismo opcional** — tarefas que não se tocam
-  PODEM rodar **em paralelo**, cada uma em sua janela limpa (git worktree +
-  branch próprios). Mas quem decide é você: o agente apresenta o plano como
-  **recomendação** (*"X dessas tarefas podem rodar em paralelo"*) e
-  **pergunta QUAIS você quer paralelizar** — todas, só algumas (as
-  escolhidas em paralelo, o resto uma após a outra ao final) ou nenhuma
-  (tudo na ordem, na árvore principal) — sempre com a mesma disciplina de
-  commits e o mesmo gate.
-- **Você sempre sabe o que está rolando** — antes de executar, o agente avisa
-  que as alterações vão rodar **em background**; enquanto rodam, a cada 1
-  minuto ele posta no chat a **tabela de andamento** (qual tarefa está
-  rodando, qual não está, o que concluiu/falhou) e o **resumo geral de
-  andamento**: um parágrafo em português (escrito por IA, com fallback do
-  motor). Ao final, você recebe o resumo completo da execução.
-- **Falhou uma faixa? refaça só ela** — peça *"reexecuta só a faixa 2"* e o
-  agente repete apenas aquela faixa, do zero e numa janela limpa, sem tocar
-  no que já passou.
-- **Gestão de commits e branches feita** — 1 tarefa = 1 commit rastreável,
-  merges organizados, árvore limpa no final.
-- **A prova** — ao final, a auditoria mecânica: cada critério de aceite tem um
-  teste que passou, ou a feature **não está pronta**. O veredito é um exit
-  code, não uma frase do agente.
+- **Readable specification** in `.spec/features/<feature>/` — user stories and
+  acceptance criteria written for people (the technical detail goes in
+  parentheses), plus the **Assumptions** and **Open Questions** the agent is
+  required to confess.
+- **Execution plan with optional parallelism** — tasks that don't touch each
+  other MAY run **in parallel**, each in its own clean window (git worktree +
+  its own branch). But you decide: the agent presents the plan as a
+  **recommendation** (*"X of these tasks can run in parallel"*) and **asks
+  WHICH ones you want to parallelize** — all of them, only a few (the chosen
+  ones in parallel, the rest one after another at the end), or none (everything
+  in order, on the main tree) — always with the same commit discipline and the
+  same gate.
+- **You always know what's going on** — before executing, the agent warns that
+  the changes will run **in the background**; while they run, every 1 minute it
+  posts to the chat the **progress table** (which task is running, which isn't,
+  what concluded/failed) and the **general progress summary**: a paragraph in
+  plain language (written by AI, with an engine fallback). At the end, you get
+  the full execution summary.
+- **A lane failed? redo just that one** — ask *"re-run only lane 2"* and the
+  agent repeats only that lane, from scratch and in a clean window, without
+  touching what already passed.
+- **Commit and branch management handled** — 1 task = 1 traceable commit,
+  organized merges, clean tree at the end.
+- **The proof** — at the end, the mechanical audit: every acceptance criterion
+  has a test that passed, or the feature **is not ready**. The verdict is an
+  exit code, not a sentence from the agent.
 
-## Por que "spec-anchored" (e não spec-first)
+## Why "spec-anchored" (and not spec-first)
 
-Spec Kit, Kiro, OpenSpec — todas são **spec-first**: a spec gera o código, o
-código evolui, e a spec vira ficção bem formatada. Aqui é **spec-anchored**:
-spec e código evoluem juntos porque um gate mecânico força o alinhamento, o
-tempo todo. A diferença aparece no dia em que alguém pergunta "isso aqui ainda
-funciona como está escrito?" — e a resposta é um comando, não uma reunião.
+Spec Kit, Kiro, OpenSpec — all of them are **spec-first**: the spec generates
+the code, the code evolves, and the spec becomes well-formatted fiction. Here
+it's **spec-anchored**: spec and code evolve together because a mechanical gate
+forces the alignment, all the time. The difference shows up on the day someone
+asks "does this still work as written?" — and the answer is a command, not a
+meeting.
 
-## O que a skill garante
+## What the skill guarantees
 
-1. **Rastreabilidade de ponta a ponta** — cada história, critério de aceite e
-   tarefa tem um código; cada critério aponta o teste que o prova. "Qual
-   requisito não tem teste?" é uma pergunta que a máquina responde.
-2. **"Pronto" é veredito da máquina** — o agente não consegue declarar vitória:
-   quem decide é o test runner, e **teste pulado não conta como prova**.
-3. **Suposições e perguntas obrigatórias** — o que o agente assumiu sem
-   confirmar fica registrado com status; feature não fecha com suposição em
-   aberto. Você aponta na tela: *"ele assumiu que não pode reenviar — é isso
-   mesmo?"*
-4. **Constituição do projeto** — regras inegociáveis (preset pronto de
-   LGPD/educação: "nota de aluno nunca exposta a outro aluno", "dado pessoal
-   nunca em log") com verificação executável, rastreada até arquivo e linha.
-5. **Lições com lastro** — o projeto aprende de feature em feature, mas só
-   entra lição ancorada em falha real registrada; opinião solta é recusada.
-6. **Execução paralela planejada** — tarefas de arquivos disjuntos rodam ao
-   mesmo tempo, em janelas de contexto limpas, com branches e commits
-   organizados pelo plano — e o gate final fecha tudo.
+1. **End-to-end traceability** — every story, acceptance criterion and task
+   has a code; every criterion points to the test that proves it. "Which
+   requirement has no test?" is a question the machine answers.
+2. **"Done" is the machine's verdict** — the agent can't declare victory: the
+   test runner decides, and **a skipped test does not count as proof**.
+3. **Assumptions and questions are mandatory** — what the agent assumed without
+   confirming is recorded with a status; a feature doesn't close with an open
+   assumption. You point at the screen: *"he assumed you can't resend — is that
+   right?"*
+4. **Project constitution** — non-negotiable rules (ready-made LGPD/education
+   preset: "a student's grade is never exposed to another student", "personal
+   data never in logs") with executable verification, traced down to file and
+   line.
+5. **Lessons with backing** — the project learns feature after feature, but
+   only a lesson anchored in a real recorded failure gets in; loose opinion is
+   rejected.
+6. **Planned parallel execution** — tasks on disjoint files run at the same
+   time, in clean context windows, with branches and commits organized by the
+   plan — and the final gate closes everything.
 
-## Funciona de verdade?
+## Does it really work?
 
-Benchmark com specs reais do domínio e defeitos que de fato adoecem projetos
-de SDD, medindo **detecção mecânica** (o que o CI pega sozinho):
+Benchmark with real specs from the domain and defects that actually sicken SDD
+projects, measuring **mechanical detection** (what CI catches on its own):
 
-| Ferramenta | Detecção de defeitos | |
+| Tool | Defect detection | |
 |---|---|---|
-| **onp-spec-driven** | **100%** (9/9) | ✅ baseline limpo |
-| OpenSpec | 11% (1/9) | só requisito incompleto |
-| spec-kit | 0% mecânico | scaffolding; testes opcionais |
+| **onp-spec-driven** | **100%** (9/9) | ✅ clean baseline |
+| OpenSpec | 11% (1/9) | incomplete requirement only |
+| spec-kit | 0% mechanical | scaffolding; optional tests |
 
-Detalhes e matriz completa: [benchmark/RESULTS.md](benchmark/RESULTS.md).
-Exemplo completo e rodável: [examples/inscricao-turma](examples/inscricao-turma).
+Details and full matrix: [benchmark/RESULTS.md](benchmark/RESULTS.md).
+Complete, runnable example: [examples/inscricao-turma](examples/inscricao-turma).
 
-## Para os curiosos
+## For the curious
 
-O motor que a skill embarca também existe como CLI standalone
-(`npm i -g @onovoprogramador/onp-spec`) e roda em CI — o mesmo audit que trava
-o agente trava o pipeline. Arquitetura, catálogo completo de achados e formato
-dos arquivos: [ARQUITETURA.md](ARQUITETURA.md). O guia que o agente segue está
-na própria skill: [skills/onp-spec-driven/SKILL.md](skills/onp-spec-driven/SKILL.md).
+The engine the skill embeds also exists as a standalone CLI
+(`npm i -g @onovoprogramador/onp-spec`) and runs in CI — the same audit that
+blocks the agent blocks the pipeline. Architecture, full finding catalog and
+file formats: [ARQUITETURA.md](ARQUITETURA.md). The guide the agent follows is
+in the skill itself: [skills/onp-spec-driven/SKILL.md](skills/onp-spec-driven/SKILL.md).
 
-## Requisitos
+## Requirements
 
-Node.js ≥ 18. Sem outras dependências — nem para você, nem para o agente.
+Node.js ≥ 18. No other dependencies — not for you, not for the agent.
 
-## Licença
+## License
 
 MIT © Vitor Manoel — O Novo Programador

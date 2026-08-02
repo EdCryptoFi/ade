@@ -17,11 +17,11 @@ import {
   LICOES_DEFAULTS,
 } from '../src/core/licoes.js';
 
-// Escala estilo Asaas: muitos domínios, centenas de features, milhares de
-// sinais. O contrato da camada: custo de contexto FIXO (listagem com teto),
-// arquivos LIMITADOS (histórico chaveado + compactação) e operações rápidas
-// mesmo com o repo enorme. Orçamentos de tempo folgados de propósito — o que
-// se está provando é a ordem de grandeza, não o hardware.
+// Asaas-style scale: many domains, hundreds of features, thousands of
+// signals. The layer's contract: FIXED context cost (capped listing),
+// BOUNDED files (keyed history + compaction) and fast operations even with a
+// huge repo. Time budgets are deliberately generous — what is being proven is
+// the order of magnitude, not the hardware.
 
 const roots = [];
 after(() => {
@@ -66,7 +66,7 @@ ${acs.join('\n')}
 `;
 }
 
-test('projeto enorme em disco: 120 features × 6 ACs — audit real vira sinais e lições com lastro', () => {
+test('huge project on disk: 120 features × 6 ACs — real audit turns into signals and lessons with backing', () => {
   const root = mkdtempSync(path.join(os.tmpdir(), 'onpspec-escala-'));
   roots.push(root);
   const specRoot = path.join(root, '.spec');
@@ -135,7 +135,7 @@ test('projeto enorme em disco: 120 features × 6 ACs — audit real vira sinais 
   assert.ok(tAdd < 3_000, `40 adds com lastro levaram ${tAdd}ms`);
 });
 
-test('milhares de sinais e centenas de lições: listagem com custo fixo e arquivos limitados', () => {
+test('thousands of signals and hundreds of lessons: listing with fixed cost and bounded files', () => {
   const root = mkdtempSync(path.join(os.tmpdir(), 'onpspec-escala-vol-'));
   roots.push(root);
   const specRoot = path.join(root, '.spec');
@@ -195,7 +195,7 @@ test('milhares de sinais e centenas de lições: listagem com custo fixo e arqui
   assert.ok(tList < 100, `list sobre 300 lições levou ${tList}ms`);
 });
 
-test('teto do histórico segura o arquivo mesmo com dezenas de milhares de pontos de falha', () => {
+test('the history cap holds the file even with tens of thousands of failure points', () => {
   const root = mkdtempSync(path.join(os.tmpdir(), 'onpspec-escala-teto-'));
   roots.push(root);
   const specRoot = path.join(root, '.spec');

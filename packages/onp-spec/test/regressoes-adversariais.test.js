@@ -1,5 +1,5 @@
-// Regressões da bateria adversarial de 17/07/2026 (docs/ACHADOS-teste-exaustivo.md).
-// Cada teste corresponde a um achado CR-x / AL-x / MD-x que DEVE permanecer corrigido.
+// Regressions from the 17/07/2026 adversarial battery (docs/ACHADOS-teste-exaustivo.md).
+// Each test corresponds to a finding CR-x / AL-x / MD-x that MUST stay fixed.
 
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -36,9 +36,9 @@ after(() => {
 const SPEC_MIN = `# Spec: F
 
 > feature: f
-> status: rascunho
+> status: draft
 
-## Histórias
+## Stories
 
 ### US-001 — H
 
@@ -46,24 +46,24 @@ Como dev, quero.
 
 #### AC-001 — C
 
-- **Dado** x
-- **Quando** y
-- **Então** z
+- **Given** x
+- **When** y
+- **Then** z
 
-## Suposições
+## Assumptions
 
-| ID | Suposição | Status | Resolução |
+| ID | Assumption | Status | Resolution |
 |---|---|---|---|
 
-## Perguntas em aberto
+## Open Questions
 
-| ID | Pergunta | Status | Resposta |
+| ID | Question | Status | Answer |
 |---|---|---|---|
 `;
 
-// ---------- CR-1: skip/todo nunca é prova ----------
+// ---------- CR-1: skip/todo is never proof ----------
 
-test('CR-1: TAP "# SKIP" não conta como pass', () => {
+test('CR-1: TAP "# SKIP" does not count as pass', () => {
   const tests = parseTap(`TAP version 13\nok 1 - AC-001: pulado @spec:AC-001 # SKIP motivo\n1..1\n`);
   assert.equal(tests.length, 1);
   assert.equal(tests[0].pass, false);
@@ -72,12 +72,12 @@ test('CR-1: TAP "# SKIP" não conta como pass', () => {
   assert.equal(acResults['AC-001'].status, 'skip');
 });
 
-test('CR-1: TAP "# TODO" não conta como pass', () => {
+test('CR-1: TAP "# TODO" does not count as pass', () => {
   const tests = parseTap(`ok 1 - AC-002: futuro @spec:AC-002 # TODO depois\n`);
   assert.equal(tests[0].skip, true);
 });
 
-test('CR-1: JSON reporter com status skipped/pending/todo não é prova', () => {
+test('CR-1: JSON reporter with skipped/pending/todo status is not proof', () => {
   const tests = parseJsonReport(
     JSON.stringify({
       testResults: [
@@ -99,7 +99,7 @@ test('CR-1: JSON reporter com status skipped/pending/todo não é prova', () => 
   assert.equal(acResults['AC-004'].status, 'pass');
 });
 
-test('CR-1: skip + pass do mesmo AC → pass; skip + fail → fail', () => {
+test('CR-1: skip + pass of the same AC → pass; skip + fail → fail', () => {
   const both = resultsByTag([
     { title: 'a @spec:AC-001', pass: false, skip: true },
     { title: 'b @spec:AC-001', pass: true, skip: false },
@@ -112,7 +112,7 @@ test('CR-1: skip + pass do mesmo AC → pass; skip + fail → fail', () => {
   assert.equal(failing.acResults['AC-001'].status, 'fail');
 });
 
-test('CR-1: prova "skip" gravada em verify vira AC_SEM_PROVA erro no audit', () => {
+test('CR-1: a "skip" proof recorded by verify becomes AC_SEM_PROVA error in the audit', () => {
   const root = tracked({
     '.spec/features/f/spec.md': SPEC_MIN,
     'test/f.test.js': `test('AC-001: pulado @spec:AC-001', () => {});`,
@@ -124,54 +124,54 @@ test('CR-1: prova "skip" gravada em verify vira AC_SEM_PROVA erro no audit', () 
   });
   const result = audit(root);
   const f = result.findings.find((x) => x.code === 'AC_SEM_PROVA');
-  assert.ok(f, 'AC_SEM_PROVA deve existir');
-  assert.equal(f.severity, 'erro');
-  assert.match(f.message, /PULADO|skip/i);
+  assert.ok(f, 'AC_SEM_PROVA must exist');
+  assert.equal(f.severity, 'error');
+  assert.match(f.message, /skip/i);
 });
 
-// ---------- CR-2: status de task com acento/maiúscula ----------
+// ---------- CR-2: task status case/accent folding ----------
 
-test('CR-2: "[concluída]" e "[Concluida]" contam como concluida (gate preservado)', () => {
-  const t1 = parseTasks(`## T-001 — X [concluída]\n- Refs: AC-001\n`);
-  assert.equal(t1.tasks[0].status, 'concluida');
-  const t2 = parseTasks(`## T-002 — Y [Concluida]\n- Refs: AC-001\n`);
-  assert.equal(t2.tasks[0].status, 'concluida');
-  const t3 = parseTasks(`## T-003 — Z [Em-Andamento]\n`);
-  assert.equal(t3.tasks[0].status, 'em-andamento');
+test('CR-2: "[done]" and "[Done]" count as done (gate preserved)', () => {
+  const t1 = parseTasks(`## T-001 — X [done]\n- Refs: AC-001\n`);
+  assert.equal(t1.tasks[0].status, 'done');
+  const t2 = parseTasks(`## T-002 — Y [Done]\n- Refs: AC-001\n`);
+  assert.equal(t2.tasks[0].status, 'done');
+  const t3 = parseTasks(`## T-003 — Z [In-Progress]\n`);
+  assert.equal(t3.tasks[0].status, 'in-progress');
 });
 
-test('CR-2: status desconhecido vira TASK_STATUS_INVALIDO (nunca pendente em silêncio)', () => {
+test('CR-2: unknown status becomes TASK_STATUS_INVALIDO (never silent pending)', () => {
   const t = parseTasks(`## T-001 — X [feita]\n- Refs: AC-001\n`);
   assert.equal(t.parseIssues[0].code, 'TASK_STATUS_INVALIDO');
 });
 
-test('CR-2 e2e: task [concluída] sem prova gera TASK_CONCLUIDA_SEM_PROVA', () => {
+test('CR-2 e2e: task [done] without proof generates TASK_CONCLUIDA_SEM_PROVA', () => {
   const root = tracked({
     '.spec/features/f/spec.md': SPEC_MIN,
-    '.spec/features/f/tasks.md': `## T-001 — X [concluída]\n\n- Refs: AC-001\n`,
+    '.spec/features/f/tasks.md': `## T-001 — X [done]\n\n- Refs: AC-001\n`,
   });
   const result = audit(root);
   assert.ok(result.findings.some((f) => f.code === 'TASK_CONCLUIDA_SEM_PROVA'));
 });
 
-// ---------- CR-4: ReDoS na constituição ----------
+// ---------- CR-4: ReDoS in the constitution ----------
 
-test('CR-4: regex patológica é morta por timeout e vira erro legível', () => {
+test('CR-4: pathological regex is killed by timeout and becomes a readable error', () => {
   const root = tracked({ 'src/payload.js': 'a'.repeat(64) + 'X' });
   const t0 = Date.now();
   const { error } = grepPattern(root, '(a+)+$', 'src/**/*.js', []);
   const dt = Date.now() - t0;
-  assert.ok(dt < 10000, `grep deveria ser morto em <10s (levou ${dt}ms)`);
-  assert.ok(error && /excedeu/.test(error), `erro deveria citar timeout: ${error}`);
+  assert.ok(dt < 10000, `grep should be killed in <10s (took ${dt}ms)`);
+  assert.ok(error && /exceeded/.test(error), `error should mention the timeout: ${error}`);
 });
 
-// ---------- CR-5: caminho feliz fecha ----------
+// ---------- CR-5: happy path closes ----------
 
-test('CR-5: constituição base (gate) não exige teste meta — kind gate satisfaz DEVE', () => {
-  const c = parseConstitution(`# Constituição — v1.1.0\n\n## P-001 [DEVE] Prova executável\n\n- verificação(gate): intrínseca ao audit\n`);
+test('CR-5: base constitution (gate) does not demand a meta test — kind gate satisfies MUST', () => {
+  const c = parseConstitution(`# Constitution — v1.1.0\n\n## P-001 [MUST] Executable proof\n\n- verification(gate): intrinsic to the audit\n`);
   assert.equal(c.principles[0].checks[0].kind, 'gate');
   const root = tracked({
-    '.spec/constituicao.md': `# Constituição — v1.1.0\n\n## P-001 [DEVE] Prova executável\n\n- verificação(gate): intrínseca ao audit\n`,
+    '.spec/constituicao.md': `# Constitution — v1.1.0\n\n## P-001 [MUST] Executable proof\n\n- verification(gate): intrinsic to the audit\n`,
   });
   const result = audit(root);
   assert.ok(!result.findings.some((f) => f.code === 'PRINCIPIO_SEM_VERIFICACAO'));
@@ -180,25 +180,25 @@ test('CR-5: constituição base (gate) não exige teste meta — kind gate satis
 
 // ---------- AL-1: NFD ----------
 
-test('AL-1: spec em NFD (macOS) parseia sem AC_INCOMPLETO falso', () => {
+test('AL-1: NFD (macOS) spec parses without a false AC_INCOMPLETO', () => {
   const spec = parseSpec(SPEC_MIN.normalize('NFD'));
   const acs = allAcs(spec);
   assert.equal(acs.length, 1);
-  assert.equal(acs[0].then.length, 1, 'Então em NFD deve casar');
+  assert.equal(acs[0].then.length, 1, 'Then in NFD must match');
 });
 
-// ---------- AL-2: caminho com espaço ----------
+// ---------- AL-2: path with space ----------
 
-test('AL-2: Arquivos: separa por vírgula — caminho com espaço sobrevive', () => {
-  const t = parseTasks(`## T-001 — X [pendente]\n- Arquivos: src/meu arquivo.js, src/outro.js\n`);
+test('AL-2: Files: splits on comma — a path with space survives', () => {
+  const t = parseTasks(`## T-001 — X [pending]\n- Files: src/meu arquivo.js, src/outro.js\n`);
   assert.deepEqual(t.tasks[0].files, ['src/meu arquivo.js', 'src/outro.js']);
 });
 
-// ---------- AL-3: GWT indentado e case ----------
+// ---------- AL-3: indented and case-insensitive GWT ----------
 
-test('AL-3: GWT indentado (2 espaços) e **dado** minúsculo são aceitos', () => {
+test('AL-3: indented (2 spaces) GWT and lowercase **given** are accepted', () => {
   const spec = parseSpec(
-    SPEC_MIN.replace('- **Dado** x', '  - **dado** x').replace('- **Quando** y', '  * **Quando** y')
+    SPEC_MIN.replace('- **Given** x', '  - **given** x').replace('- **When** y', '  * **When** y')
   );
   const ac = allAcs(spec)[0];
   assert.equal(ac.given.length, 1);
@@ -206,51 +206,51 @@ test('AL-3: GWT indentado (2 espaços) e **dado** minúsculo são aceitos', () =
   assert.equal(ac.then.length, 1);
 });
 
-// ---------- AL-4: glob sem arquivos ----------
+// ---------- AL-4: glob with no files ----------
 
-test('AL-4: verificação(obrigatório) com glob que casa 0 arquivos → GLOB_SEM_ARQUIVOS', () => {
+test('AL-4: verification(required) with a glob matching 0 files → GLOB_SEM_ARQUIVOS', () => {
   const root = tracked({
-    '.spec/constituicao.md': `# Constituição — v1.0.0\n\n## P-010 [DEVE] Auth em toda rota\n\n- verificação(obrigatório): \`checarAuth\\(\` em \`src/rotas-typo/**/*.js\`\n`,
+    '.spec/constituicao.md': `# Constitution — v1.0.0\n\n## P-010 [MUST] Auth on every route\n\n- verification(required): \`checarAuth\\(\` in \`src/rotas-typo/**/*.js\`\n`,
   });
   const result = audit(root);
   assert.ok(result.findings.some((f) => f.code === 'GLOB_SEM_ARQUIVOS'));
 });
 
-test('AL-4b: regex inválida é acusada mesmo com glob que casa 0 arquivos', () => {
+test('AL-4b: invalid regex is reported even with a glob matching 0 files', () => {
   const root = tracked({
-    '.spec/constituicao.md': `# Constituição — v1.0.0\n\n## P-001 [DEVE] Regex quebrada\n\n- verificação(proibido): \`([invalida\` em \`src/**/*.js\`\n`,
+    '.spec/constituicao.md': `# Constitution — v1.0.0\n\n## P-001 [MUST] Broken regex\n\n- verification(forbidden): \`([invalida\` in \`src/**/*.js\`\n`,
   });
   const result = audit(root);
   assert.ok(result.findings.some((f) => f.code === 'VERIFICACAO_MALFORMADA'));
 });
 
-// ---------- AL-5: nível desconhecido ----------
+// ---------- AL-5: unknown level ----------
 
-test('AL-5: nível [OBRIGATORIO] gera NIVEL_INVALIDO e princípio NÃO some', () => {
-  const c = parseConstitution(`# Constituição — v1.0.0\n\n## P-001 [OBRIGATORIO] Nível errado\n\n- verificação(teste): @principle:P-001\n`);
+test('AL-5: level [OBRIGATORIO] generates NIVEL_INVALIDO and the principle does NOT disappear', () => {
+  const c = parseConstitution(`# Constitution — v1.0.0\n\n## P-001 [OBRIGATORIO] Wrong level\n\n- verification(test): @principle:P-001\n`);
   assert.ok(c.parseIssues.some((i) => i.code === 'NIVEL_INVALIDO'));
-  assert.equal(c.principles.length, 1, 'princípio deve ser registrado mesmo assim');
+  assert.equal(c.principles.length, 1, 'the principle must still be registered');
   assert.equal(c.principles[0].checks.length, 1);
 });
 
-// ---------- AL-6: seções obrigatórias ausentes ----------
+// ---------- AL-6: required sections missing ----------
 
-test('AL-6: spec sem Suposições/Perguntas → SECAO_AUSENTE (erro quando madura)', () => {
-  const bare = `# Spec: F\n\n> feature: f\n> status: implementada\n\n## Histórias\n\n### US-001 — H\n\n#### AC-001 — C\n\n- **Dado** x\n- **Quando** y\n- **Então** z\n`;
+test('AL-6: spec without Assumptions/Open Questions → SECAO_AUSENTE (error when mature)', () => {
+  const bare = `# Spec: F\n\n> feature: f\n> status: implemented\n\n## Stories\n\n### US-001 — H\n\n#### AC-001 — C\n\n- **Given** x\n- **When** y\n- **Then** z\n`;
   const root = tracked({
     '.spec/features/f/spec.md': bare,
     'test/f.test.js': `test('AC-001 @spec:AC-001', () => {});`,
   });
   const result = audit(root);
   const secoes = result.findings.filter((f) => f.code === 'SECAO_AUSENTE');
-  assert.equal(secoes.length, 2, 'Suposições E Perguntas ausentes');
-  assert.ok(secoes.every((f) => f.severity === 'erro'), 'erro com status implementada');
+  assert.equal(secoes.length, 2, 'Assumptions AND Open Questions missing');
+  assert.ok(secoes.every((f) => f.severity === 'error'), 'error with implemented status');
 });
 
-// ---------- AL-7/MD-6: exitcode restrito a AC anotado ----------
-// (coberto via runVerify no cli.e2e; aqui garantimos o aviso PROVA_FRACA)
+// ---------- AL-7/MD-6: exitcode restricted to annotated AC ----------
+// (covered via runVerify in cli.e2e; here we guarantee the PROVA_FRACA warning)
 
-test('MD-6: prova via exitcode gera PROVA_FRACA no audit', () => {
+test('MD-6: proof via exitcode generates PROVA_FRACA in the audit', () => {
   const root = tracked({
     '.spec/features/f/spec.md': SPEC_MIN,
     'test/f.test.js': `test('AC-001: x @spec:AC-001', () => {});`,
@@ -264,33 +264,33 @@ test('MD-6: prova via exitcode gera PROVA_FRACA no audit', () => {
   assert.ok(result.findings.some((f) => f.code === 'PROVA_FRACA'));
 });
 
-// ---------- MD-1: refs globais ----------
+// ---------- MD-1: global refs ----------
 
-test('MD-1: ref cruzada entre features NÃO é REF_QUEBRADA e cobre o AC', () => {
+test('MD-1: cross-feature ref is NOT REF_QUEBRADA and covers the AC', () => {
   const specB = SPEC_MIN.replace('US-001', 'US-002').replace('AC-001', 'AC-002').replace('feature: f', 'feature: b');
   const root = tracked({
     '.spec/features/a/spec.md': SPEC_MIN.replace('feature: f', 'feature: a'),
     '.spec/features/b/spec.md': specB,
-    '.spec/features/b/tasks.md': `## T-001 — Usa AC de a [pendente]\n\n- Refs: AC-001, AC-002\n- Arquivos: src/x.js\n`,
+    '.spec/features/b/tasks.md': `## T-001 — Usa AC de a [pending]\n\n- Refs: AC-001, AC-002\n- Files: src/x.js\n`,
     'src/x.js': '// impl',
   });
   const result = audit(root);
-  assert.ok(!result.findings.some((f) => f.code === 'REF_QUEBRADA'), 'AC-001 existe globalmente');
-  assert.ok(!result.findings.some((f) => f.code === 'AC_SEM_TASK'), 'ambos cobertos');
+  assert.ok(!result.findings.some((f) => f.code === 'REF_QUEBRADA'), 'AC-001 exists globally');
+  assert.ok(!result.findings.some((f) => f.code === 'AC_SEM_TASK'), 'both covered');
 });
 
-test('MD-1: ref para AC inexistente em QUALQUER spec continua REF_QUEBRADA', () => {
+test('MD-1: ref to an AC missing in ANY spec is still REF_QUEBRADA', () => {
   const root = tracked({
     '.spec/features/f/spec.md': SPEC_MIN,
-    '.spec/features/f/tasks.md': `## T-001 — X [pendente]\n\n- Refs: AC-999\n`,
+    '.spec/features/f/tasks.md': `## T-001 — X [pending]\n\n- Refs: AC-999\n`,
   });
   const result = audit(root);
   assert.ok(result.findings.some((f) => f.code === 'REF_QUEBRADA'));
 });
 
-// ---------- MD-2: feature divergente ----------
+// ---------- MD-2: divergent feature ----------
 
-test('MD-2: "> feature:" diferente do diretório → FEATURE_DIVERGENTE', () => {
+test('MD-2: "> feature:" different from the directory → FEATURE_DIVERGENTE', () => {
   const root = tracked({
     '.spec/features/nome-do-dir/spec.md': SPEC_MIN, // > feature: f
   });
@@ -298,10 +298,10 @@ test('MD-2: "> feature:" diferente do diretório → FEATURE_DIVERGENTE', () => 
   assert.ok(result.findings.some((f) => f.code === 'FEATURE_DIVERGENTE'));
 });
 
-// ---------- MD-3: IDs curtos ----------
+// ---------- MD-3: short IDs ----------
 
-test('MD-3: US-1/AC-1 (menos de 3 dígitos) geram dica ID_CURTO', () => {
-  const spec = parseSpec(`# Spec: F\n\n## Histórias\n\n### US-1 — H\n\n#### AC-1 — C\n`);
+test('MD-3: US-1/AC-1 (fewer than 3 digits) generate the ID_CURTO hint', () => {
+  const spec = parseSpec(`# Spec: F\n\n## Stories\n\n### US-1 — H\n\n#### AC-1 — C\n`);
   const shorts = spec.parseIssues.filter((i) => i.code === 'ID_CURTO');
   assert.equal(shorts.length, 2);
   assert.match(shorts[0].message, /US-001/);

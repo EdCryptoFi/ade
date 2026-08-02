@@ -7,7 +7,7 @@ import { loadConfig } from '../src/config.js';
 import { loadProject } from '../src/core/project.js';
 import { auditProject } from '../src/core/audit.js';
 
-// Monta um projeto de verdade em disco e roda o audit sobre ele.
+// Builds a real project on disk and runs the audit over it.
 
 function makeProject(files) {
   const root = mkdtempSync(path.join(os.tmpdir(), 'onpspec-audit-'));
@@ -28,9 +28,9 @@ function audit(root, opts = {}) {
 const SPEC = `# Spec: Entrega
 
 > feature: entrega
-> status: em-implementacao
+> status: in-implementation
 
-## Histórias
+## Stories
 
 ### US-001 — Aluno entrega dever
 
@@ -38,19 +38,19 @@ Como aluno, quero enviar, para que corrijam.
 
 #### AC-001 — Entrega no prazo
 
-- **Dado** aluno autenticado
-- **Quando** envia antes do prazo
-- **Então** registra "no prazo"
+- **Given** aluno autenticado
+- **When** envia antes do prazo
+- **Then** registra "no prazo"
 
-## Suposições
+## Assumptions
 
-| ID | Suposição | Status | Resolução |
+| ID | Assumption | Status | Resolution |
 |---|---|---|---|
-| ASM-001 | Sem reenvio | confirmada | decidido 17/07 |
+| ASM-001 | Sem reenvio | confirmed | decidido 17/07 |
 
-## Perguntas em aberto
+## Open Questions
 
-| ID | Pergunta | Status | Resposta |
+| ID | Question | Status | Answer |
 |---|---|---|---|
 `;
 
@@ -64,40 +64,40 @@ after(() => {
   for (const r of roots) rmSync(r, { recursive: true, force: true });
 });
 
-test('AC_SEM_TESTE: AC sem tag @spec em nenhum teste', () => {
+test('AC_SEM_TESTE: AC with no @spec tag in any test', () => {
   const root = tracked({ '.spec/features/entrega/spec.md': SPEC });
   const result = audit(root);
   assert.ok(result.findings.some((f) => f.code === 'AC_SEM_TESTE'));
   assert.equal(result.ok, false);
 });
 
-test('AC com teste anotado não gera AC_SEM_TESTE, mas gera AC_SEM_PROVA (aviso) sem verify', () => {
+test('AC with an annotated test does not raise AC_SEM_TESTE, but raises AC_SEM_PROVA (warning) without verify', () => {
   const root = tracked({
     '.spec/features/entrega/spec.md': SPEC,
-    'test/entrega.test.js': `test('AC-001: no prazo @spec:AC-001', () => {});`,
+    'test/entrega.test.js': `test('AC-001: on time @spec:AC-001', () => {});`,
   });
   const result = audit(root);
   assert.ok(!result.findings.some((f) => f.code === 'AC_SEM_TESTE'));
   const proof = result.findings.find((f) => f.code === 'AC_SEM_PROVA');
   assert.ok(proof);
-  assert.equal(proof.severity, 'aviso');
+  assert.equal(proof.severity, 'warning');
 });
 
-test('--ci escala AC_SEM_PROVA para erro (anti vitória prematura)', () => {
+test('--ci escalates AC_SEM_PROVA to error (anti premature victory)', () => {
   const root = tracked({
     '.spec/features/entrega/spec.md': SPEC,
-    'test/entrega.test.js': `test('AC-001: no prazo @spec:AC-001', () => {});`,
+    'test/entrega.test.js': `test('AC-001: on time @spec:AC-001', () => {});`,
   });
   const result = audit(root, { ci: true });
   const proof = result.findings.find((f) => f.code === 'AC_SEM_PROVA');
-  assert.equal(proof.severity, 'erro');
+  assert.equal(proof.severity, 'error');
   assert.equal(result.ok, false);
 });
 
-test('verify PASS gravado limpa AC_SEM_PROVA', () => {
+test('recorded verify PASS clears AC_SEM_PROVA', () => {
   const root = tracked({
     '.spec/features/entrega/spec.md': SPEC,
-    'test/entrega.test.js': `test('AC-001: no prazo @spec:AC-001', () => {});`,
+    'test/entrega.test.js': `test('AC-001: on time @spec:AC-001', () => {});`,
     '.spec/verification/entrega.json': JSON.stringify({
       feature: 'entrega',
       timestamp: new Date(Date.now() + 60_000).toISOString(),
@@ -109,10 +109,10 @@ test('verify PASS gravado limpa AC_SEM_PROVA', () => {
   assert.equal(result.ok, true);
 });
 
-test('TESTE_ORFAO: tag aponta pra AC que não existe (drift)', () => {
+test('TESTE_ORFAO: tag points to an AC that does not exist (drift)', () => {
   const root = tracked({
     '.spec/features/entrega/spec.md': SPEC,
-    'test/entrega.test.js': `test('AC-001 ok @spec:AC-001', () => {});\ntest('fantasma @spec:AC-999', () => {});`,
+    'test/entrega.test.js': `test('AC-001 ok @spec:AC-001', () => {});\ntest('ghost @spec:AC-999', () => {});`,
   });
   const result = audit(root);
   const orphan = result.findings.find((f) => f.code === 'TESTE_ORFAO');
@@ -120,10 +120,10 @@ test('TESTE_ORFAO: tag aponta pra AC que não existe (drift)', () => {
   assert.match(orphan.message, /AC-999/);
 });
 
-test('ASM_ABERTA: suposição aberta com feature implementada é erro', () => {
-  const spec = SPEC.replace('status: em-implementacao', 'status: implementada').replace(
-    '| ASM-001 | Sem reenvio | confirmada | decidido 17/07 |',
-    '| ASM-001 | Sem reenvio | aberta | — |'
+test('ASM_ABERTA: open assumption with implemented feature is an error', () => {
+  const spec = SPEC.replace('status: in-implementation', 'status: implemented').replace(
+    '| ASM-001 | Sem reenvio | confirmed | decidido 17/07 |',
+    '| ASM-001 | Sem reenvio | open | — |'
   );
   const root = tracked({
     '.spec/features/entrega/spec.md': spec,
@@ -132,13 +132,13 @@ test('ASM_ABERTA: suposição aberta com feature implementada é erro', () => {
   const result = audit(root);
   const asm = result.findings.find((f) => f.code === 'ASM_ABERTA');
   assert.ok(asm);
-  assert.equal(asm.severity, 'erro');
+  assert.equal(asm.severity, 'error');
 });
 
-test('REF_QUEBRADA e TASK_CONCLUIDA_SEM_PROVA', () => {
+test('REF_QUEBRADA and TASK_CONCLUIDA_SEM_PROVA', () => {
   const root = tracked({
     '.spec/features/entrega/spec.md': SPEC,
-    '.spec/features/entrega/tasks.md': `# Tasks\n\n## T-001 — Modelo [concluida]\n\n- Refs: AC-001, AC-777\n- Arquivos: src/models/entrega.js\n`,
+    '.spec/features/entrega/tasks.md': `# Tasks\n\n## T-001 — Modelo [done]\n\n- Refs: AC-001, AC-777\n- Files: src/models/entrega.js\n`,
     'src/models/entrega.js': `export const x = 1;`,
     'test/entrega.test.js': `test('AC-001 @spec:AC-001', () => {});`,
   });
@@ -147,10 +147,10 @@ test('REF_QUEBRADA e TASK_CONCLUIDA_SEM_PROVA', () => {
   assert.ok(result.findings.some((f) => f.code === 'TASK_CONCLUIDA_SEM_PROVA'));
 });
 
-test('ARQUIVO_ORFAO: código que nenhuma task mapeia', () => {
+test('ARQUIVO_ORFAO: code not mapped by any task', () => {
   const root = tracked({
     '.spec/features/entrega/spec.md': SPEC,
-    '.spec/features/entrega/tasks.md': `# Tasks\n\n## T-001 — Modelo [pendente]\n\n- Refs: AC-001\n- Arquivos: src/models/entrega.js\n`,
+    '.spec/features/entrega/tasks.md': `# Tasks\n\n## T-001 — Modelo [pending]\n\n- Refs: AC-001\n- Files: src/models/entrega.js\n`,
     'src/models/entrega.js': `export const x = 1;`,
     'src/models/intruso.js': `export const y = 2;`,
     'test/entrega.test.js': `test('AC-001 @spec:AC-001', () => {});`,
@@ -161,7 +161,7 @@ test('ARQUIVO_ORFAO: código que nenhuma task mapeia', () => {
   assert.match(orphan.message, /intruso\.js/);
 });
 
-test('ID_DUPLICADO entre features', () => {
+test('ID_DUPLICADO across features', () => {
   const spec2 = SPEC.replace('feature: entrega', 'feature: outra');
   const root = tracked({
     '.spec/features/entrega/spec.md': SPEC,
@@ -172,9 +172,9 @@ test('ID_DUPLICADO entre features', () => {
   assert.ok(result.findings.some((f) => f.code === 'ID_DUPLICADO'));
 });
 
-test('PRINCIPIO_SEM_VERIFICACAO: DEVE sem check é erro', () => {
+test('PRINCIPIO_SEM_VERIFICACAO: MUST without check is an error', () => {
   const root = tracked({
-    '.spec/constituicao.md': `# Constituição — v1.0.0\n\n## P-001 [DEVE] Sem verificação\n\nTexto.\n`,
+    '.spec/constituicao.md': `# Constitution — v1.0.0\n\n## P-001 [MUST] No verification\n\nTexto.\n`,
     '.spec/features/entrega/spec.md': SPEC,
     'test/entrega.test.js': `test('AC-001 @spec:AC-001', () => {});`,
   });
@@ -182,9 +182,9 @@ test('PRINCIPIO_SEM_VERIFICACAO: DEVE sem check é erro', () => {
   assert.ok(result.findings.some((f) => f.code === 'PRINCIPIO_SEM_VERIFICACAO'));
 });
 
-test('PRINCIPIO_VIOLADO: padrão proibido encontrado com file:line', () => {
+test('PRINCIPIO_VIOLADO: forbidden pattern found with file:line', () => {
   const root = tracked({
-    '.spec/constituicao.md': `# Constituição — v1.0.0\n\n## P-004 [DEVE] Sem dados pessoais em log\n\n- verificação(proibido): \`console\\.log\\(.*cpf\` em \`src/**/*.js\`\n`,
+    '.spec/constituicao.md': `# Constitution — v1.0.0\n\n## P-004 [MUST] No personal data in logs\n\n- verification(forbidden): \`console\\.log\\(.*cpf\` in \`src/**/*.js\`\n`,
     '.spec/features/entrega/spec.md': SPEC,
     'src/vazamento.js': `console.log('cpf do aluno', cpf);`,
     'test/entrega.test.js': `test('AC-001 @spec:AC-001', () => {});`,
@@ -196,9 +196,9 @@ test('PRINCIPIO_VIOLADO: padrão proibido encontrado com file:line', () => {
   assert.equal(violation.line, 1);
 });
 
-test('PRINCIPIO_VIOLADO: tag de teste exigida ausente', () => {
+test('PRINCIPIO_VIOLADO: required test tag missing', () => {
   const root = tracked({
-    '.spec/constituicao.md': `# Constituição — v1.0.0\n\n## P-001 [DEVE] Nota protegida\n\n- verificação(teste): @principle:P-001\n`,
+    '.spec/constituicao.md': `# Constitution — v1.0.0\n\n## P-001 [MUST] Protected grade\n\n- verification(test): @principle:P-001\n`,
     '.spec/features/entrega/spec.md': SPEC,
     'test/entrega.test.js': `test('AC-001 @spec:AC-001', () => {});`,
   });
@@ -208,13 +208,13 @@ test('PRINCIPIO_VIOLADO: tag de teste exigida ausente', () => {
   );
 });
 
-test('projeto alinhado: audit limpo com exit 0', () => {
+test('aligned project: clean audit with exit 0', () => {
   const root = tracked({
-    '.spec/constituicao.md': `# Constituição — v1.0.0\n\n## P-001 [DEVE] Prova executável\n\n- verificação(teste): @principle:P-001\n`,
+    '.spec/constituicao.md': `# Constitution — v1.0.0\n\n## P-001 [MUST] Executable proof\n\n- verification(test): @principle:P-001\n`,
     '.spec/features/entrega/spec.md': SPEC,
-    '.spec/features/entrega/tasks.md': `# Tasks\n\n## T-001 — Modelo [concluida]\n\n- Refs: US-001\n- Arquivos: src/entrega.js\n`,
+    '.spec/features/entrega/tasks.md': `# Tasks\n\n## T-001 — Modelo [done]\n\n- Refs: US-001\n- Files: src/entrega.js\n`,
     'src/entrega.js': `export const entrega = () => 'no prazo';`,
-    'test/entrega.test.js': `test('AC-001: no prazo @spec:AC-001', () => {});\ntest('nota protegida @principle:P-001', () => {});`,
+    'test/entrega.test.js': `test('AC-001: no prazo @spec:AC-001', () => {});\ntest('grade protected @principle:P-001', () => {});`,
     '.spec/verification/entrega.json': JSON.stringify({
       feature: 'entrega',
       timestamp: new Date(Date.now() + 60_000).toISOString(),

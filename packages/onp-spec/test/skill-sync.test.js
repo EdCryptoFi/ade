@@ -91,44 +91,44 @@ test('SKILL.md (cursor): name compatível com a pasta de instalação', () => {
   assert.match(frontmatter, /^\s*description:\s*\S/m, 'description é obrigatória para a ativação automática');
 });
 
-// As regras anti-fraude do contrato são sagradas: nenhuma skill pode perder
-// "nunca enfraqueça/pule/apague teste" nem a degradação graciosa (PROVA FRACA).
-test('SKILL.md: contrato e degradação graciosa presentes nas quatro skills', () => {
+// The anti-fraud rules of the contract are sacred: no skill can lose
+// "never weaken/skip/delete a test" nor the graceful degradation (WEAK PROOF).
+test('SKILL.md: contract and graceful degradation present in all four skills', () => {
   for (const skill of SKILLS) {
     const conteudo = readFileSync(path.join(ROOT, 'skills', skill, 'SKILL.md'), 'utf-8');
-    assert.match(conteudo, /Nunca enfraqueça, pule ou apague um teste/, `${skill}: regra 6 do contrato sumiu`);
-    assert.match(conteudo, /skip\/todo\) não é prova/, `${skill}: "skip não é prova" sumiu`);
-    assert.match(conteudo, /PROVA FRACA \(auditoria manual\)/, `${skill}: degradação graciosa sumiu`);
-    assert.match(conteudo, /audit --ci` sai com código 0/, `${skill}: gate do audit sumiu`);
+    assert.match(conteudo, /Never weaken, skip or delete a test/, `${skill}: contract rule 6 is missing`);
+    assert.match(conteudo, /skip\/todo\) is not proof/, `${skill}: "skip is not proof" is missing`);
+    assert.match(conteudo, /WEAK PROOF \(manual audit\)/, `${skill}: graceful degradation is missing`);
+    assert.match(conteudo, /audit --ci` exits with code 0/, `${skill}: audit gate is missing`);
   }
 });
 
-// No codex, custo é escolha do usuário: a skill NUNCA pode perder o gate de
-// confirmação de modelos/esforços antes de executar (licença barata torra
-// tokens com modelo forte + esforço alto).
-test('SKILL.md (codex): gate de confirmação de modelos e esforços presente', () => {
+// On codex, cost is the user's choice: the skill can NEVER lose the gate of
+// confirming models/efforts before executing (a cheap license burns tokens
+// with a strong model + high effort).
+test('SKILL.md (codex): model and effort confirmation gate present', () => {
   const conteudo = readFileSync(path.join(ROOT, 'skills', 'onp-spec-driven-codex', 'SKILL.md'), 'utf-8');
-  assert.match(conteudo, /MODELO e ESFORÇO são escolha do USUÁRIO — confirme ANTES de\s+executar/);
-  assert.match(conteudo, /Sem essa confirmação,\s+não execute/);
-  assert.match(conteudo, /Nunca\s+aumente modelo\/esforço sem o usuário pedir/);
+  assert.match(conteudo, /MODEL and EFFORT are the USER's choice — confirm BEFORE\s+executing/);
+  assert.match(conteudo, /Without this confirmation,\s+do not execute/);
+  assert.match(conteudo, /Never\s+raise model\/effort without the user asking/);
   assert.match(conteudo, /--modelo gpt-5\.6-luna --esforco baixo/);
   assert.match(conteudo, /onp-spec tarefa <feature> <T-xxx> --modelo/);
 });
 
-// No cursor, idem: modelos claude-*/gpt-* são cobrados por uso no plano do
-// usuário — o gate de confirmação de modelos é sagrado, e a skill precisa
-// ser honesta sobre o esforço (não existe flag no CLI; vai no slug).
-test('SKILL.md (cursor): gate de confirmação de modelos e honestidade do esforço', () => {
+// On cursor, same: claude-*/gpt-* models are billed per use on the user's
+// plan — the model confirmation gate is sacred, and the skill needs to be
+// honest about effort (there is no CLI flag; it goes in the slug).
+test('SKILL.md (cursor): model confirmation gate and effort honesty', () => {
   const conteudo = readFileSync(path.join(ROOT, 'skills', 'onp-spec-driven-cursor', 'SKILL.md'), 'utf-8');
-  assert.match(conteudo, /O MODELO de cada tarefa é escolha do USUÁRIO — confirme ANTES de\s+executar/);
-  assert.match(conteudo, /Sem essa confirmação, não execute/);
-  assert.match(conteudo, /Nunca troque um modelo por um\s+mais caro sem o usuário pedir/);
+  assert.match(conteudo, /The MODEL of each task is the USER's choice — confirm BEFORE\s+executing/);
+  assert.match(conteudo, /Without this confirmation,\s+do not execute/);
+  assert.match(conteudo, /Never swap a model for a\s+more expensive one without the user asking/);
   assert.match(conteudo, /--modelo composer/);
   assert.match(conteudo, /onp-spec tarefa <feature> <T-xxx> --modelo/);
-  // honestidade: o CLI do Cursor não tem flag de esforço — o slug decide
-  assert.match(conteudo, /o CLI do Cursor não tem flag de esforço/);
+  // honesty: the Cursor CLI has no effort flag — the slug decides
+  assert.match(conteudo, /the Cursor CLI has no effort flag/);
   assert.match(conteudo, /gpt-5\.6-terra-high/);
-  // e o executor depende do --force (sem ele o modo print não escreve)
+  // and the executor depends on --force (without it, print mode doesn't write)
   assert.match(conteudo, /--force/);
   assert.match(conteudo, /\.cursor\/cli\.json/);
 });

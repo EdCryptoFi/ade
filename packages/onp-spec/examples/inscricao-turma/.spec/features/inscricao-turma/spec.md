@@ -1,58 +1,58 @@
-# Spec: Inscrição na turma
+# Spec: Enrolling in a class
 
 > feature: inscricao-turma
-> status: implementada
+> status: implemented
 
-## Contexto
+## Context
 
-Um visitante interessado se inscreve numa turma aberta do curso. O sistema
-respeita o limite de vagas e, quando o aluno é menor de idade, exige o
-consentimento de um responsável (LGPD art. 14).
+An interested visitor enrolls in an open class of the course. The system
+respects the seat limit and, when the student is a minor, requires guardian
+consent (LGPD art. 14).
 
-## Histórias
+## Stories
 
-### US-001 — Aluno se inscreve em turma aberta
+### US-001 — Student enrolls in an open class
 
-Como visitante interessado, quero me inscrever numa turma com vagas, para que eu
-garanta minha vaga no curso.
+As an interested visitor, I want to enroll in a class with seats available, so that I
+can secure my spot in the course.
 
-#### AC-001 — Inscrição em turma com vaga
+#### AC-001 — Enrollment in a class with a free seat
 
-- **Dado** uma turma aberta com vagas disponíveis
-- **Quando** o visitante envia nome, e-mail e telefone válidos
-- **Então** a inscrição é registrada e o número de vagas é decrementado
+- **Given** an open class with seats available
+- **When** the visitor submits a valid name, email and phone
+- **Then** the enrollment is recorded and the number of available seats is decremented
 
-#### AC-002 — Turma lotada recusa inscrição
+#### AC-002 — Full class refuses enrollment
 
-- **Dado** uma turma sem vagas
-- **Quando** o visitante tenta se inscrever
-- **Então** a inscrição é recusada com a mensagem "turma lotada"
+- **Given** a class with no seats left
+- **When** the visitor tries to enroll
+- **Then** the enrollment is refused with the message "class is full"
 
-### US-002 — Menor de idade exige consentimento
+### US-002 — Minor requires consent
 
-Como responsável, quero autorizar a inscrição de um menor, para que o cadastro
-tenha base legal.
+As a guardian, I want to authorize the enrollment of a minor, so that the registration
+has a legal basis.
 
-#### AC-003 — Inscrição de menor sem consentimento é bloqueada
+#### AC-003 — Enrollment of a minor without consent is blocked
 
-- **Dado** um visitante que informa idade menor de 18
-- **Quando** ele tenta concluir a inscrição sem dados do responsável
-- **Então** a inscrição é bloqueada pedindo o consentimento do responsável
+- **Given** a visitor who reports an age under 18
+- **When** they try to complete the enrollment without guardian data
+- **Then** the enrollment is blocked asking for the guardian's consent
 
-## Fora de escopo
+## Out of scope
 
-- Cobrança e pagamento (feature separada).
-- Cancelamento de inscrição pelo aluno.
+- Billing and payment (separate feature).
+- Enrollment cancellation by the student.
 
-## Suposições
+## Assumptions
 
-| ID | Suposição | Status | Resolução |
+| ID | Assumption | Status | Resolution |
 |---|---|---|---|
-| ASM-001 | E-mail é o identificador único do aluno | confirmada | decidido com o produto em 17/07 |
-| ASM-002 | Idade é auto-declarada no formulário | confirmada | MVP não valida documento |
+| ASM-001 | Email is the student's unique identifier | confirmed | decided with the product on 17/07 |
+| ASM-002 | Age is self-declared in the form | confirmed | MVP does not validate documents |
 
-## Perguntas em aberto
+## Open Questions
 
-| ID | Pergunta | Status | Resposta |
+| ID | Question | Status | Answer |
 |---|---|---|---|
-| Q-001 | Guardamos o e-mail do responsável separado do e-mail do aluno? | respondida | sim, campo próprio |
+| Q-001 | Do we store the guardian's email separately from the student's email? | answered | yes, its own field |

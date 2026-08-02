@@ -1,5 +1,5 @@
-// API pública programática do onp-spec-driven.
-// Use quando quiser embutir a auditoria num script/CI próprio em vez do CLI.
+// Programmatic public API for onp-spec-driven.
+// Use this to embed auditing in your own script/CI instead of the CLI.
 
 export { loadConfig, DEFAULT_CONFIG } from './config.js';
 export { loadProject } from './core/project.js';

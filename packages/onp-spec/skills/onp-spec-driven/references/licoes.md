@@ -1,105 +1,108 @@
-# Lições — aprendizado com lastro mecânico
+# Lessons — learning with mechanical backing
 
-A camada que faz o projeto melhorar de feature em feature sem virar um log
-morto. A divisão que a mantém viva:
+The layer that makes the project improve feature after feature without turning
+into a dead log. The division that keeps it alive:
 
-- **Você (agente) entra com o julgamento**: ler a falha e frasear a regra
-  geral que teria evitado a recorrência.
-- **O motor é dono de tudo mecânico**: lastro, IDs, dedup, recorrência por
-  feature distinta, promoção candidata→confirmada, penalização→quarentena,
-  poda e renderização. Você nunca faz essa contabilidade à mão — nem edita
-  `licoes.json`/`LICOES.md` diretamente.
+- **You (the agent) bring the judgment**: read the failure and phrase the
+  general rule that would have prevented the recurrence.
+- **The engine owns everything mechanical**: backing, IDs, dedup, recurrence
+  by distinct feature, candidate→confirmed promotion, penalization→quarantine,
+  pruning and rendering. You never do this bookkeeping by hand — and never
+  edit `licoes.json`/`LICOES.md` directly.
 
-**O gate que torna isso seletivo**: `licoes add` só aceita uma lição que cita
-um sinal REAL — um achado de audit ou uma falha/skip de verify que o próprio
-motor registrou em `.spec/verification/sinais.json`. Lição sem sinal é opinião
-e o motor recusa (`LICAO_SEM_LASTRO`). Você não decide sozinho o que é digno
-de lição; o histórico decide com você.
+**The gate that makes it selective**: `licoes add` only accepts a lesson that
+cites a REAL signal — an audit finding or a verify failure/skip that the
+engine itself recorded in `.spec/verification/sinais.json`. A lesson without a
+signal is opinion and the engine refuses it (`LICAO_SEM_LASTRO`). You don't
+decide alone what is worth a lesson; the history decides with you.
 
-## Arquivos (todos do motor)
+## Files (all owned by the engine)
 
-| Arquivo | O que é |
+| File | What it is |
 |---|---|
-| `.spec/verification/sinais.json` | histórico de sinais — escrito por `audit`/`verify`, nunca por você |
-| `.spec/licoes.json` | estado canônico das lições — mutação só via `onp-spec licoes` |
-| `.spec/LICOES.md` | renderização legível — leia; nunca escreva |
+| `.spec/verification/sinais.json` | signal history — written by `audit`/`verify`, never by you |
+| `.spec/licoes.json` | canonical lessons state — mutation only via `onp-spec licoes` |
+| `.spec/LICOES.md` | readable rendering — read it; never write it |
 
-Status de lição: `candidata` (1 feature — registrada, não confiada) →
-`confirmada` (recorreu em 2+ features distintas — vira guia) →
-`quarentena` (aplicada e a falha recorreu — ignorada).
+Lesson status: `candidata` (1 feature — recorded, not trusted) →
+`confirmada` (recurred in 2+ distinct features — becomes a guide) →
+`quarentena` (applied and the failure recurred — ignored).
 
-## LER — no Especificar (e no Projetar, se houver design.md)
+## READ — in Specifying (and in Designing, if there's a design.md)
 
-Obrigatório e barato (teto fixo de itens, não cresce com o repo):
+Required and cheap (fixed item ceiling, doesn't grow with the repo):
 
 ```bash
-onp-spec licoes list                       # confirmadas, máx 10
-onp-spec licoes list --escopo cobranca     # projeto grande: filtre pelo domínio
-onp-spec licoes list --query idempotencia  # ou por termo
+onp-spec licoes list                       # confirmed, max 10
+onp-spec licoes list --escopo cobranca     # big project: filter by domain
+onp-spec licoes list --query idempotencia  # or by term
 ```
 
-Aplique as lições retornadas ao escrever a spec e o design. Não carregue
-candidatas nem quarentenadas como guia — elas não são confiadas.
+Apply the returned lessons when writing the spec and the design. Don't load
+candidates or quarantined lessons as a guide — they aren't trusted.
 
-## ESCREVER — depois do gate, nunca antes
+## WRITE — after the gate, never before
 
-Momento exato: depois que `onp-spec audit --ci` sai 0. O caminho até o 0 ficou
-registrado sozinho no histórico de sinais — você não precisa anotar nada
-durante a implementação.
+Exact moment: after `onp-spec audit --ci` exits 0. The path to 0 was recorded
+by itself in the signal history — you don't need to note anything during
+implementation.
 
-1. `onp-spec licoes sugerir` — o motor aponta os sinais que recorreram em
-   features distintas e ainda não têm lição. Comece por eles.
-2. Para cada lição que valer a pena (**máximo 3 por feature**):
+1. `onp-spec licoes sugerir` — the engine points at signals that recurred in
+   distinct features and still have no lesson. Start from them.
+2. For each lesson worth keeping (**max 3 per feature**):
 
 ```bash
 onp-spec licoes add \
   --sinal  AC_SEM_PROVA \
   --feature entrega-dever \
   --fonte  AC-042 \
-  --texto  "Asserte o valor persistido do status, não só a existência do campo" \
+  --texto  "Assert the persisted value of the status, not just the field's existence" \
   --escopo cobranca/boleto
 ```
 
-3. Se o motor recusar por falta de lastro, o sinal não aconteceu aqui — a
-   lição não existe. Não reformule os argumentos para forçar a entrada.
-4. **Caminho limpo (audit passou de primeira, verify sem falha) → nenhuma
-   lição.** Isso é o resultado correto, não uma omissão.
+3. If the engine refuses for lack of backing, the signal didn't happen here —
+   the lesson doesn't exist. Don't rephrase the arguments to force it in.
+4. **Clean path (audit passed first try, verify without failure) → no
+   lesson.** That's the correct result, not an omission.
 
-### Como frasear (é o que faz a recorrência deduplicar)
+### How to phrase (it's what makes recurrence deduplicate)
 
-O dedup é exato-após-normalização (minúsculas, sem acentos, sem pontuação) —
-não é semântico. Duas lições que dizem o mesmo precisam LER igual:
+The dedup is exact-after-normalization (lowercase, no accents, no punctuation)
+— it's not semantic. Two lessons saying the same thing must READ the same:
 
-- **A regra geral, não o incidente.** ✔ "Asserte o valor persistido do
-  status, não só a existência do campo" · ✘ "O teste da linha 88 estava fraco"
-- **Uma frase, tersa e canônica** (o motor recusa acima de 280 caracteres).
-- **Uma lição por sinal** — não agrupe.
-- `--escopo` com o domínio (aceita hierarquia: `cobranca/boleto`) — é o que
-  torna o filtro útil quando o projeto tem dezenas de domínios.
+- **The general rule, not the incident.** ✔ "Assert the persisted value of the
+  status, not just the field's existence" · ✘ "The test on line 88 was weak"
+- **One sentence, terse and canonical** (the engine refuses above 280
+  characters).
+- **One lesson per signal** — don't group.
+- `--escopo` with the domain (accepts hierarchy: `cobranca/boleto`) — that's
+  what makes the filter useful when the project has dozens of domains.
 
-### Quando uma lição confirmada não funcionar
+### When a confirmed lesson doesn't work
 
-Se você carregou uma confirmada no Especificar e a MESMA falha recorreu mesmo
-assim, a orientação não está funcionando:
+If you loaded a confirmed lesson in Specifying and the SAME failure still
+recurred, the guidance isn't working:
 
 ```bash
 onp-spec licoes penalizar --id L-007
 ```
 
-Duas penalidades movem para quarentena. Use com parcimônia e só em
-recorrências reais.
+Two penalties move it to quarantine. Use sparingly and only on real
+recurrences.
 
-## Escala
+## Scale
 
-Pensada para projetos com muitos domínios e centenas de features:
+Designed for projects with many domains and hundreds of features:
 
-- o histórico é chaveado por (sinal, feature, ref) — cresce com pontos de
-  falha distintos, não com execuções — e é compactado por janela e teto;
-- a listagem tem teto fixo: o custo de contexto não cresce com o repositório;
-- candidatas que não corroboram dentro da janela são podadas automaticamente.
+- the history is keyed by (signal, feature, ref) — it grows with distinct
+  failure points, not executions — and is compacted by window and ceiling;
+- listing has a fixed ceiling: the context cost doesn't grow with the
+  repository;
+- candidates that don't corroborate within the window are pruned
+  automatically.
 
-## Sem node no ambiente
+## No node in the environment
 
-Pule a camada de lições. Não mantenha contabilidade manual de lições —
-contabilidade manual é exatamente a falha que esta camada existe para evitar.
-Registre em texto, uma vez, que a camada ficou inativa por falta de runtime.
+Skip the lessons layer. Don't keep manual lessons bookkeeping — manual
+bookkeeping is exactly the failure this layer exists to avoid. Record in text,
+once, that the layer was inactive for lack of runtime.

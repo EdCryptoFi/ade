@@ -11,7 +11,7 @@ declare module "@ade/onp-spec" {
 
   export interface AuditFinding {
     code: string
-    severity: "erro" | "aviso"
+    severity: "error" | "warning"
     message: string
     [key: string]: unknown
   }

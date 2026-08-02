@@ -1,18 +1,18 @@
-// Camada de lições — o projeto aprende com os próprios sinais.
+// Lessons layer — the project learns from its own signals.
 //
-// A divisão que mantém isso vivo: o agente entra com o JULGAMENTO (frasear a
-// regra geral que evitaria a recorrência); o motor é dono de tudo MECÂNICO —
-// lastro contra o histórico de sinais, dedup por normalização, recorrência
-// por feature distinta, promoção candidata→confirmada, penalização→
-// quarentena, poda e renderização. Contabilidade manual é exatamente o que
-// apodrece um arquivo de lições, então ela não existe aqui.
+// The split that keeps this alive: the agent brings the JUDGMENT (phrasing
+// the general rule that would prevent recurrence); the engine owns everything
+// MECHANICAL — backing against the signal history, dedup by normalization,
+// recurrence across distinct features, candidate→confirmed promotion,
+// penalty→quarantine, pruning and rendering. Manual bookkeeping is exactly
+// what rots a lessons file, so it doesn't exist here.
 //
-// Seletividade é mecânica, não opinião:
-//   1. lição sem sinal registrado no histórico → recusada (LICAO_SEM_LASTRO);
-//   2. só lições corroboradas em >= limiarPromocao features distintas viram
-//      confirmadas — e só confirmadas são carregadas como guia;
-//   3. candidatas não corroboradas dentro da janela são podadas;
-//   4. a listagem tem teto fixo — o custo de contexto não cresce com o repo.
+// Selectivity is mechanical, not opinion:
+//   1. lesson without a recorded signal in the history → rejected (LICAO_SEM_LASTRO);
+//   2. only lessons corroborated in >= limiarPromocao distinct features become
+//      confirmed — and only confirmed ones are loaded as a guide;
+//   3. candidates not corroborated within the window are pruned;
+//   4. listing has a fixed ceiling — context cost doesn't grow with the repo.
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import path from 'path';
@@ -52,7 +52,7 @@ export function carregarLicoes(specRoot) {
     if (!Number.isInteger(data.proximoId)) data.proximoId = data.licoes.length + 1;
     return data;
   } catch {
-    throw new Error(`${file} corrompido — restaure do git ou apague para recomeçar`);
+    throw new Error(`${file} corrupted — restore it from git or delete it to start over`);
   }
 }
 
@@ -62,9 +62,9 @@ export function salvarLicoes(specRoot, data) {
   writeFileSync(caminhoRender(specRoot), renderLicoes(data));
 }
 
-// Chave de dedup: minúsculas, sem acentos, sem pontuação, espaços colapsados.
-// Exata-após-normalização, sem semântica — por isso o fraseado precisa ser
-// canônico e terso (duas lições que dizem o mesmo têm que LER igual).
+// Dedup key: lowercase, no accents, no punctuation, collapsed whitespace.
+// Exact-after-normalization, no semantics — that's why the phrasing must be
+// canonical and terse (two lessons saying the same thing must READ the same).
 function normalizar(texto) {
   return texto
     .normalize('NFD')
@@ -79,8 +79,8 @@ function pad3(n) {
   return String(n).padStart(3, '0');
 }
 
-// Flags de CLI sem valor chegam como `true` — trate qualquer não-string
-// como ausente em vez de quebrar.
+// CLI flags without a value arrive as `true` — treat any non-string as absent
+// instead of breaking.
 function campo(valor) {
   return typeof valor === 'string' ? valor.trim() : '';
 }
@@ -92,24 +92,24 @@ export function adicionarLicao(data, sinaisData, entrada, cfg = LICOES_DEFAULTS)
   const fonte = campo(entrada.fonte);
   const escopo = campo(entrada.escopo) || null;
 
-  if (!texto) return { erro: 'faltou --texto: a regra geral, em uma frase acionável' };
+  if (!texto) return { erro: 'missing --texto: the general rule, in one actionable sentence' };
   if (texto.length > MAX_TEXTO) {
     return {
-      erro: `texto com ${texto.length} caracteres — uma lição é UMA frase geral e acionável (máx ${MAX_TEXTO})`,
+      erro: `text has ${texto.length} characters — a lesson is ONE general, actionable sentence (max ${MAX_TEXTO})`,
     };
   }
-  if (!sinal) return { erro: 'faltou --sinal: o código do achado/falha que motivou a lição' };
-  if (!feature) return { erro: 'faltou --feature: a feature em que o sinal aconteceu' };
-  if (!fonte) return { erro: 'faltou --fonte: o ID (AC-xxx, T-xxx, P-xxx...) ou arquivo do sinal' };
+  if (!sinal) return { erro: 'missing --sinal: the finding/failure code that motivated the lesson' };
+  if (!feature) return { erro: 'missing --feature: the feature where the signal happened' };
+  if (!fonte) return { erro: 'missing --fonte: the signal\'s ID (AC-xxx, T-xxx, P-xxx...) or file' };
 
   const lastro = buscarSinal(sinaisData, { sinal, feature, fonte });
   if (!lastro) {
     const refs = refsDisponiveis(sinaisData, { sinal, feature });
     const dica = refs.length
-      ? `refs registradas para ${sinal} em ${feature}: ${refs.slice(0, 8).join(', ')}${refs.length > 8 ? ` (+${refs.length - 8})` : ''}`
-      : `nenhum sinal ${sinal} registrado para ${feature} — o histórico só é escrito por audit/verify`;
+      ? `refs recorded for ${sinal} in ${feature}: ${refs.slice(0, 8).join(', ')}${refs.length > 8 ? ` (+${refs.length - 8})` : ''}`
+      : `no ${sinal} signal recorded for ${feature} — the history is only written by audit/verify`;
     return {
-      erro: `LICAO_SEM_LASTRO: nenhum sinal corresponde a (${sinal}, ${feature}, ${fonte}). Lição sem sinal real é opinião — o motor recusa. ${dica}`,
+      erro: `LICAO_SEM_LASTRO: no signal matches (${sinal}, ${feature}, ${fonte}). A lesson without a real signal is opinion — the engine rejects it. ${dica}`,
     };
   }
 
@@ -126,7 +126,7 @@ export function adicionarLicao(data, sinaisData, entrada, cfg = LICOES_DEFAULTS)
   if (existente) {
     if (existente.status === 'quarentena') {
       return {
-        erro: `${existente.id} está em quarentena (foi aplicada e a falha recorreu) — revise com o usuário antes de reativar`,
+        erro: `${existente.id} is in quarantine (it was applied and the failure recurred) — review with the user before re-activating`,
       };
     }
     if (!existente.features.includes(feature)) existente.features.push(feature);
@@ -160,7 +160,7 @@ export function adicionarLicao(data, sinaisData, entrada, cfg = LICOES_DEFAULTS)
   return { licao, evento: 'criada' };
 }
 
-// Poda: candidata que não corroborou dentro da janela sai do store.
+// Pruning: a candidate that didn't corroborate within the window leaves the store.
 export function podarLicoes(data, cfg = LICOES_DEFAULTS) {
   const corte = Date.now() - cfg.janelaDias * 24 * 60 * 60 * 1000;
   const removidas = [];
@@ -203,10 +203,10 @@ export function listarLicoes(data, opts = {}) {
 
 export function penalizarLicao(data, id, cfg = LICOES_DEFAULTS) {
   const licao = data.licoes.find((l) => l.id === id);
-  if (!licao) return { erro: `lição ${id} não existe` };
+  if (!licao) return { erro: `lesson ${id} does not exist` };
   if (licao.status !== 'confirmada') {
     return {
-      erro: `${id} está "${licao.status}" — só lições confirmadas são aplicadas como guia, logo só elas podem falhar ao ser aplicadas`,
+      erro: `${id} is "${licao.status}" — only confirmed lessons are applied as a guide, so only they can fail when applied`,
     };
   }
   licao.penalidades += 1;
@@ -217,9 +217,9 @@ export function penalizarLicao(data, id, cfg = LICOES_DEFAULTS) {
   return { licao, evento: 'penalizada' };
 }
 
-// Mineração mecânica: sinais que recorreram em features distintas e ainda têm
-// pouca (ou nenhuma) lição associada. O motor aponta ONDE vale escrever uma
-// lição; o julgamento de COMO fraseá-la continua sendo do agente.
+// Mechanical mining: signals that recurred across distinct features and still
+// have few (or no) associated lessons. The engine points WHERE a lesson is
+// worth writing; the judgment of HOW to phrase it remains the agent's.
 export function sugerirLicoes(data, sinaisData, cfg = LICOES_DEFAULTS, opts = {}) {
   const limite = opts.limite ?? 5;
   const porCodigo = new Map();
@@ -256,10 +256,10 @@ export function sugerirLicoes(data, sinaisData, cfg = LICOES_DEFAULTS, opts = {}
 
 export function renderLicoes(data) {
   const linhas = [];
-  linhas.push('# LIÇÕES — mantido pelo motor (`onp-spec licoes`)');
+  linhas.push('# LESSONS — maintained by the engine (`onp-spec licoes`)');
   linhas.push('');
-  linhas.push('> Não edite à mão: qualquer escrita do motor sobrescreve este arquivo.');
-  linhas.push('> Estado canônico em `.spec/licoes.json`; mutação só via `onp-spec licoes`.');
+  linhas.push('> Do not edit by hand: any engine write overwrites this file.');
+  linhas.push('> Canonical state in `.spec/licoes.json`; mutation only via `onp-spec licoes`.');
   linhas.push('');
 
   const porStatus = { confirmada: [], candidata: [], quarentena: [] };
@@ -271,37 +271,37 @@ export function renderLicoes(data) {
     linhas.push(nota);
     linhas.push('');
     if (!itens.length) {
-      linhas.push('_nenhuma_');
+      linhas.push('_none_');
       linhas.push('');
       return;
     }
     for (const l of [...itens].sort((a, b) => a.id.localeCompare(b.id))) {
       linhas.push(`### ${l.id} — ${l.texto}`);
-      const escopo = l.escopo ? ` · escopo: \`${l.escopo}\`` : '';
+      const escopo = l.escopo ? ` · scope: \`${l.escopo}\`` : '';
       linhas.push(
-        `- sinal: \`${l.sinal}\` · recorrência: ${l.recorrencia} feature(s)${escopo} · penalidades: ${l.penalidades}`
+        `- signal: \`${l.sinal}\` · recurrence: ${l.recorrencia} feature(s)${escopo} · penalties: ${l.penalidades}`
       );
       linhas.push(`- features: ${l.features.join(', ')}`);
       const ev = l.evidencias[l.evidencias.length - 1];
-      if (ev) linhas.push(`- última evidência: ${ev.fonte} (${ev.feature}, ${ev.quando})`);
+      if (ev) linhas.push(`- last evidence: ${ev.fonte} (${ev.feature}, ${ev.quando})`);
       linhas.push('');
     }
   };
 
   bloco(
-    'Confirmadas — carregue no Especificar/Projetar',
+    'Confirmed — load into Specifying/Designing',
     porStatus.confirmada,
-    'Corroboradas em múltiplas features. Aplique como guia.'
+    'Corroborated across multiple features. Apply as a guide.'
   );
   bloco(
-    'Candidatas — em observação, NÃO aplicar ainda',
+    'Candidates — under observation, DO NOT apply yet',
     porStatus.candidata,
-    'Vistas em uma feature só. Registradas, não confiadas.'
+    'Seen in a single feature. Recorded, not trusted.'
   );
   bloco(
-    'Quarentena — aplicadas e falharam, ignorar',
+    'Quarantined — applied and failed, ignore',
     porStatus.quarentena,
-    'A falha recorreu mesmo com a lição aplicada. Revisão é do usuário.'
+    'The failure recurred even with the lesson applied. Review is up to the user.'
   );
 
   return `${linhas.join('\n').trimEnd()}\n`;

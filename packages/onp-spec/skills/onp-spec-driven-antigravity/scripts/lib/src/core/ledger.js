@@ -1,30 +1,30 @@
-// Ledger global — UM arquivo para todas as execuções, de todos os projetos.
+// Global ledger — ONE file for every execution, across all projects.
 //
 //   ~/.onp-spec/painel/ledger.jsonl        (override: ONP_SPEC_HOME)
 //   ~/.onp-spec/painel/streams/<runId>/<chave>.jsonl
 //
-// Cada linha do ledger é um evento JSON. É a fonte de verdade compartilhada
-// do que está rodando: `onp-spec resumo` lê este arquivo único e monta a
-// árvore projeto → execução → faixa → tarefa, então funciona mesmo com
-// projetos diferentes rodando ao mesmo tempo (o repositório do usuário não
-// guarda estado de execução).
+// Each ledger line is a JSON event. It is the shared source of truth of what
+// is running: `onp-spec resumo` reads this single file and assembles the
+// project → execution → lane → task tree, so it works even with different
+// projects running at the same time (the user's repo keeps no execution
+// state).
 //
-// Tipos de evento:
+// Event types:
 //   plano  {runId, projeto, projetoDir, feature, agent, plano}
-//   faixa  {runId, faixa, estado: executando|mesclando|mesclada|conflito|falhou, tentativa}
-//   tarefa {runId, tarefa, faixa, estado: executando|concluida|falhou, stream}
-//   gate   {runId, etapa: verify|audit, exit}
-//   fim    {runId, exit, escopo}
-//   resumo {runId, texto, origem: ia|motor} — o "resumo geral de andamento"
-//          que o executor grava a cada ~1 min e o agente repassa no chat
+//   faixa  {runId, faixa, estado: running|merging|merged|conflict|failed, tentativa}
+//   tarefa {runId, tarefa, faixa, estado: running|done|failed, stream}
+//   gate   {runId, etapa: start|verify|audit, exit}
+//   end    {runId, exit, escopo}
+//   resumo {runId, texto, origem: ai|engine} — the "general progress summary"
+//          the executor records about every ~1 min and the agent relays in chat
 //
-// O stream de cada tarefa é o JSONL cru do CLI headless do agente —
-// `claude -p --output-format stream-json` (eventos system/assistant/user/
-// result), `codex exec --json` (eventos thread.*/turn.*/item.*) ou o CLI do
-// Cursor `agent -p --output-format stream-json` (eventos system/assistant/
-// tool_call/result; init, assistant e result têm o MESMO shape do claude —
-// só as ferramentas chegam como tool_call) — e o parser abaixo transforma
-// qualquer um dos três em linha do tempo legível.
+// Each task's stream is the raw JSONL of the agent's headless CLI —
+// `claude -p --output-format stream-json` (system/assistant/user/result
+// events), `codex exec --json` (thread.*/turn.*/item.* events) or the Cursor
+// CLI `agent -p --output-format stream-json` (system/assistant/tool_call/
+// result events; init, assistant and result have the SAME shape as claude —
+// only the tools arrive as tool_call) — and the parser below turns any of
+// the three into a readable timeline.
 
 import os from 'os';
 import path from 'path';
@@ -39,8 +39,8 @@ import {
   statSync,
 } from 'fs';
 
-export const ESTADOS_FAIXA = ['aguardando', 'executando', 'mesclando', 'mesclada', 'conflito', 'falhou'];
-export const MAX_EXECUCOES = 30; // poda: execuções mais antigas somem (com seus streams)
+export const ESTADOS_FAIXA = ['waiting', 'running', 'merging', 'merged', 'conflict', 'failed'];
+export const MAX_EXECUCOES = 30; // pruning: the oldest executions disappear (with their streams)
 
 export function homeOnp() {
   return process.env.ONP_SPEC_HOME || path.join(os.homedir(), '.onp-spec');
@@ -68,7 +68,7 @@ export function lerEventos() {
     try {
       out.push(JSON.parse(linha));
     } catch {
-      // linha corrompida (disco cheio, escrita concorrente truncada) — ignora
+      // corrupted line (disk full, truncated concurrent write) — ignore it
     }
   }
   return out;
@@ -82,7 +82,7 @@ export function chaveStream(faixaOuSeq, tarefa) {
   return `${faixaOuSeq}--${tarefa}`;
 }
 
-// ── árvore consolidada (o que o resumo narra) ───────────────────────────────
+// ── consolidated tree (what the summary narrates) ──────────────────────────
 
 export function montarArvore(eventos, { projetoDir = null, feature = null } = {}) {
   const execucoes = new Map();
@@ -105,11 +105,11 @@ export function montarArvore(eventos, { projetoDir = null, feature = null } = {}
           id: fx.id,
           branch: fx.branch,
           worktree: fx.worktree,
-          estado: 'aguardando',
+          estado: 'waiting',
           tentativa: 0,
-          tarefas: (fx.tarefas || []).map((t) => ({ ...t, estado: 'pendente', stream: null })),
+          tarefas: (fx.tarefas || []).map((t) => ({ ...t, estado: 'pending', stream: null })),
         })),
-        sequenciais: (p.sequenciais || []).map((t) => ({ ...t, estado: 'pendente', stream: null })),
+        sequenciais: (p.sequenciais || []).map((t) => ({ ...t, estado: 'pending', stream: null })),
         gate: { verify: null, audit: null },
         gateDesatualizado: false,
         fim: null,
@@ -119,7 +119,7 @@ export function montarArvore(eventos, { projetoDir = null, feature = null } = {}
       continue;
     }
     const ex = execucoes.get(e.runId);
-    if (!ex) continue; // evento de execução cujo plano foi podado
+    if (!ex) continue; // execution event whose plan was pruned
     ex.atualizadoEm = e.ts;
 
     if (e.tipo === 'faixa') {
@@ -127,9 +127,9 @@ export function montarArvore(eventos, { projetoDir = null, feature = null } = {}
       if (fx) {
         fx.estado = e.estado;
         if (e.tentativa) fx.tentativa = e.tentativa;
-        // nova tentativa reabre as tarefas da faixa
-        if (e.estado === 'executando') {
-          for (const t of fx.tarefas) if (t.estado !== 'concluida') t.estado = 'pendente';
+        // a new attempt reopens the lane's tasks
+        if (e.estado === 'running') {
+          for (const t of fx.tarefas) if (t.estado !== 'done') t.estado = 'pending';
         }
       }
     } else if (e.tipo === 'tarefa') {
@@ -140,24 +140,24 @@ export function montarArvore(eventos, { projetoDir = null, feature = null } = {}
         if (e.stream) t.stream = e.stream;
       }
     } else if (e.tipo === 'gate') {
-      if (e.etapa === 'inicio') ex.gate = { verify: null, audit: null };
+      if (e.etapa === 'start') ex.gate = { verify: null, audit: null };
       if (e.etapa === 'verify' || e.etapa === 'audit') ex.gate[e.etapa] = e.exit;
-      // audit novo = veredito fresco
+      // new audit = fresh verdict
       if (e.etapa === 'audit') ex.gateDesatualizado = false;
-    } else if (e.tipo === 'fim') {
+    } else if (e.tipo === 'end') {
       ex.fim = e.exit;
-      ex.escopoUltimo = e.escopo || 'tudo';
+      ex.escopoUltimo = e.escopo || 'all';
     } else if (e.tipo === 'resumo') {
-      // fica só o mais recente: é o texto que `onp-spec resumo` devolve
+      // keep only the most recent: it's the text `onp-spec resumo` returns
       if (typeof e.texto === 'string' && e.texto.trim()) {
-        ex.resumo = { texto: e.texto, origem: e.origem === 'ia' ? 'ia' : 'motor', ts: e.ts };
+        ex.resumo = { texto: e.texto, origem: e.origem === 'ai' ? 'ai' : 'engine', ts: e.ts };
       }
-    } else if (e.tipo === 'inicio') {
+    } else if (e.tipo === 'start') {
       ex.fim = null;
-      ex.escopoUltimo = e.escopo || 'tudo';
-      // qualquer trabalho novo invalida o veredito anterior até o audit rodar
+      ex.escopoUltimo = e.escopo || 'all';
+      // any new work invalidates the previous verdict until the audit runs
       ex.gateDesatualizado = ex.gate.audit !== null;
-      if (!e.escopo || e.escopo === 'tudo') {
+      if (!e.escopo || e.escopo === 'all') {
         ex.gate = { verify: null, audit: null };
         ex.gateDesatualizado = false;
       }
@@ -168,19 +168,19 @@ export function montarArvore(eventos, { projetoDir = null, feature = null } = {}
   if (projetoDir) lista = lista.filter((ex) => path.resolve(ex.projetoDir || '') === path.resolve(projetoDir));
   if (feature) lista = lista.filter((ex) => ex.feature === feature);
 
-  // uma execução está "rodando" se alguma faixa/tarefa está em curso
+  // an execution is "running" if some lane/task is in progress
   for (const ex of lista) {
     const emCurso =
-      ex.faixas.some((f) => f.estado === 'executando' || f.estado === 'mesclando') ||
-      [...ex.faixas.flatMap((f) => f.tarefas), ...ex.sequenciais].some((t) => t.estado === 'executando');
+      ex.faixas.some((f) => f.estado === 'running' || f.estado === 'merging') ||
+      [...ex.faixas.flatMap((f) => f.tarefas), ...ex.sequenciais].some((t) => t.estado === 'running');
     ex.rodando = emCurso && ex.fim === null;
     const tarefas = [...ex.faixas.flatMap((f) => f.tarefas), ...ex.sequenciais];
     ex.total = tarefas.length;
-    ex.concluidas = tarefas.filter((t) => t.estado === 'concluida').length;
-    ex.falhas = ex.faixas.filter((f) => f.estado === 'falhou' || f.estado === 'conflito').length;
+    ex.concluidas = tarefas.filter((t) => t.estado === 'done').length;
+    ex.falhas = ex.faixas.filter((f) => f.estado === 'failed' || f.estado === 'conflict').length;
   }
 
-  // projetos, mais recentes primeiro
+  // projects, most recent first
   const projetos = new Map();
   for (const ex of lista.sort((a, b) => (a.atualizadoEm < b.atualizadoEm ? 1 : -1))) {
     const chave = ex.projetoDir || ex.projeto;
@@ -192,7 +192,7 @@ export function montarArvore(eventos, { projetoDir = null, feature = null } = {}
   return [...projetos.values()];
 }
 
-// ── poda: o ledger é único e append-only; não pode crescer para sempre ──────
+// ── pruning: the ledger is single and append-only; it cannot grow forever ──
 
 export function podarLedger(maxExecucoes = MAX_EXECUCOES) {
   const { ledger, streams } = caminhos();
@@ -209,7 +209,7 @@ export function podarLedger(maxExecucoes = MAX_EXECUCOES) {
   return { removidas: [...remover] };
 }
 
-// ── parser do stream do modelo (NDJSON do claude -p) ───────────────────────
+// ── model stream parser (claude -p NDJSON) ────────────────────────────────
 
 const CORTE = 400;
 const corta = (s, n = CORTE) => {
@@ -217,7 +217,7 @@ const corta = (s, n = CORTE) => {
   return t.length > n ? `${t.slice(0, n)}…` : t;
 };
 
-// resumo de uma linha por ferramenta: o que importa ver ao vivo
+// one-line summary per tool: what matters to watch live
 export function resumoFerramenta(nome, input = {}) {
   const rel = (p) => String(p || '').split('/').slice(-3).join('/');
   switch (nome) {
@@ -226,14 +226,14 @@ export function resumoFerramenta(nome, input = {}) {
     case 'Read':
       return rel(input.file_path);
     case 'Write':
-      return `${rel(input.file_path)} (${String(input.content || '').split('\n').length} linhas)`;
+      return `${rel(input.file_path)} (${String(input.content || '').split('\n').length} lines)`;
     case 'Edit':
       return `${rel(input.file_path)} — ${corta(String(input.old_string || '').split('\n')[0], 60)}`;
     case 'Glob':
     case 'Grep':
       return corta(input.pattern, 120);
     case 'TodoWrite':
-      return `${(input.todos || []).length} item(ns)`;
+      return `${(input.todos || []).length} item(s)`;
     case 'Task':
       return corta(input.description, 120);
     case 'WebFetch':
@@ -247,33 +247,33 @@ export function resumoFerramenta(nome, input = {}) {
   }
 }
 
-// resumo de uma linha por item do codex (`codex exec --json`): devolve
-// {nome, resumo} para itens tipo ferramenta, ou null para os que têm
-// tratamento próprio (mensagem, raciocínio, fim)
+// one-line summary per codex item (`codex exec --json`): returns
+// {nome, resumo} for tool-like items, or null for those with their own
+// handling (message, reasoning, end)
 export function resumoItemCodex(item = {}) {
   switch (item.type) {
     case 'command_execution':
       return { nome: 'Bash', resumo: corta(item.command, 200) };
     case 'file_change': {
       const mudancas = (item.changes || []).map((c) => `${c.kind || '?'} ${String(c.path || '').split('/').slice(-3).join('/')}`);
-      return { nome: 'Edição', resumo: corta(mudancas.join(', '), 200) };
+      return { nome: 'Edit', resumo: corta(mudancas.join(', '), 200) };
     }
     case 'mcp_tool_call':
       return { nome: [item.server, item.tool].filter(Boolean).join('.') || 'MCP', resumo: '' };
     case 'web_search':
       return { nome: 'WebSearch', resumo: corta(item.query, 120) };
     case 'todo_list':
-      return { nome: 'Plano', resumo: `${(item.items || []).length} item(ns)` };
+      return { nome: 'Todo', resumo: `${(item.items || []).length} item(s)` };
     default:
       return null;
   }
 }
 
-// resumo de uma linha por tool_call do CLI do Cursor (`agent -p
-// --output-format stream-json`): o corpo vem em `tool_call.<nome>ToolCall`
-// com `args` e, no completed, `result` (chave `success` = deu certo;
-// qualquer outra = erro). Devolve {nome, resumo, erro, temResultado, saida}
-// ou null quando o shape não é reconhecido.
+// one-line summary per tool_call of the Cursor CLI (`agent -p
+// --output-format stream-json`): the body comes in `tool_call.<nome>ToolCall`
+// with `args` and, on completed, `result` (key `success` = it worked; any
+// other key = error). Returns {nome, resumo, erro, temResultado, saida}
+// or null when the shape is not recognized.
 const NOMES_TOOL_CURSOR = {
   shell: 'Bash',
   terminal: 'Bash',
@@ -290,7 +290,7 @@ const NOMES_TOOL_CURSOR = {
   webfetch: 'WebFetch',
   websearch: 'WebSearch',
   mcp: 'MCP',
-  todo: 'Plano',
+  todo: 'Todo',
 };
 
 export function resumoToolCallCursor(toolCall = {}) {
@@ -300,11 +300,11 @@ export function resumoToolCallCursor(toolCall = {}) {
   const args = corpo.args || {};
   const base = chave.slice(0, -'ToolCall'.length);
   const nome =
-    NOMES_TOOL_CURSOR[base.toLowerCase()] || (base ? base[0].toUpperCase() + base.slice(1) : 'Ferramenta');
+    NOMES_TOOL_CURSOR[base.toLowerCase()] || (base ? base[0].toUpperCase() + base.slice(1) : 'Tool');
   const rel = (p) => String(p || '').split('/').slice(-3).join('/');
   const str = (v) => (typeof v === 'string' && v ? v : null);
-  // ordem: o que importa ver ao vivo — comando > padrão/consulta > caminho
-  // (num grep com pattern E path, esconder o pattern seria esconder a busca)
+  // order: what matters to watch live — command > pattern/query > path
+  // (in a grep with both pattern and path, hiding the pattern would hide the search)
   let resumo = '';
   const comando = str(args.command);
   const busca = str(args.pattern) ?? str(args.query) ?? str(args.url);
@@ -319,7 +319,7 @@ export function resumoToolCallCursor(toolCall = {}) {
   const resultado = corpo.result;
   const temResultado = resultado != null && typeof resultado === 'object';
   const erro = temResultado && !('success' in resultado);
-  // saída legível quando o resultado traz texto (o shape varia por ferramenta)
+  // readable output when the result carries text (the shape varies per tool)
   let saida = null;
   if (temResultado) {
     const dono = erro ? Object.values(resultado)[0] : resultado.success;
@@ -344,8 +344,8 @@ function textoDeConteudo(conteudo) {
   return '';
 }
 
-// Transforma o NDJSON cru numa linha do tempo. `desde` = linhas já lidas
-// (leitura incremental); devolve também o total para o próximo pedido.
+// Turns the raw NDJSON into a timeline. `desde` = lines already read
+// (incremental reading); also returns the total for the next request.
 export function resumirStream(texto, { desde = 0 } = {}) {
   const linhas = String(texto || '').split('\n').filter((l) => l.trim());
   const novas = linhas.slice(desde);
@@ -365,7 +365,7 @@ export function resumirStream(texto, { desde = 0 } = {}) {
     if (e.type === 'system' && e.subtype === 'init') {
       itens.push({ tipo: 'inicio', modelo: e.model, sessao: String(e.session_id || '').slice(0, 8) });
     } else if (e.type === 'system' && e.subtype === 'thinking_tokens') {
-      // agrega: um item de "pensando" que cresce, em vez de dezenas de linhas
+      // aggregate: one growing "thinking" item instead of dozens of lines
       if (pensando) pensando.tokens = e.estimated_tokens;
       else {
         pensando = { tipo: 'pensando', tokens: e.estimated_tokens, texto: '' };
@@ -384,7 +384,7 @@ export function resumirStream(texto, { desde = 0 } = {}) {
         } else if (c.type === 'thinking') {
           const t = String(c.thinking || '');
           if (t.trim()) {
-            // texto disponível (nem sempre: em headless costuma vir redigido)
+            // text available (not always: headless usually comes redacted)
             if (pensando) pensando.texto = corta(t, 1200);
             else itens.push({ tipo: 'pensando', tokens: null, texto: corta(t, 1200) });
           }
@@ -407,7 +407,7 @@ export function resumirStream(texto, { desde = 0 } = {}) {
     } else if (e.type === 'result') {
       pensando = null;
       resumo = {
-        status: e.is_error ? 'erro' : e.subtype === 'success' ? 'sucesso' : String(e.subtype || ''),
+        status: e.is_error ? 'error' : e.subtype === 'success' ? 'success' : String(e.subtype || ''),
         duracaoMs: e.duration_ms ?? null,
         turnos: e.num_turns ?? null,
         custoUsd: e.total_cost_usd ?? null,
@@ -416,8 +416,8 @@ export function resumirStream(texto, { desde = 0 } = {}) {
       };
       itens.push({ tipo: 'fim', ...resumo, texto: corta(e.result, 600) });
     } else if (e.type === 'tool_call' && e.subtype === 'completed' && e.tool_call) {
-      // CLI do Cursor: a ferramenta chega como tool_call (started/completed);
-      // só o completed entra na linha do tempo — o started viraria duplicata
+      // Cursor CLI: the tool arrives as tool_call (started/completed); only
+      // the completed one enters the timeline — the started would be a duplicate
       const fer = resumoToolCallCursor(e.tool_call);
       if (fer) {
         pensando = null;
@@ -427,14 +427,14 @@ export function resumirStream(texto, { desde = 0 } = {}) {
           resumo: fer.resumo,
           detalhe: corta(JSON.stringify(e.tool_call, null, 2), 1200),
         });
-        // como no codex, chamada e resultado chegam juntos — o parser separa
-        // para a linha do tempo ficar igual à do claude (ferramenta + saída)
+        // as in codex, call and result arrive together — the parser splits
+        // them so the timeline looks like claude's (tool + output)
         if (fer.saida != null || fer.erro) {
           itens.push({ tipo: 'saida', erro: fer.erro, texto: corta(fer.saida ?? '', 600) });
         }
       }
     } else if (e.type === 'thread.started') {
-      // codex exec --json: começo da sessão
+      // codex exec --json: session start
       itens.push({ tipo: 'inicio', modelo: e.model || null, sessao: String(e.thread_id || '').slice(0, 8) });
     } else if (e.type === 'item.completed' && e.item) {
       const item = e.item;
@@ -463,8 +463,8 @@ export function resumirStream(texto, { desde = 0 } = {}) {
             resumo: fer.resumo,
             detalhe: corta(JSON.stringify(item, null, 2), 1200),
           });
-          // no codex, comando e saída chegam no MESMO item — o parser separa
-          // para a linha do tempo ficar igual à do claude (ferramenta + saída)
+          // as in codex, command and output arrive in the SAME item — the
+          // parser splits them so the timeline looks like claude's (tool + output)
           if (item.type === 'command_execution' && item.aggregated_output != null) {
             itens.push({
               tipo: 'saida',
@@ -478,7 +478,7 @@ export function resumirStream(texto, { desde = 0 } = {}) {
       pensando = null;
       turnosCodex += 1;
       resumo = {
-        status: e.type === 'turn.failed' ? 'erro' : 'sucesso',
+        status: e.type === 'turn.failed' ? 'error' : 'success',
         duracaoMs: null,
         turnos: turnosCodex,
         custoUsd: null,
@@ -501,7 +501,7 @@ export function lerStream(runId, chave, { desde = 0 } = {}) {
   return { ...resumirStream(readFileSync(caminho, 'utf-8'), { desde }), existe: true };
 }
 
-// streams gravados de uma execução (diagnóstico, mesmo sem evento)
+// streams recorded for an execution (diagnostic, even without events)
 export function streamsDaExecucao(runId) {
   const dir = path.join(caminhos().streams, runId);
   if (!existsSync(dir)) return [];

@@ -1,46 +1,45 @@
-// Plano de execução — transforma as tarefas pendentes de tasks.md em FAIXAS:
-// tarefas com `Arquivos:` disjuntos podem rodar em PARALELO (1 faixa = 1
-// git worktree + 1 branch + 1 janela de contexto limpa); tarefas que
-// compartilham arquivo caem na MESMA faixa (sequência dentro dela); tarefa
-// sem `Arquivos:` tem pegada desconhecida → roda ao final, uma a uma, na
-// árvore principal.
+// Execution plan — turns the pending tasks of tasks.md into LANES: tasks with
+// disjoint `Files:` can run in PARALLEL (1 lane = 1 git worktree + 1 branch +
+// 1 clean context window); tasks that share a file fall into the SAME lane
+// (sequence within it); a task without `Files:` has unknown footprint → runs
+// at the end, one by one, on the main tree.
 //
-// PARALELIZAR É ESCOLHA DO USUÁRIO: o agente pergunta antes — inclusive QUAIS
-// tarefas paralelizar. Com `--paralelizar T-001,T-003`, só as escolhidas
-// concorrem às faixas; as demais rodam uma após a outra, na árvore principal,
-// depois das ondas. Com `--sequencial`, o plano roda TODAS as tarefas uma
-// após a outra (sem worktrees) — mesma disciplina de commits e mesmo gate.
+// PARALLELIZING IS THE USER'S CHOICE: the agent asks first — including WHICH
+// tasks to parallelize. With `--paralelizar T-001,T-003`, only the chosen ones
+// compete for lanes; the rest run one after another, on the main tree, after
+// the waves. With `--sequencial`, the plan runs ALL tasks one after another
+// (no worktrees) — same commit discipline and same gate.
 //
-// O CÁLCULO do plano é agnóstico de agente. Os ARTEFATOS variam:
+// The plan CALCULATION is agent-agnostic. The ARTIFACTS vary:
 //   claude      → plano-execucao.md + executar-tarefas.sh (claude -p headless,
-//                 com --model e --effort por tarefa, e o resumo geral de
-//                 andamento a cada 1 min no terminal) + plano-execucao.html
-//                 (visual, somente leitura)
-//   codex       → mesmos artefatos do claude, mas o executor roda
-//                 `codex exec` headless (--json, --sandbox, --model e
-//                 model_reasoning_effort por tarefa) — nunca depende do CLI
-//                 do Claude
-//   cursor      → mesmos artefatos do claude, mas o executor roda o CLI do
-//                 Cursor (`agent -p`, legado `cursor-agent`) com
-//                 --output-format stream-json e --force (sem --force o modo
-//                 print não modifica arquivos); o Cursor não tem flag de
-//                 esforço — esforço é sufixo do slug do modelo
-//   antigravity → plano-execucao.md com comandos de worktree e um PROMPT
-//                 pronto por faixa, para os agentes paralelos nativos do
-//                 Antigravity (nunca depende de CLI nenhum)
+//                 with --model and --effort per task, and the general progress
+//                 summary every 1 min in the terminal) + plano-execucao.html
+//                 (visual, read-only)
+//   codex       → same artifacts as claude, but the executor runs
+//                 `codex exec` headless (--json, --sandbox, --model and
+//                 model_reasoning_effort per task) — never depends on the
+//                 Claude CLI
+//   cursor      → same artifacts as claude, but the executor runs the Cursor
+//                 CLI (`agent -p`, legacy `cursor-agent`) with
+//                 --output-format stream-json and --force (without --force the
+//                 print mode doesn't modify files); Cursor has no effort flag —
+//                 effort is a suffix of the model slug
+//   antigravity → plano-execucao.md with worktree commands and a ready PROMPT
+//                 per lane, for Antigravity's native parallel agents (never
+//                 depends on any CLI)
 
 import path from 'path';
 import { foldStatus } from '../util/text.js';
 
 export const AGENTES = ['claude', 'antigravity', 'codex', 'cursor'];
 
-// agentes cujo plano gera executar-tarefas.sh + plano-execucao.html (CLI
-// headless próprio); o antigravity executa com os agentes nativos dele
+// agents whose plan generates executar-tarefas.sh + plano-execucao.html (their
+// own headless CLI); antigravity runs with its native agents
 export function usaExecutorSh(agent) {
   return agent === 'claude' || agent === 'codex' || agent === 'cursor';
 }
 
-// esforço aceito em PT ou EN → nível do CLI (`claude --effort <nível>`)
+// effort accepted in PT or EN → CLI level (`claude --effort <level>`)
 export const ESFORCO_CLI = {
   baixo: 'low',
   low: 'low',
@@ -59,20 +58,20 @@ export function normalizarEsforco(raw) {
   return ESFORCO_CLI[foldStatus(String(raw)).replace(/[\s_-]/g, '')] || null;
 }
 
-// defaults do codex quando a config ainda traz um modelo claude-* (a config
-// tem defaults do claude; um modelo do outro CLI quebraria o codex exec)
+// codex defaults when the config still carries a claude-* model (the config
+// has claude defaults; a model from another CLI would break codex exec)
 const MODELO_CODEX = 'gpt-5.6-terra';
 const RESUMO_MODEL_CODEX = 'gpt-5.6-luna';
 const ehModeloClaude = (m) => /^claude-/.test(String(m || ''));
 
-// no Cursor, modelos claude-* são slugs VÁLIDOS (o Cursor serve Claude, GPT,
-// Gemini e os modelos da casa) — nada é trocado. Só o modelo do resumo por
-// minuto muda quando ainda é o default claude-haiku-4-5 (não é slug do
-// Cursor): entra o composer, modelo da casa com uso incluído nos planos.
+// in Cursor, claude-* models are VALID slugs (Cursor serves Claude, GPT,
+// Gemini and its own models) — nothing is swapped. Only the per-minute summary
+// model changes when it's still the claude-haiku-4-5 default (not a Cursor
+// slug): it becomes composer, the in-house model with usage included in plans.
 const RESUMO_MODEL_CURSOR = 'composer';
 const RESUMO_MODEL_DEFAULT = 'claude-haiku-4-5';
 
-// o codex não tem nível "max" — o teto do model_reasoning_effort é xhigh
+// codex has no "max" level — the ceiling of model_reasoning_effort is xhigh
 export function esforcoParaAgente(esforcoCli, agent) {
   if (agent === 'codex' && esforcoCli === 'max') return 'xhigh';
   return esforcoCli;
@@ -93,37 +92,37 @@ function normFile(f) {
   return f.split('\\').join('/').replace(/^\.\//, '');
 }
 
-// ── cálculo ────────────────────────────────────────────────────────────────
+// ── calculation ─────────────────────────────────────────────────────────────
 
 export function montarPlano(project, featureName, opts = {}) {
   const agent = AGENTES.includes(opts.agent) ? opts.agent : 'claude';
   const feature = project.features.find((f) => f.name === featureName);
-  if (!feature) return { erro: `feature "${featureName}" não encontrada em ${project.config.specDir}/features/` };
+  if (!feature) return { erro: `feature "${featureName}" not found in ${project.config.specDir}/features/` };
   if (!feature.tasks || !feature.tasks.tasks.length) {
-    return { erro: `feature "${featureName}" não tem tarefas em tasks.md — escreva as tarefas (T-xxx) primeiro` };
+    return { erro: `feature "${featureName}" has no tasks in tasks.md — write the tasks (T-xxx) first` };
   }
 
   const cfg = project.config.paralelo;
   const avisos = [];
 
-  // escolha explícita do usuário para o plano INTEIRO (--modelo/--esforco):
-  // vence tasks.md e config — é assim que quem tem licença apertada trava o
-  // gasto de tokens sem editar arquivo nenhum
+  // explicit user choice for the WHOLE plan (--modelo/--esforco): overrides
+  // tasks.md and config — this is how someone on a tight license caps the
+  // token spend without editing any file
   let esforcoForcado = null;
   if (opts.esforco != null) {
     esforcoForcado = normalizarEsforco(opts.esforco);
     if (!esforcoForcado) {
-      return { erro: `--esforco "${opts.esforco}" desconhecido (aceitos: baixo|medio|alto|xalto|max)` };
+      return { erro: `--esforco "${opts.esforco}" unknown (accepted: low|medium|high|xhigh|max)` };
     }
   }
   const modeloForcado = opts.modelo || null;
   if (modeloForcado && agent === 'codex' && ehModeloClaude(modeloForcado)) {
     return {
-      erro: `--modelo "${modeloForcado}" é um modelo do Claude — este plano é do codex (use um modelo do Codex, ex.: gpt-5.6-terra, gpt-5.6-luna)`,
+      erro: `--modelo "${modeloForcado}" is a Claude model — this plan is for codex (use a Codex model, e.g.: gpt-5.6-terra, gpt-5.6-luna)`,
     };
   }
 
-  // título dos critérios de aceite, para dar contexto humano nos prompts
+  // titles of the acceptance criteria, for human context in the prompts
   const acTitulo = {};
   for (const f of project.features) {
     if (!f.spec) continue;
@@ -133,21 +132,21 @@ export function montarPlano(project, featureName, opts = {}) {
   const concluidas = [];
   const pendentes = [];
   for (const t of feature.tasks.tasks) {
-    if (t.status === 'concluida') {
+    if (t.status === 'done') {
       concluidas.push(t);
       continue;
     }
-    if (t.status === 'em-andamento') {
-      avisos.push(`${t.id} está [em-andamento] — entrou no plano; se já houver trabalho local, commite antes de executar`);
+    if (t.status === 'in-progress') {
+      avisos.push(`${t.id} is [in-progress] — it joined the plan; if there's local work, commit it before executing`);
     }
     const esforcoRaw = esforcoForcado || t.esforco || cfg.esforco;
     const esforcoCli = normalizarEsforco(esforcoRaw);
     if (!esforcoCli) {
-      avisos.push(`${t.id}: esforço "${esforcoRaw}" desconhecido — usando "medium" (aceitos: baixo|medio|alto|xalto|max)`);
+      avisos.push(`${t.id}: unknown effort "${esforcoRaw}" — using "medium" (accepted: low|medium|high|xhigh|max)`);
     }
     let model = modeloForcado || t.model || cfg.model;
     if (agent === 'codex' && ehModeloClaude(model)) {
-      if (t.model) avisos.push(`${t.id}: modelo "${model}" é do Claude — no codex vai rodar com "${MODELO_CODEX}"`);
+      if (t.model) avisos.push(`${t.id}: model "${model}" is a Claude model — under codex it will run with "${MODELO_CODEX}"`);
       model = MODELO_CODEX;
     }
     pendentes.push({
@@ -160,12 +159,12 @@ export function montarPlano(project, featureName, opts = {}) {
   }
 
   if (!pendentes.length) {
-    return { erro: `todas as tarefas de "${featureName}" já estão [concluida] — nada a planejar` };
+    return { erro: `all tasks of "${featureName}" are already [done] — nothing to plan` };
   }
 
-  // modo sequencial (escolha do usuário): nada de faixas nem worktrees —
-  // TODAS as tarefas rodam uma após a outra, na árvore principal, na ordem
-  // do tasks.md; a disciplina de commits e o gate continuam os mesmos
+  // sequential mode (user's choice): no lanes, no worktrees — ALL tasks run
+  // one after another, on the main tree, in the tasks.md order; the commit
+  // discipline and the gate stay the same
   if (opts.sequencial) {
     pendentes.sort((a, b) => a.line - b.line);
     return fecharPlano(project, featureName, {
@@ -184,34 +183,34 @@ export function montarPlano(project, featureName, opts = {}) {
     });
   }
 
-  // seleção do usuário (--paralelizar T-001,T-003): só as escolhidas
-  // concorrem às faixas; as demais rodam ao final, uma a uma, na árvore
-  // principal — mesma disciplina de commits e mesmo gate
+  // user's selection (--paralelizar T-001,T-003): only the chosen ones
+  // compete for lanes; the rest run at the end, one by one, on the main
+  // tree — same commit discipline and same gate
   let selecao = null;
   if (Array.isArray(opts.paralelizar)) {
     selecao = [...new Set(opts.paralelizar)];
     if (!selecao.length) {
-      return { erro: 'seleção vazia em --paralelizar — para rodar tudo uma após a outra, use --sequencial' };
+      return { erro: 'empty selection in --paralelizar — to run everything one after another, use --sequencial' };
     }
     const ids = new Set(pendentes.map((t) => t.id));
     const desconhecidas = selecao.filter((id) => !ids.has(id));
     if (desconhecidas.length) {
       return {
-        erro: `--paralelizar cita tarefa(s) que não estão pendentes em "${featureName}": ${desconhecidas.join(', ')}`,
+        erro: `--paralelizar cites task(s) that are not pending in "${featureName}": ${desconhecidas.join(', ')}`,
       };
     }
   }
 
-  // agrupa por conflito de arquivos: componentes conexos viram faixas
+  // group by file conflict: connected components become lanes
   const escolhida = (t) => !selecao || selecao.includes(t.id);
   const comArquivos = pendentes.filter((t) => t.files.length && escolhida(t));
   const sequenciais = pendentes.filter((t) => !t.files.length || !escolhida(t));
   for (const t of sequenciais) {
     if (!t.files.length) {
-      t.motivoSeq = 'sem `Arquivos:` — pegada desconhecida';
-      avisos.push(`${t.id} não lista Arquivos: — pegada desconhecida, vai rodar sozinha ao final (sem paralelismo)`);
+      t.motivoSeq = 'no `Files:` — unknown footprint';
+      avisos.push(`${t.id} lists no Files: — unknown footprint, it will run alone at the end (no parallelism)`);
     } else {
-      t.motivoSeq = 'fora da seleção do usuário';
+      t.motivoSeq = 'outside the user\'s selection';
     }
   }
 
@@ -221,7 +220,7 @@ export function montarPlano(project, featureName, opts = {}) {
     if (!donos.length) {
       faixas.push({ tasks: [t], fileSet: new Set(t.files) });
     } else {
-      // conflita com 1+ faixas: funde todas na primeira e acrescenta a tarefa
+      // conflicts with 1+ lanes: merge them all into the first and add the task
       const alvo = donos[0];
       for (const outra of donos.slice(1)) {
         alvo.tasks.push(...outra.tasks);
@@ -232,7 +231,7 @@ export function montarPlano(project, featureName, opts = {}) {
       for (const f of t.files) alvo.fileSet.add(f);
     }
   }
-  // ordem estável: pela primeira tarefa (ordem do tasks.md)
+  // stable order: by the first task (tasks.md order)
   faixas.sort((a, b) => a.tasks[0].line - b.tasks[0].line);
   for (const fx of faixas) fx.tasks.sort((a, b) => a.line - b.line);
 
@@ -243,7 +242,7 @@ export function montarPlano(project, featureName, opts = {}) {
     fx.worktree = `../onp-worktrees/${repoName}-${featureName}-faixa-${i + 1}`;
   });
 
-  // ondas: no máximo maxParalelas faixas simultâneas
+  // waves: at most maxParalelas simultaneous lanes
   const max = Math.max(1, cfg.maxParalelas | 0 || 3);
   const ondas = [];
   for (let i = 0; i < faixas.length; i += max) ondas.push(faixas.slice(i, i + max));
@@ -265,10 +264,10 @@ export function montarPlano(project, featureName, opts = {}) {
   });
 }
 
-// campos comuns aos dois modos (paralelo e sequencial)
+// fields common to both modes (parallel and sequential)
 function fecharPlano(project, featureName, { agent, opts, cfg, avisos, acTitulo, concluidas, modo, faixas, ondas, sequenciais, paralelizar = null, modeloForcado = null, esforcoForcado = null }) {
   const repoName = path.basename(project.config.rootDir);
-  // como invocar o motor a partir da raiz do projeto
+  // how to invoke the engine from the project root
   let engine = opts.enginePath || 'onp-spec';
   if (path.isAbsolute(engine)) {
     const rel = path.relative(project.config.rootDir, engine);
@@ -279,7 +278,7 @@ function fecharPlano(project, featureName, { agent, opts, cfg, avisos, acTitulo,
     agent,
     modo,
     feature: featureName,
-    // identidade desta execução no ledger global (muda a cada plano gerado)
+    // identity of this execution in the global ledger (changes on each generated plan)
     runId: opts.runId || `${repoName}-${featureName}-${Date.now().toString(36)}`,
     specDir: project.config.specDir,
     baseDir: `${project.config.specDir}/features/${featureName}`,
@@ -305,62 +304,62 @@ function fecharPlano(project, featureName, { agent, opts, cfg, avisos, acTitulo,
 
 function linhasRegras(plan) {
   const teste = plan.testCommand
-    ? `Rode os testes localmente com \`${plan.testCommand}\` até passarem.`
-    : 'Rode os testes do projeto localmente até passarem.';
+    ? `Run the tests locally with \`${plan.testCommand}\` until they pass.`
+    : 'Run the project\'s tests locally until they pass.';
   return [
-    'Regras inegociáveis:',
-    '- Todo critério de aceite referenciado vira teste com @spec:AC-xxx no título.',
-    '- NUNCA enfraqueça, pule (skip/todo) ou apague um teste para passar — teste pulado não é prova e o audit acusa.',
+    'Non-negotiable rules:',
+    '- Every referenced acceptance criterion becomes a test with @spec:AC-xxx in the title.',
+    '- NEVER weaken, skip (skip/todo) or delete a test to pass — a skipped test is not proof and the audit flags it.',
     `- ${teste}`,
-    '- NÃO edite tasks.md, NÃO rode onp-spec verify/audit e NÃO toque em outras tarefas — o orquestrador cuida disso.',
-    '- Ao final de CADA tarefa: `git add` só no que você tocou e um commit próprio.',
+    '- Do NOT edit tasks.md, do NOT run onp-spec verify/audit and do NOT touch other tasks — the orchestrator handles that.',
+    '- At the end of EACH task: `git add` only what you touched and one commit of your own.',
   ];
 }
 
 function descreveTarefa(plan, t) {
   const acs = t.acs.map((id) => (plan.acTitulo[id] ? `${id} (${plan.acTitulo[id]})` : id));
   const refs = acs.length ? acs.join(', ') : t.refs.join(', ') || '—';
-  const arquivos = t.files.length ? t.files.join(', ') : '(a definir pela tarefa)';
+  const arquivos = t.files.length ? t.files.join(', ') : '(to be defined by the task)';
   return [
     `${t.id} — "${t.title}"`,
-    `  critérios/refs: ${refs}`,
-    `  arquivos permitidos (e seus testes): ${arquivos}`,
-    `  mensagem de commit: "${t.id} ${plan.feature}: ${t.title}"`,
+    `  criteria/refs: ${refs}`,
+    `  allowed files (and their tests): ${arquivos}`,
+    `  commit message: "${t.id} ${plan.feature}: ${t.title}"`,
   ];
 }
 
-// prompt de UMA tarefa (script claude headless e tarefas sequenciais)
+// prompt for ONE task (claude headless script and sequential tasks)
 export function promptTarefa(plan, t) {
   return [
-    `Você executa UMA tarefa da feature "${plan.feature}" (fluxo onp-spec, spec-anchored).`,
-    `Leia primeiro: ${plan.baseDir}/spec.md, ${plan.baseDir}/tasks.md e .spec/constituicao.md.`,
+    `You execute ONE task of feature "${plan.feature}" (onp-spec flow, spec-anchored).`,
+    `Read first: ${plan.baseDir}/spec.md, ${plan.baseDir}/tasks.md and .spec/constituicao.md.`,
     '',
-    'Sua tarefa (somente ela):',
+    'Your task (only it):',
     ...descreveTarefa(plan, t),
     '',
     ...linhasRegras(plan),
   ].join('\n');
 }
 
-// prompt de uma FAIXA inteira (uma janela limpa executa as tarefas em ordem)
+// prompt for an ENTIRE lane (one clean window runs the tasks in order)
 export function promptFaixa(plan, fx, { worktree = true } = {}) {
   const onde = worktree
-    ? `Trabalhe SOMENTE dentro do worktree ${fx.worktree} (branch ${fx.branch}) — já preparado.`
-    : 'Trabalhe na árvore principal do repositório.';
+    ? `Work ONLY inside the worktree ${fx.worktree} (branch ${fx.branch}) — already prepared.`
+    : 'Work on the repository\'s main tree.';
   return [
-    `Você executa as tarefas da ${fx.id} da feature "${plan.feature}" (fluxo onp-spec, spec-anchored).`,
+    `You execute the tasks of ${fx.id} of feature "${plan.feature}" (onp-spec flow, spec-anchored).`,
     onde,
-    `Leia primeiro: ${plan.baseDir}/spec.md, ${plan.baseDir}/tasks.md e .spec/constituicao.md.`,
+    `Read first: ${plan.baseDir}/spec.md, ${plan.baseDir}/tasks.md and .spec/constituicao.md.`,
     '',
-    `Execute NESTA ORDEM (1 tarefa = 1 commit):`,
+    `Execute IN THIS ORDER (1 task = 1 commit):`,
     ...fx.tasks.flatMap((t) => descreveTarefa(plan, t)),
     '',
     ...linhasRegras(plan),
-    'Quando a última tarefa estiver commitada, PARE e informe o resultado — a mesclagem é do orquestrador.',
+    'When the last task is committed, STOP and report the result — the merge is the orchestrator\'s job.',
   ].join('\n');
 }
 
-// ── artefato: plano.json (leitura de máquina — alimenta o ledger/resumo) ──
+// ── artifact: plano.json (machine reading — feeds the ledger/resumo) ────────
 
 export function renderPlanoJson(plan) {
   const tarefa = (t) => ({
@@ -402,11 +401,11 @@ export function renderPlanoJson(plan) {
   )}\n`;
 }
 
-// ── artefato: plano-execucao.md ────────────────────────────────────────────
+// ── artifact: plano-execucao.md ─────────────────────────────────────────────
 
 function tabelaFaixa(plan, fx) {
   const linhas = [
-    '| tarefa | título | modelo | esforço | arquivos |',
+    '| task | title | model | effort | files |',
     '|---|---|---|---|---|',
   ];
   for (const t of fx.tasks) {
@@ -415,7 +414,7 @@ function tabelaFaixa(plan, fx) {
   return linhas;
 }
 
-// flags que reproduzem este plano (para o "regenere com" dos artefatos)
+// flags that reproduce this plan (for the "regenerate with" of the artifacts)
 function flagsRegenerar(plan) {
   let flags = '';
   if (plan.modo === 'sequencial') flags += ' --sequencial';
@@ -429,43 +428,43 @@ export function renderPlanoMd(plan) {
   const L = [];
   const paralelas = plan.faixas.reduce((n, fx) => n + fx.tasks.length, 0);
   const sequencial = plan.modo === 'sequencial';
-  L.push(`# Plano de execução — ${plan.feature}`);
+  L.push(`# Execution plan — ${plan.feature}`);
   L.push('');
-  L.push(`> gerado por \`onp-spec plano\` em ${plan.geradoEm} — NÃO edite à mão;`);
-  L.push(`> mudou tasks.md ou a config? Regenere: \`onp-spec plano ${plan.feature}${flagsRegenerar(plan)}\``);
+  L.push(`> generated by \`onp-spec plano\` at ${plan.geradoEm} — do NOT edit by hand;`);
+  L.push(`> changed tasks.md or the config? Regenerate: \`onp-spec plano ${plan.feature}${flagsRegenerar(plan)}\``);
   L.push('');
-  L.push('## Resumo — o que vai acontecer');
+  L.push('## Summary — what is going to happen');
   L.push('');
   if (sequencial) {
-    L.push(`- **modo SEQUENCIAL (escolha do usuário)**: ${plan.sequenciais.length} tarefa(s) pendente(s), UMA APÓS A OUTRA, na árvore principal${plan.concluidas.length ? ` (${plan.concluidas.length} já concluída(s): ${plan.concluidas.map((t) => t.id).join(', ')})` : ''}`);
-    L.push('- sem worktrees e sem paralelismo — cada tarefa roda numa janela de contexto limpa, na ordem do tasks.md');
+    L.push(`- **SEQUENTIAL mode (user's choice)**: ${plan.sequenciais.length} pending task(s), ONE AFTER ANOTHER, on the main tree${plan.concluidas.length ? ` (${plan.concluidas.length} already done: ${plan.concluidas.map((t) => t.id).join(', ')})` : ''}`);
+    L.push('- no worktrees and no parallelism — each task runs in a clean context window, in the tasks.md order');
   } else {
-    L.push(`- **${paralelas + plan.sequenciais.length} tarefa(s) pendente(s)**: ${paralelas} em ${plan.faixas.length} faixa(s) paralela(s) + ${plan.sequenciais.length} sequencial(is)${plan.concluidas.length ? ` (${plan.concluidas.length} já concluída(s): ${plan.concluidas.map((t) => t.id).join(', ')})` : ''}`);
+    L.push(`- **${paralelas + plan.sequenciais.length} pending task(s)**: ${paralelas} in ${plan.faixas.length} parallel lane(s) + ${plan.sequenciais.length} sequential${plan.concluidas.length ? ` (${plan.concluidas.length} already done: ${plan.concluidas.map((t) => t.id).join(', ')})` : ''}`);
     if (plan.paralelizar) {
-      L.push(`- **seleção do usuário**: paralelizar só ${plan.paralelizar.join(', ')} — as demais rodam uma após a outra, ao final`);
+      L.push(`- **user's selection**: parallelize only ${plan.paralelizar.join(', ')} — the rest run one after another, at the end`);
     }
-    L.push(`- **1 faixa = 1 worktree + 1 branch + 1 janela de contexto limpa** — faixas não compartilham nenhum arquivo entre si`);
-    L.push(`- prefere outra seleção ou uma após a outra? Regenere com \`onp-spec plano ${plan.feature} --paralelizar T-xxx,T-yyy\` ou \`--sequencial\``);
+    L.push(`- **1 lane = 1 worktree + 1 branch + 1 clean context window** — lanes share no files with each other`);
+    L.push(`- prefer another selection or one after another? Regenerate with \`onp-spec plano ${plan.feature} --paralelizar T-xxx,T-yyy\` or \`--sequencial\``);
   }
   if (plan.modeloForcado || plan.esforcoForcado) {
     const partes = [];
-    if (plan.modeloForcado) partes.push(`modelo \`${plan.modeloForcado}\``);
-    if (plan.esforcoForcado) partes.push(`esforço \`${plan.esforcoForcado}\``);
-    L.push(`- **custo travado pelo usuário**: ${partes.join(' · ')} em TODAS as tarefas (vence tasks.md e config)`);
+    if (plan.modeloForcado) partes.push(`model \`${plan.modeloForcado}\``);
+    if (plan.esforcoForcado) partes.push(`effort \`${plan.esforcoForcado}\``);
+    L.push(`- **cost locked by the user**: ${partes.join(' · ')} in ALL tasks (overrides tasks.md and config)`);
   }
-  L.push(`- tudo acontece na branch de trabalho \`${plan.branchTrabalho}\`; levar para a main é decisão sua`);
+  L.push(`- everything happens on the work branch \`${plan.branchTrabalho}\`; merging to main is your decision`);
   if (plan.avisos.length) {
     L.push('');
-    L.push('### Avisos');
+    L.push('### Warnings');
     L.push('');
     for (const a of plan.avisos) L.push(`- ⚠ ${a}`);
   }
   L.push('');
   if (!sequencial) {
-    L.push('## Faixas e ondas');
+    L.push('## Lanes and waves');
     L.push('');
     plan.ondas.forEach((onda, i) => {
-      L.push(`### Onda ${i + 1} — ${onda.map((fx) => fx.id).join(' ∥ ')}`);
+      L.push(`### Wave ${i + 1} — ${onda.map((fx) => fx.id).join(' ∥ ')}`);
       L.push('');
       for (const fx of onda) {
         L.push(`#### ${fx.id} — branch \`${fx.branch}\` — worktree \`${fx.worktree}\``);
@@ -476,45 +475,45 @@ export function renderPlanoMd(plan) {
     });
   }
   if (plan.sequenciais.length) {
-    L.push(sequencial ? '## Ordem de execução (uma tarefa após a outra)' : '## Tarefas sequenciais (após as ondas, na árvore principal)');
+    L.push(sequencial ? '## Execution order (one task after another)' : '## Sequential tasks (after the waves, on the main tree)');
     L.push('');
-    L.push(`| tarefa | título | modelo | esforço |${sequencial ? '' : ' por que sequencial |'}`);
+    L.push(`| task | title | model | effort |${sequencial ? '' : ' why sequential |'}`);
     L.push(`|---|---|---|---|${sequencial ? '' : '---|'}`);
     for (const t of plan.sequenciais) {
       L.push(`| ${t.id} | ${t.title} | \`${t.model}\` | ${t.esforcoCli} |${sequencial ? '' : ` ${t.motivoSeq || '—'} |`}`);
     }
     L.push('');
   }
-  L.push('## Gestão de branches e commits');
+  L.push('## Branch and commit management');
   L.push('');
-  L.push(`1. branch de trabalho \`${plan.branchTrabalho}\` criada do ponto atual (se ainda não existir)`);
+  L.push(`1. work branch \`${plan.branchTrabalho}\` created from the current point (if it doesn\'t exist yet)`);
   if (sequencial) {
-    L.push('2. as tarefas rodam nela mesma, na ordem — **1 tarefa = 1 commit** (`T-xxx feature: título`), marcada `[concluida]` só com trabalho feito');
-    L.push(`3. gate final na branch de trabalho: \`onp-spec verify ${plan.feature}\` + \`onp-spec audit --ci\` — **exit 0 ou não está pronto**`);
+    L.push('2. the tasks run on it, in order — **1 task = 1 commit** (`T-xxx feature: title`), marked `[done]` only with work actually done');
+    L.push(`3. final gate on the work branch: \`onp-spec verify ${plan.feature}\` + \`onp-spec audit --ci\` — **exit 0 or it isn't ready**`);
   } else {
-    L.push('2. cada faixa nasce dela como branch própria e roda no seu worktree — **1 tarefa = 1 commit** (`T-xxx feature: título`)');
-    L.push('3. terminou a onda → merge `--no-ff` de cada faixa de volta, na ordem; conflito interrompe a faixa e pede resolução humana');
-    L.push('4. faixa mesclada → worktree removido, branch apagada, tarefa marcada `[concluida]` no tasks.md');
-    L.push(`5. gate final na branch de trabalho: \`onp-spec verify ${plan.feature}\` + \`onp-spec audit --ci\` — **exit 0 ou não está pronto**`);
+    L.push('2. each lane is born from it as its own branch and runs in its own worktree — **1 task = 1 commit** (`T-xxx feature: title`)');
+    L.push('3. wave finished → merge `--no-ff` of each lane back, in order; a conflict stops the lane and asks for human resolution');
+    L.push('4. merged lane → worktree removed, branch deleted, task marked `[done]` in tasks.md');
+    L.push(`5. final gate on the work branch: \`onp-spec verify ${plan.feature}\` + \`onp-spec audit --ci\` — **exit 0 or it isn't ready**`);
   }
   L.push('');
-  L.push('## Como executar');
+  L.push('## How to execute');
   L.push('');
   if (usaExecutorSh(plan.agent)) {
     const codex = plan.agent === 'codex';
     const cursor = plan.agent === 'cursor';
-    const cliTarefa = codex ? '`codex exec`' : cursor ? '`agent -p` (CLI do Cursor)' : '`claude -p`';
+    const cliTarefa = codex ? '`codex exec`' : cursor ? '`agent -p` (Cursor CLI)' : '`claude -p`';
     const ajustes = codex
-      ? `\`--model\` e \`model_reasoning_effort\` já definidos por tarefa e sandbox \`${plan.cfg.sandbox}\``
+      ? `\`--model\` and \`model_reasoning_effort\` already set per task and sandbox \`${plan.cfg.sandbox}\``
       : cursor
-        ? '`--model` já definido por tarefa e `--force` (sem ele o modo print do Cursor não modifica arquivos)'
-        : `\`--model\` e \`--effort\` já definidos por tarefa e permissões \`${plan.cfg.permissionMode}\``;
+        ? '`--model` already set per task and `--force` (without it Cursor\'s print mode doesn\'t modify files)'
+        : `\`--model\` and \`--effort\` already set per task and permissions \`${plan.cfg.permissionMode}\``;
     L.push(
       codex
-        ? '### ▶ Execução — Codex headless (codex exec)'
+        ? '### ▶ Execution — Codex headless (codex exec)'
         : cursor
-          ? '### ▶ Execução — Cursor headless (agent CLI)'
-          : '### ▶ Execução — Claude Code headless'
+          ? '### ▶ Execution — Cursor headless (agent CLI)'
+          : '### ▶ Execution — Claude Code headless'
     );
     L.push('');
     L.push('```bash');
@@ -522,59 +521,59 @@ export function renderPlanoMd(plan) {
     L.push('```');
     L.push('');
     if (sequencial) {
-      L.push(`Cada tarefa roda ${cliTarefa} com **janela de contexto limpa**, na árvore principal,`);
-      L.push(`uma após a outra, com ${ajustes}.`);
-      L.push('Os prompts exatos estão embutidos no script.');
+      L.push(`Each task runs ${cliTarefa} with a **clean context window**, on the main tree,`);
+      L.push(`one after another, with ${ajustes}.`);
+      L.push('The exact prompts are embedded in the script.');
     } else {
-      L.push(`Cada faixa roda ${cliTarefa} com **janela de contexto limpa**, no seu worktree, com`);
-      L.push(`${ajustes}. Os prompts exatos estão`);
-      L.push('embutidos no script — quer rodar uma faixa na mão, é só copiá-los de lá.');
+      L.push(`Each lane runs ${cliTarefa} with a **clean context window**, in its worktree, with`);
+      L.push(`${ajustes}. The exact prompts are`);
+      L.push('embedded in the script — want to run a lane by hand, just copy them from there.');
     }
     L.push(`Logs: \`../onp-worktrees/${plan.repoName}-${plan.feature}-logs/\`.`);
     if (codex) {
       L.push('');
-      L.push('**Confirmação de custos — antes de executar**: os modelos e esforços por');
-      L.push('tarefa estão nas tabelas acima; o agente CONFIRMA com o usuário se estão');
-      L.push('dentro da licença/cota dele (modelo forte + esforço alto torra tokens).');
-      L.push(`Para gastar menos: \`onp-spec plano ${plan.feature} --modelo gpt-5.6-luna --esforco baixo\``);
-      L.push(`(tudo) ou por tarefa \`onp-spec tarefa ${plan.feature} T-xxx --modelo <m> --esforco <nível>\` — e regenere o plano.`);
+      L.push('**Cost confirmation — before executing**: the models and efforts per');
+      L.push('task are in the tables above; the agent CONFIRMS with the user that they are');
+      L.push('within his license/quota (strong model + high effort burns tokens).');
+      L.push(`To spend less: \`onp-spec plano ${plan.feature} --modelo gpt-5.6-luna --esforco baixo\``);
+      L.push(`(all) or per task \`onp-spec tarefa ${plan.feature} T-xxx --modelo <m> --esforco <level>\` — and regenerate the plan.`);
     }
     if (cursor) {
       L.push('');
-      L.push('**Confirmação de custos — antes de executar**: os modelos por tarefa estão');
-      L.push('nas tabelas acima; o agente CONFIRMA com o usuário se estão dentro do plano');
-      L.push('dele no Cursor (modelos claude-*/gpt-* são cobrados por uso; `composer` tem');
-      L.push(`uso incluído nos planos pagos). Para gastar menos: \`onp-spec plano ${plan.feature} --modelo composer\``);
-      L.push(`(tudo) ou por tarefa \`onp-spec tarefa ${plan.feature} T-xxx --modelo <m>\` — e regenere o plano.`);
+      L.push('**Cost confirmation — before executing**: the models per task are');
+      L.push('in the tables above; the agent CONFIRMS with the user that they fit his');
+      L.push('Cursor plan (claude-*/gpt-* models are billed per usage; `composer` has');
+      L.push(`usage included in paid plans). To spend less: \`onp-spec plano ${plan.feature} --modelo composer\``);
+      L.push(`(all) or per task \`onp-spec tarefa ${plan.feature} T-xxx --modelo <m>\` — and regenerate the plan.`);
       L.push('');
-      L.push('**Esforço no Cursor**: o CLI não tem flag de esforço — o nível vai embutido');
-      L.push('no slug do modelo (ex.: `gpt-5.6-terra-high`). A coluna "esforço" acima é');
-      L.push('informativa e NÃO vira flag; para controlar o esforço, escolha o slug.');
+      L.push('**Effort in Cursor**: the CLI has no effort flag — the level goes embedded');
+      L.push('in the model slug (e.g.: `gpt-5.6-terra-high`). The "effort" column above is');
+      L.push('informative and does NOT become a flag; to control the effort, choose the slug.');
     }
     L.push('');
-    L.push('### 📣 Acompanhamento — tabela + resumo no chat (a cada 1 min)');
+    L.push('### 📣 Monitoring — table + summary in the chat (every 1 min)');
     L.push('');
-    L.push('O script roda em **background**: o agente AVISA o usuário antes de iniciar e,');
-    L.push('enquanto roda, posta no chat a cada ~1 minuto a **tabela de andamento** (qual');
-    L.push('tarefa está rodando, qual não está, o que concluiu/falhou) junto com o');
-    L.push('**resumo geral de andamento** (escrito por IA; sem IA, o motor resume). Ao');
-    L.push('final, o usuário recebe o resumo completo da execução. A qualquer momento:');
+    L.push('The script runs in **background**: the agent WARNS the user before starting and,');
+    L.push('while it runs, posts in the chat every ~1 minute the **progress table** (which');
+    L.push('task is running, which isn\'t, what finished/failed) together with the');
+    L.push('**general progress summary** (AI-written; without AI, the engine summarizes). When');
+    L.push('done, the user receives the full execution summary. At any time:');
     L.push('');
     L.push('```bash');
-    L.push(`onp-spec resumo ${plan.feature} --tabela   # a tabela de andamento`);
-    L.push(`onp-spec resumo ${plan.feature}            # o resumo em texto`);
+    L.push(`onp-spec resumo ${plan.feature} --tabela   # the progress table`);
+    L.push(`onp-spec resumo ${plan.feature}            # the text summary`);
     L.push('```');
   } else if (sequencial) {
-    L.push('### ▶ Sequencial no Antigravity (uma tarefa após a outra, sem Claude CLI)');
+    L.push('### ▶ Sequential on Antigravity (one task after another, no Claude CLI)');
     L.push('');
-    L.push('1. **Entre na branch de trabalho** (terminal, na raiz do repositório):');
+    L.push('1. **Enter the work branch** (terminal, at the repo root):');
     L.push('');
     L.push('```bash');
-    L.push(`git checkout -b ${plan.branchTrabalho}   # ou: git checkout ${plan.branchTrabalho}`);
+    L.push(`git checkout -b ${plan.branchTrabalho}   # or: git checkout ${plan.branchTrabalho}`);
     L.push('```');
     L.push('');
-    L.push('2. **Execute as tarefas NA ORDEM, uma após a outra** (janela limpa por tarefa');
-    L.push('   ajuda o foco; a próxima só começa quando a anterior commitou):');
+    L.push('2. **Execute the tasks IN ORDER, one after another** (clean window per task');
+    L.push('   helps focus; the next only starts when the previous committed):');
     L.push('');
     for (const t of plan.sequenciais) {
       L.push(`#### Prompt — ${t.id}`);
@@ -583,45 +582,45 @@ export function renderPlanoMd(plan) {
       L.push(promptTarefa(plan, t));
       L.push('```');
       L.push('');
-      L.push(`\`node ${plan.engine} tarefa ${plan.feature} ${t.id} concluida\` após o commit.`);
+      L.push(`\`node ${plan.engine} tarefa ${plan.feature} ${t.id} done\` after the commit.`);
       L.push('');
     }
-    L.push('3. **Gate final** (exit 0 ou não está pronto):');
+    L.push('3. **Final gate** (exit 0 or it isn\'t ready):');
     L.push('');
     L.push('```bash');
     L.push(`node ${plan.engine} verify ${plan.feature}`);
     L.push(`node ${plan.engine} audit --ci`);
     L.push('```');
     L.push('');
-    L.push('4. **Acompanhamento (a cada ~1 min, enquanto executa)**: avise ANTES de começar');
-    L.push('   que o trabalho roda em background e que o resumo completo vem ao final. Marque');
-    L.push('   cada tarefa no ledger ao começar e ao terminar (é disso que a tabela é feita):');
+    L.push('4. **Monitoring (every ~1 min, while it runs)**: warn BEFORE starting');
+    L.push('   that the work runs in background and that the full summary comes at the end. Mark');
+    L.push('   each task in the ledger when starting and finishing (that\'s what the table is made of):');
     L.push('');
     L.push('```bash');
-    L.push(`node ${plan.engine} evento --run ${plan.runId} --tipo tarefa --tarefa <T-xxx> --faixa seq --estado executando   # ao começar`);
-    L.push(`node ${plan.engine} evento --run ${plan.runId} --tipo tarefa --tarefa <T-xxx> --faixa seq --estado concluida    # após o commit`);
+    L.push(`node ${plan.engine} evento --run ${plan.runId} --tipo tarefa --tarefa <T-xxx> --faixa seq --estado running   # when starting`);
+    L.push(`node ${plan.engine} evento --run ${plan.runId} --tipo tarefa --tarefa <T-xxx> --faixa seq --estado done      # after the commit`);
     L.push('```');
     L.push('');
-    L.push('   E a cada ~1 min poste no chat a TABELA de andamento + um parágrafo curto,');
-    L.push('   registrando o texto no ledger:');
+    L.push('   And every ~1 min post in the chat the progress TABLE + a short paragraph,');
+    L.push('   recording the text in the ledger:');
     L.push('');
     L.push('```bash');
-    L.push(`node ${plan.engine} resumo ${plan.feature} --tabela   # a tabela — cole no chat`);
-    L.push(`node ${plan.engine} resumo ${plan.feature} --gravar --origem ia --texto "<2 a 4 frases do que está rolando>"`);
+    L.push(`node ${plan.engine} resumo ${plan.feature} --tabela   # the table — paste in the chat`);
+    L.push(`node ${plan.engine} resumo ${plan.feature} --gravar --origem ai --texto "<2 to 4 sentences of what is going on>"`);
     L.push('```');
   } else {
-    L.push('### ▶ Paralelo nativo no Antigravity (janelas limpas, sem Claude CLI)');
+    L.push('### ▶ Native parallel on Antigravity (clean windows, no Claude CLI)');
     L.push('');
-    L.push('1. **Prepare a branch de trabalho e os worktrees** (terminal, na raiz do repositório):');
+    L.push('1. **Prepare the work branch and the worktrees** (terminal, at the repo root):');
     L.push('');
     L.push('```bash');
-    L.push(`git checkout -b ${plan.branchTrabalho}   # ou: git checkout ${plan.branchTrabalho}`);
+    L.push(`git checkout -b ${plan.branchTrabalho}   # or: git checkout ${plan.branchTrabalho}`);
     for (const fx of plan.faixas) {
       L.push(`git worktree add ${fx.worktree} -b ${fx.branch}`);
     }
     L.push('```');
     L.push('');
-    L.push('2. **Abra um agente NOVO por faixa** (janela limpa) e cole o prompt da faixa:');
+    L.push('2. **Open a NEW agent per lane** (clean window) and paste the lane prompt:');
     L.push('');
     for (const fx of plan.faixas) {
       L.push(`#### Prompt — ${fx.id}`);
@@ -631,74 +630,74 @@ export function renderPlanoMd(plan) {
       L.push('```');
       L.push('');
     }
-    L.push('3. **Todas terminaram? Mescle na ordem e marque as tarefas** (na árvore principal):');
+    L.push('3. **All done? Merge in order and mark the tasks** (on the main tree):');
     L.push('');
     L.push('```bash');
     for (const fx of plan.faixas) {
       L.push(`git merge --no-ff ${fx.branch} -m "merge ${fx.id} (${plan.feature})"`);
       L.push(`git worktree remove ${fx.worktree} && git branch -d ${fx.branch}`);
-      for (const t of fx.tasks) L.push(`node ${plan.engine} tarefa ${plan.feature} ${t.id} concluida`);
+      for (const t of fx.tasks) L.push(`node ${plan.engine} tarefa ${plan.feature} ${t.id} done`);
     }
     L.push('```');
     if (plan.sequenciais.length) {
       L.push('');
-      L.push('4. **Tarefas sequenciais** — execute você mesmo (mesma janela ou nova), uma a uma:');
+      L.push('4. **Sequential tasks** — execute them yourself (same or new window), one by one:');
       L.push('');
       for (const t of plan.sequenciais) {
         L.push('```');
         L.push(promptTarefa(plan, t));
         L.push('```');
         L.push('');
-        L.push(`\`node ${plan.engine} tarefa ${plan.feature} ${t.id} concluida\` após o commit.`);
+        L.push(`\`node ${plan.engine} tarefa ${plan.feature} ${t.id} done\` after the commit.`);
         L.push('');
       }
     }
     L.push('');
-    L.push('5. **Gate final** (exit 0 ou não está pronto):');
+    L.push('5. **Final gate** (exit 0 or it isn\'t ready):');
     L.push('');
     L.push('```bash');
     L.push(`node ${plan.engine} verify ${plan.feature}`);
     L.push(`node ${plan.engine} audit --ci`);
     L.push('```');
     L.push('');
-    L.push('6. **Acompanhamento (a cada ~1 min, enquanto os agentes trabalham)**: avise ANTES');
-    L.push('   de despachar os agentes que o trabalho roda em background e que o resumo');
-    L.push('   completo vem ao final. Marque cada tarefa no ledger quando um agente começa');
-    L.push('   e quando termina (é disso que a tabela é feita):');
+    L.push('6. **Monitoring (every ~1 min, while the agents work)**: warn BEFORE');
+    L.push('   dispatching the agents that the work runs in background and that the full summary');
+    L.push('   complete comes at the end. Mark each task in the ledger when an agent starts');
+    L.push('   and when it finishes (that\'s what the table is made of):');
     L.push('');
     L.push('```bash');
-    L.push(`node ${plan.engine} evento --run ${plan.runId} --tipo tarefa --tarefa <T-xxx> --faixa <faixa-N> --estado executando`);
-    L.push(`node ${plan.engine} evento --run ${plan.runId} --tipo tarefa --tarefa <T-xxx> --faixa <faixa-N> --estado concluida`);
+    L.push(`node ${plan.engine} evento --run ${plan.runId} --tipo tarefa --tarefa <T-xxx> --faixa <faixa-N> --estado running`);
+    L.push(`node ${plan.engine} evento --run ${plan.runId} --tipo tarefa --tarefa <T-xxx> --faixa <faixa-N> --estado done`);
     L.push('```');
     L.push('');
-    L.push('   E a cada ~1 min poste no chat a TABELA de andamento + um parágrafo curto,');
-    L.push('   registrando o texto no ledger:');
+    L.push('   And every ~1 min post in the chat the progress TABLE + a short paragraph,');
+    L.push('   recording the text in the ledger:');
     L.push('');
     L.push('```bash');
-    L.push(`node ${plan.engine} resumo ${plan.feature} --tabela   # a tabela — cole no chat`);
-    L.push(`node ${plan.engine} resumo ${plan.feature} --gravar --origem ia --texto "<2 a 4 frases do que está rolando>"`);
+    L.push(`node ${plan.engine} resumo ${plan.feature} --tabela   # the table — paste in the chat`);
+    L.push(`node ${plan.engine} resumo ${plan.feature} --gravar --origem ai --texto "<2 to 4 sentences of what is going on>"`);
     L.push('```');
   }
   L.push('');
   return `${L.join('\n')}\n`;
 }
-// ── artefato: executar-tarefas.sh (claude e codex) ─────────────────────────
+// ── artifact: executar-tarefas.sh (claude and codex) ────────────────────────
 //
-// O script é um DISPATCHER, não um roteiro linear: cada faixa e cada tarefa
-// sequencial viram funções, então dá para reexecutar só o que falhou.
+// The script is a DISPATCHER, not a linear script: each lane and each
+// sequential task become functions, so you can re-run just what failed.
 //
-//   bash executar-tarefas.sh                  → tudo (ondas → sequenciais → gate)
-//   bash executar-tarefas.sh --faixa faixa-2  → só essa faixa (+ merge + gate)
-//   bash executar-tarefas.sh --seq T-004      → só essa tarefa sequencial
-//   bash executar-tarefas.sh --gate           → só verify + audit
-//   bash executar-tarefas.sh --listar         → o que existe para executar
+//   bash executar-tarefas.sh                  → everything (waves → sequentials → gate)
+//   bash executar-tarefas.sh --faixa faixa-2  → just that lane (+ merge + gate)
+//   bash executar-tarefas.sh --seq T-004      → just that sequential task
+//   bash executar-tarefas.sh --gate           → only verify + audit
+//   bash executar-tarefas.sh --listar         → what exists to execute
 //
-// Cada tarefa roda o CLI headless do agente com saída em JSONL:
+// Each task runs the agent's headless CLI with JSONL output:
 //   claude → `claude -p --output-format stream-json --verbose`
-//   codex  → `codex exec --json` (sandbox + --add-dir para o .git
-//            compartilhado dos worktrees)
-// O JSONL cru vai para o stream da tarefa no ledger global (ferramentas,
-// raciocínio, saídas, custo) — é de lá que o resumo tira a "última ação".
+//   codex  → `codex exec --json` (sandbox + --add-dir for the shared
+//            worktrees' .git)
+// The raw JSONL goes to the task's stream in the global ledger (tools,
+// reasoning, outputs, cost) — that's where the summary gets the "last action".
 
 const shq = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;
 
@@ -709,7 +708,7 @@ function allowedTools(plan) {
   return base.join(',');
 }
 
-// nome de função bash a partir do id da faixa (faixa-1 → faixa_1)
+// bash function name from the lane id (faixa-1 → faixa_1)
 const fn = (id) => id.replace(/-/g, '_');
 
 export function renderPlanoSh(plan) {
@@ -717,18 +716,18 @@ export function renderPlanoSh(plan) {
   const P = (...linhas) => L.push(...linhas);
 
   P('#!/usr/bin/env bash');
-  P(`# executar-tarefas.sh — gerado por \`onp-spec plano ${plan.feature}\` em ${plan.geradoEm}`);
-  P('# NÃO edite à mão: mudou tasks.md ou a config, regenere o plano.');
+  P(`# executar-tarefas.sh — generated by \`onp-spec plano ${plan.feature}\` at ${plan.geradoEm}`);
+  P('# do NOT edit by hand: changed tasks.md or the config, regenerate the plan.');
   P('#');
-  P('# uso:');
-  P('#   bash executar-tarefas.sh                  tudo (ondas → sequenciais → gate)');
-  P('#   bash executar-tarefas.sh --faixa <id>     reexecuta UMA faixa (+ merge + gate)');
-  P('#   bash executar-tarefas.sh --seq <T-xxx>    reexecuta UMA tarefa sequencial');
-  P('#   bash executar-tarefas.sh --gate           só o gate (verify + audit)');
-  P('#   bash executar-tarefas.sh --listar         mostra faixas, tarefas e estados');
-  P('#   (acrescente --sem-gate para não rodar o gate ao final)');
+  P('# usage:');
+  P('#   bash executar-tarefas.sh                  everything (waves → sequentials → gate)');
+  P('#   bash executar-tarefas.sh --faixa <id>     re-runs ONE lane (+ merge + gate)');
+  P('#   bash executar-tarefas.sh --seq <T-xxx>    re-runs ONE sequential task');
+  P('#   bash executar-tarefas.sh --gate           only the gate (verify + audit)');
+  P('#   bash executar-tarefas.sh --listar         shows lanes, tasks and states');
+  P('#   (add --sem-gate to skip the gate at the end)');
   P('#');
-  P(`# resumo do que está rolando, a qualquer momento: onp-spec resumo ${plan.feature}`);
+  P(`# what is going on, at any time: onp-spec resumo ${plan.feature}`);
   P('set -u');
   P('set -o pipefail');
   P('');
@@ -742,8 +741,8 @@ export function renderPlanoSh(plan) {
     P(`CODEX_FLAGS=(--sandbox ${shq(plan.cfg.sandbox || 'workspace-write')})`);
     P('STREAM_FLAGS=(--json)');
   } else if (cursor) {
-    P('# --force: sem ele o modo print do Cursor só propõe alterações (não escreve).');
-    P('# Controle fino é do usuário: permissions.deny em .cursor/cli.json VENCE o --force.');
+    P('# --force: without it Cursor\'s print mode only proposes changes (doesn\'t write).');
+    P('# Fine control is the user\'s: permissions.deny in .cursor/cli.json WINS over --force.');
     P('CURSOR_FLAGS=(--force)');
     P('STREAM_FLAGS=(--output-format stream-json)');
   } else {
@@ -761,45 +760,45 @@ export function renderPlanoSh(plan) {
   P(`info()     { printf '· %s\\n' "$*"; }`);
   P('falhar()   { vermelho "✘ $*"; exit 1; }');
   P('');
-  P('# eventos vão para o ledger GLOBAL (~/.onp-spec/painel/ledger.jsonl):');
-  P('# um arquivo para todos os projetos, é o que o onp-spec resumo lê');
+  P('# events go to the GLOBAL ledger (~/.onp-spec/painel/ledger.jsonl):');
+  P('# one file for all projects, that\'s what onp-spec resumo reads');
   P('evento() { node "$ENGINE" evento --run "$RUN_ID" "$@" >/dev/null 2>&1 || true; }');
   P('');
-  P('# ── ambiente (todos os modos passam por aqui) ────────────────────────');
+  P('# ── environment (all modes pass through here) ─────────────────────────');
   P('preparar_ambiente() {');
-  P('  command -v git >/dev/null 2>&1 || falhar "git não encontrado"');
-  P('  command -v node >/dev/null 2>&1 || falhar "node não encontrado"');
+  P('  command -v git >/dev/null 2>&1 || falhar "git not found"');
+  P('  command -v node >/dev/null 2>&1 || falhar "node not found"');
   if (codex) {
-    P('  command -v codex >/dev/null 2>&1 || falhar "Codex CLI (codex) não encontrado — instale-o ou siga o modo manual em plano-execucao.md"');
+    P('  command -v codex >/dev/null 2>&1 || falhar "Codex CLI (codex) not found — install it or follow the manual mode in plano-execucao.md"');
   } else if (cursor) {
-    P('  # binário atual do CLI do Cursor é `agent`; `cursor-agent` é o nome legado');
-    P('  CURSOR_BIN=$(command -v agent || command -v cursor-agent) || falhar "CLI do Cursor (agent) não encontrado — instale: curl https://cursor.com/install -fsS | bash"');
+    P('  # current binary of the Cursor CLI is `agent`; `cursor-agent` is the legacy name');
+    P('  CURSOR_BIN=$(command -v agent || command -v cursor-agent) || falhar "Cursor CLI (agent) not found — install: curl https://cursor.com/install -fsS | bash"');
   } else {
-    P('  command -v claude >/dev/null 2>&1 || falhar "Claude Code CLI (claude) não encontrado — instale-o ou siga o modo manual em plano-execucao.md"');
+    P('  command -v claude >/dev/null 2>&1 || falhar "Claude Code CLI (claude) not found — install it or follow the manual mode in plano-execucao.md"');
   }
-  P('  TOPLEVEL=$(git rev-parse --show-toplevel 2>/dev/null) || falhar "fora de um repositório git"');
+  P('  TOPLEVEL=$(git rev-parse --show-toplevel 2>/dev/null) || falhar "outside a git repository"');
   P('  cd "$TOPLEVEL" || exit 1');
-  P('  # artefatos recém-gerados pelo `onp-spec plano` são sujeira esperada:');
-  P('  # se forem a ÚNICA sujeira, o script mesmo commita; qualquer outra, aborta');
+  P('  # artifacts freshly generated by `onp-spec plano` are expected dirt:');
+  P('  # if they are the ONLY dirt, the script commits them itself; anything else, abort');
   P('  if [ -n "$(git status --porcelain)" ]; then');
   P(`    if [ -z "$(git status --porcelain | grep -v -e 'plano-execucao\\.' -e 'plano\\.json' -e 'executar-tarefas\\.sh')" ]; then`);
   P('      git add -A');
-  P('      git commit -q -m "plano de execução: $FEATURE (artefatos gerados)"');
-  P('      info "artefatos do plano commitados"');
+  P('      git commit -q -m "execution plan: $FEATURE (generated artifacts)"');
+  P('      info "plan artifacts committed"');
   P('    else');
-  P('      falhar "árvore suja além dos artefatos do plano — commite ou faça git stash antes (os worktrees partem do último commit)"');
+  P('      falhar "tree dirty beyond the plan artifacts — commit or git stash before (the worktrees start from the last commit)"');
   P('    fi');
   P('  fi');
-  P(`  git ls-files --error-unmatch -- ${shq(`${plan.baseDir}/spec.md`)} >/dev/null 2>&1 || falhar "spec.md não está commitada — os worktrees das faixas precisam dela no git"`);
+  P(`  git ls-files --error-unmatch -- ${shq(`${plan.baseDir}/spec.md`)} >/dev/null 2>&1 || falhar "spec.md is not committed — the lane worktrees need it in git"`);
   P('  ATUAL=$(git rev-parse --abbrev-ref HEAD)');
-  P('  [ "$ATUAL" != "HEAD" ] || falhar "HEAD destacado — troque para uma branch"');
+  P('  [ "$ATUAL" != "HEAD" ] || falhar "detached HEAD — switch to a branch"');
   P('  if [ "$ATUAL" != "$BASE_BRANCH" ]; then');
   P('    if git show-ref --verify --quiet "refs/heads/$BASE_BRANCH"; then');
-  P('      git checkout -q "$BASE_BRANCH" || falhar "não consegui trocar para $BASE_BRANCH"');
+  P('      git checkout -q "$BASE_BRANCH" || falhar "could not switch to $BASE_BRANCH"');
   P('    else');
-  P('      git checkout -q -b "$BASE_BRANCH" || falhar "não consegui criar $BASE_BRANCH"');
+  P('      git checkout -q -b "$BASE_BRANCH" || falhar "could not create $BASE_BRANCH"');
   P('    fi');
-  P('    info "branch de trabalho: $BASE_BRANCH (a partir de $ATUAL)"');
+  P('    info "work branch: $BASE_BRANCH (from $ATUAL)"');
   P('  fi');
   P('  git worktree prune');
   P(`  LOG_DIR="$(dirname "$TOPLEVEL")/onp-worktrees/${plan.repoName}-${plan.feature}-logs"`);
@@ -808,15 +807,15 @@ export function renderPlanoSh(plan) {
   P('  mkdir -p "$LOG_DIR" "$STREAMS_DIR"');
   P('}');
   P('');
-  P('# worktree limpo mesmo depois de uma tentativa que falhou');
-  P('preparar_worktree() { # $1=faixa $2=branch $3=worktree');
+  P('# clean worktree even after a failed attempt');
+  P('preparar_worktree() { # $1=lane $2=branch $3=worktree');
   P('  git worktree prune');
   P('  if [ -e "$3" ]; then git worktree remove --force "$3" >/dev/null 2>&1; rm -rf "$3"; fi');
   P('  if git show-ref --verify --quiet "refs/heads/$2"; then git branch -D "$2" >/dev/null 2>&1; fi');
-  P('  git worktree add "$3" -b "$2" >/dev/null 2>&1 || { vermelho "✘ não consegui criar o worktree de $1 em $3"; return 1; }');
+  P('  git worktree add "$3" -b "$2" >/dev/null 2>&1 || { vermelho "✘ could not create the worktree of $1 at $3"; return 1; }');
   P('}');
   P('');
-  P('tentativa() { # $1=faixa — conta reexecuções (vai para o ledger)');
+  P('tentativa() { # $1=lane — counts re-runs (goes to the ledger)');
   P('  local arq="$LOG_DIR/.tentativa-$1"');
   P('  local n=1');
   P('  [ -f "$arq" ] && n=$(( $(cat "$arq") + 1 ))');
@@ -824,89 +823,89 @@ export function renderPlanoSh(plan) {
   P('  printf "%s" "$n"');
   P('}');
   P('');
-  P(`# uma tarefa = uma sessão ${codex ? 'codex exec' : cursor ? 'agent (Cursor)' : 'claude'} headless com contexto limpo.`);
-  P('# o JSONL da sessão vira o stream da tarefa no ledger');
-  P('rodar_tarefa() { # $1=escopo(faixa|seq) $2=T-xxx $3=prompt $4=modelo $5=esforço');
+  P(`# one task = one ${codex ? 'codex exec' : cursor ? 'agent (Cursor)' : 'claude'} headless session with clean context.`);
+  P('# the session\'s JSONL becomes the task\'s stream in the ledger');
+  P('rodar_tarefa() { # $1=scope(lane|seq) $2=T-xxx $3=prompt $4=model $5=effort');
   P('  local chave="$1--$2"');
   P('  local stream="$STREAMS_DIR/$chave.jsonl"');
-  P('  evento --tipo tarefa --tarefa "$2" --faixa "$1" --estado executando --stream "$chave"');
+  P('  evento --tipo tarefa --tarefa "$2" --faixa "$1" --estado running --stream "$chave"');
   if (codex) {
     P('  info "$2 — codex exec ($4 · $5) · stream: $chave"');
-    P('  # --add-dir: o .git compartilhado dos worktrees mora no repo principal —');
-    P('  # sem ele o sandbox workspace-write bloquearia o commit da tarefa');
+    P('  # --add-dir: the shared worktrees\' .git lives in the main repo —');
+    P('  # without it the workspace-write sandbox would block the task\'s commit');
     P('  if codex exec "$3" --model "$4" -c model_reasoning_effort="$5" "${STREAM_FLAGS[@]}" "${CODEX_FLAGS[@]}" --add-dir "$TOPLEVEL" > "$stream" 2>>"$LOG_DIR/$1.log"; then');
   } else if (cursor) {
     P('  info "$2 — agent -p ($4) · stream: $chave"');
-    P('  # $5 (esforço) não vira flag: o CLI do Cursor não tem reasoning effort —');
-    P('  # o nível vai embutido no slug do modelo (ex.: gpt-5.6-terra-high)');
+    P('  # $5 (effort) does NOT become a flag: the Cursor CLI has no reasoning effort —');
+    P('  # the level goes embedded in the model slug (e.g.: gpt-5.6-terra-high)');
     P('  if "$CURSOR_BIN" -p "$3" --model "$4" "${STREAM_FLAGS[@]}" "${CURSOR_FLAGS[@]}" > "$stream" 2>>"$LOG_DIR/$1.log"; then');
   } else {
     P('  info "$2 — claude -p ($4 · $5) · stream: $chave"');
     P('  if claude -p "$3" --model "$4" --effort "$5" "${STREAM_FLAGS[@]}" "${CLAUDE_FLAGS[@]}" > "$stream" 2>>"$LOG_DIR/$1.log"; then');
   }
-  P('    evento --tipo tarefa --tarefa "$2" --faixa "$1" --estado concluida --stream "$chave"');
+  P('    evento --tipo tarefa --tarefa "$2" --faixa "$1" --estado done --stream "$chave"');
   P('    node "$ENGINE" stream-resumo "$RUN_ID" "$chave" 2>/dev/null || true');
   P('    return 0');
   P('  fi');
-  P('  evento --tipo tarefa --tarefa "$2" --faixa "$1" --estado falhou --stream "$chave"');
+  P('  evento --tipo tarefa --tarefa "$2" --faixa "$1" --estado failed --stream "$chave"');
   P('  node "$ENGINE" stream-resumo "$RUN_ID" "$chave" 2>/dev/null || true');
   P('  return 1');
   P('}');
   P('');
-  P('mesclar_faixa() { # $1=faixa $2=branch $3=worktree $4=exit-da-faixa');
+  P('mesclar_faixa() { # $1=lane $2=branch $3=worktree $4=lane-exit');
   P('  if [ "$4" -ne 0 ]; then');
-  P('    evento --tipo faixa --faixa "$1" --estado falhou');
-  P('    vermelho "✘ $1 falhou (log: $LOG_DIR/$1.log) — worktree mantido para inspeção: $3"');
-  P(`    amarelo "  reexecute só ela: bash ${plan.baseDir}/executar-tarefas.sh --faixa $1"`);
+  P('    evento --tipo faixa --faixa "$1" --estado failed');
+  P('    vermelho "✘ $1 failed (log: $LOG_DIR/$1.log) — worktree kept for inspection: $3"');
+  P(`    amarelo "  re-run only it: bash ${plan.baseDir}/executar-tarefas.sh --faixa $1"`);
   P('    FALHAS="$FALHAS $1"; return 1');
   P('  fi');
-  P('  evento --tipo faixa --faixa "$1" --estado mesclando');
+  P('  evento --tipo faixa --faixa "$1" --estado merging');
   P('  if git merge --no-ff "$2" -m "merge $1 ($FEATURE)"; then');
   P('    git worktree remove --force "$3" >/dev/null 2>&1');
   P('    git branch -d "$2" >/dev/null 2>&1');
-  P('    evento --tipo faixa --faixa "$1" --estado mesclada');
-  P('    verde "✔ $1 mesclada em $BASE_BRANCH"');
+  P('    evento --tipo faixa --faixa "$1" --estado merged');
+  P('    verde "✔ $1 merged into $BASE_BRANCH"');
   P('  else');
   P('    git merge --abort >/dev/null 2>&1');
-  P('    evento --tipo faixa --faixa "$1" --estado conflito');
-  P('    vermelho "✘ conflito ao mesclar $1 — resolva na mão: git merge $2 (worktree mantido: $3)"');
+  P('    evento --tipo faixa --faixa "$1" --estado conflict');
+  P('    vermelho "✘ conflict merging $1 — resolve by hand: git merge $2 (worktree kept: $3)"');
   P('    FALHAS="$FALHAS $1"; return 1');
   P('  fi');
   P('}');
   P('');
   P('marcar_concluidas() { # $@=T-xxx');
-  P('  for t in "$@"; do node "$ENGINE" tarefa "$FEATURE" "$t" concluida >/dev/null || true; done');
+  P('  for t in "$@"; do node "$ENGINE" tarefa "$FEATURE" "$t" done >/dev/null || true; done');
   P('}');
   P('');
-  P('# ── resumo geral de andamento: 1/min enquanto a execução roda ─────────');
+  P('# ── general progress summary: 1/min while the execution runs ──────────');
   P(
-    `# escrito por IA (${codex ? 'codex exec somente leitura' : cursor ? 'agent -p sem --force, somente leitura' : 'claude -p, sem ferramentas'}) com fallback do motor; vai`
+    `# written by AI (${codex ? 'codex exec read-only' : cursor ? 'agent -p without --force, read-only' : 'claude -p, no tools'}) with engine fallback; goes`
   );
-  P('# para o terminal e para o ledger — o agente repassa o texto no chat.');
+  P('# to the terminal and to the ledger — the agent relays the text in the chat.');
   P('gerar_resumo() {');
   P('  local ctx ia');
   P('  ctx=$(node "$ENGINE" resumo "$FEATURE" --contexto 2>/dev/null) || ctx=""');
   P('  [ -n "$ctx" ] || return 0');
   P(
-    `  ia=$(${codex ? 'codex exec' : cursor ? '"$CURSOR_BIN" -p' : 'claude -p'} "Você narra, para o dono do produto, uma execução de tarefas de código em andamento. Estado mecânico:`
+    `  ia=$(${codex ? 'codex exec' : cursor ? '"$CURSOR_BIN" -p' : 'claude -p'} "You narrate, for the product owner, a running execution of coding tasks. Mechanical state:`
   );
   P('');
   P('$ctx');
   P('');
   P(
-    `Escreva o RESUMO GERAL DE ANDAMENTO: um parágrafo único de 2 a 4 frases, em português simples, dizendo o que está acontecendo agora, o que já terminou, o que falhou e se o usuário precisa agir. Sem markdown, sem listas." --model "$RESUMO_MODEL"${codex ? ' --sandbox read-only --ephemeral' : ''} 2>/dev/null)`
+    `Write the GENERAL PROGRESS SUMMARY: a single paragraph of 2 to 4 sentences, in plain English, saying what is happening now, what already finished, what failed and whether the user needs to act. No markdown, no lists." --model "$RESUMO_MODEL"${codex ? ' --sandbox read-only --ephemeral' : ''} 2>/dev/null)`
   );
   P('  if [ -n "$ia" ]; then');
-  P('    node "$ENGINE" resumo "$FEATURE" --gravar --origem ia --texto "$ia" >/dev/null 2>&1 || true');
-  P(`    printf '\\n📣 resumo (IA): %s\\n' "$ia"`);
+  P('    node "$ENGINE" resumo "$FEATURE" --gravar --origem ai --texto "$ia" >/dev/null 2>&1 || true');
+  P(`    printf '\\n📣 summary (AI): %s\\n' "$ia"`);
   P('  else');
   P('    node "$ENGINE" resumo "$FEATURE" --gravar >/dev/null 2>&1 || true');
-  P(`    printf '\\n📣 resumo: %s\\n' "$(node "$ENGINE" resumo "$FEATURE" 2>/dev/null)"`);
+  P(`    printf '\\n📣 summary: %s\\n' "$(node "$ENGINE" resumo "$FEATURE" 2>/dev/null)"`);
   P('  fi');
   P('}');
   P('');
-  P('# mata o loop E o sleep filho — senão o sleep herda o stdout e quem chamou');
-  P('# o script via pipe fica esperando EOF por até 60s depois do exit');
+  P('# kills the loop AND the child sleep — otherwise the sleep inherits stdout and whoever');
+  P('# called the script via pipe waits for EOF up to 60s after the exit');
   P('parar_resumos() {');
   P('  [ -n "$RESUMO_PID" ] || return 0');
   P('  command -v pkill >/dev/null 2>&1 && pkill -P "$RESUMO_PID" 2>/dev/null');
@@ -917,11 +916,11 @@ export function renderPlanoSh(plan) {
   P('iniciar_resumos() {');
   P('  ( while :; do sleep 60; gerar_resumo; done ) &');
   P('  RESUMO_PID=$!');
-  P('  # ao sair: para o loop e grava um último resumo (o estado final, do motor)');
+  P('  # on exit: stop the loop and record a last summary (the final state, by the engine)');
   P(`  trap 'parar_resumos; node "$ENGINE" resumo "$FEATURE" --gravar >/dev/null 2>&1 || true' EXIT`);
   P('}');
 
-  // ── uma função por faixa ────────────────────────────────────────────────
+  // ── one function per lane ────────────────────────────────────────────────
   for (const fx of plan.faixas) {
     const ids = fx.tasks.map((t) => t.id).join(' ');
     P('');
@@ -929,7 +928,7 @@ export function renderPlanoSh(plan) {
     P(`executar_${fn(fx.id)}() {`);
     P(`  local WT="$WT_BASE-${fx.id}"`);
     P(`  preparar_worktree ${shq(fx.id)} ${shq(fx.branch)} "$WT" || return 1`);
-    P(`  evento --tipo faixa --faixa ${shq(fx.id)} --estado executando --tentativa "$(tentativa ${shq(fx.id)})"`);
+    P(`  evento --tipo faixa --faixa ${shq(fx.id)} --estado running --tentativa "$(tentativa ${shq(fx.id)})"`);
     P(`  : > "$LOG_DIR/${fx.id}.log"`);
     P('  (');
     P('    cd "$WT" || exit 9');
@@ -945,23 +944,23 @@ export function renderPlanoSh(plan) {
     P('}');
   }
 
-  // ── uma função por tarefa sequencial ────────────────────────────────────
+  // ── one function per sequential task ────────────────────────────────────
   for (const t of plan.sequenciais) {
     P('');
-    P(`# ── sequencial ${t.id} (${(t.motivoSeq || 'ordem do tasks.md').replace(/`/g, '')}) ──`);
+    P(`# ── sequential ${t.id} (${(t.motivoSeq || 'tasks.md order').replace(/`/g, '')}) ──`);
     P(`executar_seq_${fn(t.id)}() {`);
-    P(`  info ${shq(`sequencial ${t.id} — ${t.title}`)}`);
+    P(`  info ${shq(`sequential ${t.id} — ${t.title}`)}`);
     P(`  if rodar_tarefa seq ${shq(t.id)} ${shq(promptTarefa(plan, t))} ${shq(t.model)} ${t.esforcoCli} >> "$LOG_DIR/seq.log" 2>&1; then`);
-    P('    # commit de segurança se o agente esqueceu (rastreabilidade > perfeição)');
+    P('    # safety commit if the agent forgot (traceability > perfection)');
     P('    if [ -n "$(git status --porcelain)" ]; then');
-    P(`      git add -A && git commit -q -m ${shq(`${t.id} ${plan.feature}: ${t.title} (auto-commit do plano)`)}`);
+    P(`      git add -A && git commit -q -m ${shq(`${t.id} ${plan.feature}: ${t.title} (plan auto-commit)`)}`);
     P('    fi');
     P(`    marcar_concluidas ${t.id}`);
-    P(`    verde "✔ ${t.id} concluída"`);
+    P(`    verde "✔ ${t.id} done"`);
     P('    return 0');
     P('  fi');
-    P(`  vermelho "✘ ${t.id} falhou (log: $LOG_DIR/seq.log)"`);
-    P(`  amarelo "  reexecute só ela: bash ${plan.baseDir}/executar-tarefas.sh --seq ${t.id}"`);
+    P(`  vermelho "✘ ${t.id} failed (log: $LOG_DIR/seq.log)"`);
+    P(`  amarelo "  re-run only it: bash ${plan.baseDir}/executar-tarefas.sh --seq ${t.id}"`);
     P(`  FALHAS="$FALHAS ${t.id}"`);
     P('  return 1');
     P('}');
@@ -969,64 +968,64 @@ export function renderPlanoSh(plan) {
 
   // ── gate ────────────────────────────────────────────────────────────────
   P('');
-  P('# ── gate: quem decide é a máquina ────────────────────────────────────');
+  P('# ── gate: the machine decides ─────────────────────────────────────────');
   P('rodar_gate() {');
   P('  echo');
   P('  info "gate: verify + audit --ci"');
-  P('  evento --tipo gate --etapa inicio');
+  P('  evento --tipo gate --etapa start');
   P('  node "$ENGINE" verify "$FEATURE"');
   P('  local v=$?');
   P('  evento --tipo gate --etapa verify --exit "$v"');
   P('  node "$ENGINE" audit --ci');
   P('  AUDIT=$?');
   P('  evento --tipo gate --etapa audit --exit "$AUDIT"');
-  P('  # fecha a contabilidade: status das tarefas + prova do verify no git');
+  P('  # closes the accounting: task statuses + verify proof in git');
   P(`  if [ -n "$(git status --porcelain -- ${shq(plan.specDir)})" ]; then`);
   P(`    git add -A -- ${shq(plan.specDir)}`);
-  P('    git commit -q -m "$FEATURE: status das tarefas + prova do verify (plano)"');
-  P('    info "status das tarefas e prova do verify commitados"');
+  P('    git commit -q -m "$FEATURE: task statuses + verify proof (plan)"');
+  P('    info "task statuses and verify proof committed"');
   P('  fi');
   P('  return "$AUDIT"');
   P('}');
   P('');
-  P('encerrar() { # $1=escopo');
+  P('encerrar() { # $1=scope');
   P('  echo');
-  P('  if [ -n "$FALHAS" ]; then vermelho "faixas/tarefas com falha:$FALHAS"; fi');
-  P('  # sem gate não existe veredito: NUNCA anunciar alinhamento sem o audit');
+  P('  if [ -n "$FALHAS" ]; then vermelho "lanes/tasks with failure:$FALHAS"; fi');
+  P('  # without the gate there is no verdict: NEVER announce alignment without the audit');
   P('  if [ "$COM_GATE" -eq 0 ]; then');
-  P('    evento --tipo fim --exit 1 --escopo "$1"');
+  P('    evento --tipo end --exit 1 --escopo "$1"');
   P('    if [ -z "$FALHAS" ]; then');
-  P('      amarelo "○ trabalho de \'$1\' terminou SEM o gate (--sem-gate) — isto NÃO é prova de nada"');
-  P(`      amarelo "  para o veredito: bash ${plan.baseDir}/executar-tarefas.sh --gate"`);
+  P('      amarelo "○ \'$1\' work finished WITHOUT the gate (--sem-gate) — this is NOT proof of anything"');
+  P(`      amarelo "  for the verdict: bash ${plan.baseDir}/executar-tarefas.sh --gate"`);
   P('      exit 0');
   P('    fi');
-  P('    vermelho "e ainda há falhas — conserte e rode o gate"');
+  P('    vermelho "and there are still failures — fix them and run the gate"');
   P('    exit 1');
   P('  fi');
   P('  rodar_gate');
   P('  local audit=$?');
   P('  if [ "$audit" -eq 0 ] && [ -z "$FALHAS" ]; then');
-  P('    evento --tipo fim --exit 0 --escopo "$1"');
-  P('    verde "✔ plano concluído — especificação e código alinhados (audit exit 0) na branch $BASE_BRANCH"');
-  P('    info "próximo passo: revise e leve para a main quando quiser (git merge $BASE_BRANCH)"');
+  P('    evento --tipo end --exit 0 --escopo "$1"');
+  P('    verde "✔ plan completed — spec and code aligned (audit exit 0) on branch $BASE_BRANCH"');
+  P('    info "next step: review and merge to main when you want (git merge $BASE_BRANCH)"');
   P('    exit 0');
   P('  fi');
-  P('  evento --tipo fim --exit 1 --escopo "$1"');
-  P('  vermelho "plano terminou com pendências — leia a saída do audit acima e os logs em $LOG_DIR"');
-  P('  amarelo "dica: reexecute só o que falhou (--faixa <id> / --seq <T-xxx>)"');
+  P('  evento --tipo end --exit 1 --escopo "$1"');
+  P('  vermelho "plan finished with pending items — read the audit output above and the logs in $LOG_DIR"');
+  P('  amarelo "tip: re-run just what failed (--faixa <id> / --seq <T-xxx>)"');
   P('  exit 1');
   P('}');
 
-  // ── modo: tudo ──────────────────────────────────────────────────────────
+  // ── mode: everything ────────────────────────────────────────────────────
   P('');
   P('executar_tudo() {');
-  P('  evento --tipo inicio --escopo tudo');
+  P('  evento --tipo start --escopo all');
   P('  iniciar_resumos');
-  P('  info "logs em: $LOG_DIR"');
-  P('  info "resumo geral de andamento: a cada 1 min aqui no terminal (e via: onp-spec resumo)"');
+  P('  info "logs in: $LOG_DIR"');
+  P('  info "general progress summary: every 1 min here in the terminal (and via: onp-spec resumo)"');
   plan.ondas.forEach((onda, oi) => {
-    P(`  # onda ${oi + 1}: ${onda.map((fx) => fx.id).join(' ∥ ')}`);
-    P(`  info "onda ${oi + 1}: ${onda.map((fx) => fx.id).join(' ∥ ')} — janelas limpas em paralelo"`);
+    P(`  # wave ${oi + 1}: ${onda.map((fx) => fx.id).join(' ∥ ')}`);
+    P(`  info "wave ${oi + 1}: ${onda.map((fx) => fx.id).join(' ∥ ')} — clean windows in parallel"`);
     for (const fx of onda) {
       P(`  executar_${fn(fx.id)} & PID_${fn(fx.id).toUpperCase()}=$!`);
     }
@@ -1035,23 +1034,23 @@ export function renderPlanoSh(plan) {
     }
   });
   for (const t of plan.sequenciais) P(`  executar_seq_${fn(t.id)} || true`);
-  P('  encerrar tudo');
+  P('  encerrar all');
   P('}');
 
   // ── dispatcher ──────────────────────────────────────────────────────────
   P('');
   P('listar() {');
-  P(`  echo "execução: $RUN_ID (feature $FEATURE, branch $BASE_BRANCH)"`);
+  P(`  echo "execution: $RUN_ID (feature $FEATURE, branch $BASE_BRANCH)"`);
   plan.ondas.forEach((onda, oi) => {
     for (const fx of onda) {
-      P(`  echo "  ${fx.id}  onda ${oi + 1}  ${fx.tasks.map((t) => t.id).join(', ')}"`);
+      P(`  echo "  ${fx.id}  wave ${oi + 1}  ${fx.tasks.map((t) => t.id).join(', ')}"`);
     }
   });
-  for (const t of plan.sequenciais) P(`  echo "  seq       ${t.id} (sequencial)"`);
+  for (const t of plan.sequenciais) P(`  echo "  seq       ${t.id} (sequential)"`);
   P('  echo');
-  P('  echo "reexecutar uma faixa:    --faixa <id>"');
-  P('  echo "reexecutar sequencial:   --seq <T-xxx>"');
-  P('  echo "só o gate:               --gate"');
+  P('  echo "re-run a lane:       --faixa <id>"');
+  P('  echo "re-run sequential:   --seq <T-xxx>"');
+  P('  echo "only the gate:       --gate"');
   P('}');
   P('');
   P('MODO="tudo"');
@@ -1064,7 +1063,7 @@ export function renderPlanoSh(plan) {
   P('    --faixa) MODO="faixa"; ALVO="${2:-}"; shift ;;');
   P('    --seq) MODO="seq"; ALVO="${2:-}"; shift ;;');
   P('    -h|--help) sed -n "2,14p" "$0"; exit 0 ;;');
-  P('    *) vermelho "argumento desconhecido: $1"; sed -n "2,14p" "$0"; exit 2 ;;');
+  P('    *) vermelho "unknown argument: $1"; sed -n "2,14p" "$0"; exit 2 ;;');
   P('  esac');
   P('  shift');
   P('done');
@@ -1079,22 +1078,22 @@ export function renderPlanoSh(plan) {
   P('  faixa)');
   P('    case "$ALVO" in');
   for (const fx of plan.faixas) {
-    P(`      ${fx.id}) evento --tipo inicio --escopo "faixa:${fx.id}"; iniciar_resumos; executar_${fn(fx.id)} || true; encerrar "faixa:${fx.id}" ;;`);
+    P(`      ${fx.id}) evento --tipo start --escopo "faixa:${fx.id}"; iniciar_resumos; executar_${fn(fx.id)} || true; encerrar "faixa:${fx.id}" ;;`);
   }
-  P('      *) falhar "faixa desconhecida: \'$ALVO\' — veja as disponíveis com --listar" ;;');
+  P('      *) falhar "unknown lane: \'$ALVO\' — see the available ones with --listar" ;;');
   P('    esac ;;');
   P('  seq)');
   P('    case "$ALVO" in');
   for (const t of plan.sequenciais) {
-    P(`      ${t.id}) evento --tipo inicio --escopo "seq:${t.id}"; iniciar_resumos; executar_seq_${fn(t.id)} || true; encerrar "seq:${t.id}" ;;`);
+    P(`      ${t.id}) evento --tipo start --escopo "seq:${t.id}"; iniciar_resumos; executar_seq_${fn(t.id)} || true; encerrar "seq:${t.id}" ;;`);
   }
-  P(`      *) falhar "tarefa sequencial desconhecida: '$ALVO' — veja as disponíveis com --listar" ;;`);
+  P(`      *) falhar "unknown sequential task: '$ALVO' — see the available ones with --listar" ;;`);
   P('    esac ;;');
   P('esac');
 
   return `${L.join('\n')}\n`;
 }
-// ── artefato: plano-execucao.html (só claude) ──────────────────────────────
+// ── artifact: plano-execucao.html (claude only) ────────────────────────────
 
 const esc = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1109,14 +1108,14 @@ export function renderPlanoHtml(plan) {
   const cliRotulo = codexHtml
     ? '<code>codex exec</code>'
     : cursorHtml
-      ? '<code>agent -p</code> (CLI do Cursor)'
+      ? '<code>agent -p</code> (Cursor CLI)'
       : '<code>claude -p</code>';
   const card = (t) => `
         <div class="tarefa">
           <span class="tid">${esc(t.id)}</span>
           <span class="ttitulo">${esc(t.title)}</span>
-          <span class="meta"><code>${esc(t.model)}</code> · esforço <b>${esc(t.esforcoCli)}</b></span>
-          <span class="arquivos">${t.files.map((f) => `<code>${esc(f)}</code>`).join(' ') || `<em>${esc((t.motivoSeq || 'sem arquivos — sequencial').replace(/`/g, ''))}</em>`}</span>
+          <span class="meta"><code>${esc(t.model)}</code> · effort <b>${esc(t.esforcoCli)}</b></span>
+          <span class="arquivos">${t.files.map((f) => `<code>${esc(f)}</code>`).join(' ') || `<em>${esc((t.motivoSeq || 'no files — sequential').replace(/`/g, ''))}</em>`}</span>
         </div>`;
   const faixaHtml = (fx) => `
       <div class="faixa">
@@ -1127,7 +1126,7 @@ export function renderPlanoHtml(plan) {
     .map(
       (onda, i) => `
     <section class="onda">
-      <h3>Onda ${i + 1} <small>${onda.map((fx) => esc(fx.id)).join(' ∥ ')} — em paralelo, janelas limpas</small></h3>
+      <h3>Wave ${i + 1} <small>${onda.map((fx) => esc(fx.id)).join(' ∥ ')} — in parallel, clean windows</small></h3>
       <div class="grade">${onda.map(faixaHtml).join('')}</div>
     </section>`
     )
@@ -1135,7 +1134,7 @@ export function renderPlanoHtml(plan) {
   const seqHtml = plan.sequenciais.length
     ? `
     <section class="onda">
-      <h3>${sequencial ? 'Ordem de execução <small>uma tarefa após a outra, na árvore principal</small>' : 'Sequenciais <small>após as ondas, na árvore principal</small>'}</h3>
+      <h3>${sequencial ? 'Execution order <small>one task after another, on the main tree</small>' : 'Sequentials <small>after the waves, on the main tree</small>'}</h3>
       <div class="grade"><div class="faixa">${plan.sequenciais.map(card).join('')}</div></div>
     </section>`
     : '';
@@ -1145,7 +1144,7 @@ export function renderPlanoHtml(plan) {
 
   return `<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Plano de execução — ${esc(plan.feature)}</title>
+<title>Execution plan — ${esc(plan.feature)}</title>
 <style>
   :root { --bg:#fafafa; --fg:#1a1a1a; --card:#fff; --borda:#e2e2e2; --sub:#666;
           --acc:#0a7c42; --acc-fg:#fff; --aviso:#8a6d00; --aviso-bg:#fff8e1; }
@@ -1182,49 +1181,49 @@ export function renderPlanoHtml(plan) {
   ol li { margin:.25rem 0 }
 </style>
 <main>
-  <h1>Plano de execução — ${esc(plan.feature)}</h1>
-  <p class="sub">gerado por <code>onp-spec plano</code> em ${esc(plan.geradoEm)} · regenere após mudar tasks.md</p>
+  <h1>Execution plan — ${esc(plan.feature)}</h1>
+  <p class="sub">generated by <code>onp-spec plano</code> at ${esc(plan.geradoEm)} · regenerate after changing tasks.md</p>
   <div class="resumo">
     ${
       sequencial
-        ? `<div><b>${plan.sequenciais.length}</b> tarefa(s), uma após a outra</div>
-    <div>modo <b>sequencial</b> (escolha do usuário)</div>`
-        : `<div><b>${paralelas}</b> tarefa(s) em paralelo</div>
-    <div><b>${plan.faixas.length}</b> faixa(s) · <b>${plan.ondas.length}</b> onda(s)</div>
-    <div><b>${plan.sequenciais.length}</b> sequencial(is)</div>${
-      plan.paralelizar ? `\n    <div>seleção do usuário: <b>${plan.paralelizar.map(esc).join(', ')}</b></div>` : ''
+        ? `<div><b>${plan.sequenciais.length}</b> task(s), one after another</div>
+    <div>mode <b>sequential</b> (user's choice)</div>`
+        : `<div><b>${paralelas}</b> task(s) in parallel</div>
+    <div><b>${plan.faixas.length}</b> lane(s) · <b>${plan.ondas.length}</b> wave(s)</div>
+    <div><b>${plan.sequenciais.length}</b> sequential</div>${
+      plan.paralelizar ? `\n    <div>user's selection: <b>${plan.paralelizar.map(esc).join(', ')}</b></div>` : ''
     }`
     }
     <div>branch <code>${esc(plan.branchTrabalho)}</code></div>
   </div>
   ${avisosHtml}
   <div class="executor">
-    <h2>Como executar — via agente</h2>
-    <p>Peça ao agente (${agenteRotulo}) para executar o plano. Ele roda:</p>
+    <h2>How to execute — via agent</h2>
+    <p>Ask the agent (${agenteRotulo}) to execute the plan. It runs:</p>
     <div><code id="cmd">${esc(cmd)}</code></div>
-    <p class="nota">Este arquivo é só visualização. ${
+    <p class="nota">This file is just visualization. ${
       sequencial
-        ? `Cada tarefa roda ${cliRotulo} na árvore principal, uma após a outra, com contexto limpo e modelo/esforço já definidos.`
-        : `Cada faixa roda ${cliRotulo} num worktree próprio, com contexto limpo, modelo e esforço já definidos.`
+        ? `Each task runs ${cliRotulo} on the main tree, one after another, with clean context and model/effort already set.`
+        : `Each lane runs ${cliRotulo} in its own worktree, with clean context, model and effort already set.`
     }
-    O gate final (verify + audit) roda sozinho; a execução fica em background e, a cada
-    1 minuto, o agente posta no chat a <b>tabela de andamento</b>
-    (<code>onp-spec resumo ${esc(plan.feature)} --tabela</code>) e o
-    <b>resumo geral de andamento</b> (<code>onp-spec resumo ${esc(plan.feature)}</code>).</p>
+    The final gate (verify + audit) runs by itself; the execution stays in background and, every
+    1 minute, the agent posts in the chat the <b>progress table</b>
+    (<code>onp-spec resumo ${esc(plan.feature)} --tabela</code>) and the
+    <b>general progress summary</b> (<code>onp-spec resumo ${esc(plan.feature)}</code>).</p>
   </div>
   ${ondasHtml}
   ${seqHtml}
   <section class="onda">
-    <h3>Branches e commits</h3>
+    <h3>Branches and commits</h3>
     <ol>
-      <li>tudo parte da branch de trabalho <code>${esc(plan.branchTrabalho)}</code></li>
+      <li>everything starts from the work branch <code>${esc(plan.branchTrabalho)}</code></li>
       ${
         sequencial
-          ? `<li>as tarefas rodam nela mesma, na ordem; 1 tarefa = 1 commit <code>T-xxx ${esc(plan.feature)}: título</code></li>`
-          : `<li>1 faixa = 1 branch + 1 worktree; 1 tarefa = 1 commit <code>T-xxx ${esc(plan.feature)}: título</code></li>
-      <li>merge <code>--no-ff</code> por faixa, na ordem; conflito interrompe e pede você</li>`
+          ? `<li>the tasks run on it, in order; 1 task = 1 commit <code>T-xxx ${esc(plan.feature)}: title</code></li>`
+          : `<li>1 lane = 1 branch + 1 worktree; 1 task = 1 commit <code>T-xxx ${esc(plan.feature)}: title</code></li>
+      <li>merge <code>--no-ff</code> per lane, in order; conflict stops and asks you</li>`
       }
-      <li>gate final: <code>onp-spec verify ${esc(plan.feature)}</code> + <code>onp-spec audit --ci</code> — exit 0 ou não está pronto</li>
+      <li>final gate: <code>onp-spec verify ${esc(plan.feature)}</code> + <code>onp-spec audit --ci</code> — exit 0 or it isn't ready</li>
     </ol>
   </section>
 </main>

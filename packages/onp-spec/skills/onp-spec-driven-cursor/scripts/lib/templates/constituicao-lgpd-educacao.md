@@ -1,65 +1,64 @@
-# Constituição — v1.0.0 (preset: LGPD + Educação)
+# Constitution — v1.0.0 (preset: LGPD + Education)
 
 <!--
-  Princípios para produtos educacionais que guardam dados pessoais de
-  alunos — inclusive menores de idade (LGPD art. 14: melhor interesse
-  da criança; consentimento de ao menos um dos pais/responsável).
+  Principles for educational products that store students' personal data —
+  including minors (LGPD art. 14: best interest of the child; consent of at
+  least one parent/guardian).
 
-  Níveis: [DEVE] obrigatório · [RECOMENDADO] forte · [PODE] permitido/explícito.
-  Todo [DEVE] precisa de verificação executável. Formatos aceitos:
-    - verificação(teste): @principle:P-xxx
-    - verificação(proibido): `regex` em `glob`
-    - verificação(obrigatório): `regex` em `glob`
+  Levels: [MUST] mandatory · [SHOULD] strong · [MAY] permitted/explicit.
+  Every [MUST] needs executable verification. Accepted formats:
+    - verification(test): @principle:P-xxx
+    - verification(forbidden): `regex` in `glob`
+    - verification(required): `regex` in `glob`
 
-  Ajuste os globs/regex à sua stack — estes são pontos de partida REAIS,
-  não decoração: o audit roda cada um deles.
+  Adjust the globs/regex to your stack — these are REAL starting points,
+  not decoration: the audit runs each one of them.
 -->
 
-## P-001 [DEVE] Nota de um aluno nunca é exposta a outro aluno
+## P-001 [MUST] A student's grade is never exposed to another student
 
-Todo endpoint/consulta que retorna nota, correção ou feedback filtra pelo
-aluno autenticado. Listagens agregadas (média da turma) não identificam
-indivíduos.
+Every endpoint/query that returns a grade, correction or feedback filters by
+the authenticated student. Aggregated listings (class average) do not identify
+individuals.
 
-- verificação(teste): @principle:P-001
+- verification(test): @principle:P-001
 
-## P-002 [DEVE] Acesso a nota é registrado (trilha de auditoria)
+## P-002 [MUST] Grade access is logged (audit trail)
 
-Toda leitura de nota/correção registra quem acessou, o quê e quando.
-LGPD art. 37: registro das operações de tratamento.
+Every read of a grade/correction records who accessed it, what and when.
+LGPD art. 37: record of processing operations.
 
-- verificação(teste): @principle:P-002
+- verification(test): @principle:P-002
 
-## P-003 [DEVE] Dados de menores só com base legal explícita
+## P-003 [MUST] Minors' data only with explicit legal basis
 
-Cadastro de aluno menor de idade exige consentimento de responsável
-registrado (quem, quando, como). Nenhum dado de menor é usado para
-marketing.
+Registering a minor student requires recorded guardian consent (who, when, how).
+No minor's data is used for marketing.
 
-- verificação(teste): @principle:P-003
+- verification(test): @principle:P-003
 
-## P-004 [DEVE] Dados pessoais nunca aparecem em logs
+## P-004 [MUST] Personal data never appears in logs
 
-CPF, e-mail, telefone e nota nunca vão para console/log em texto puro.
+CPF, email, phone and grades never go to console/log in plain text.
 
-- verificação(proibido): `console\.(log|error|warn)\(.*(cpf|nota|email|telefone)` em `src/**/*.js`
+- verification(forbidden): `console\.(log|error|warn)\(.*(cpf|nota|email|telefone)` in `src/**/*.js`
 
-## P-005 [RECOMENDADO] Minimização: só coletar o que a pedagogia exige
+## P-005 [SHOULD] Minimization: only collect what the pedagogy requires
 
-Cada campo pessoal coletado tem justificativa pedagógica escrita na spec
-da feature que o coleta (LGPD art. 6º, III — necessidade).
+Each collected personal field has a written pedagogical justification in the
+spec of the feature that collects it (LGPD art. 6, III — necessity).
 
-## P-006 [RECOMENDADO] Erro pedagógico não é dado punitivo
+## P-006 [SHOULD] Pedagogical error is not punitive data
 
-Histórico de erros/tentativas do aluno serve para ensinar, não para
-ranquear publicamente. Rankings públicos só com opt-in.
+The student's error/attempt history exists to teach, not to rank publicly.
+Public rankings only with opt-in.
 
-## P-007 [PODE] Exclusão a pedido do titular
+## P-007 [MAY] Deletion on data subject's request
 
-O titular (ou responsável) pode pedir exclusão dos dados; o sistema PODE
-manter o mínimo legal (registros fiscais) com prazo documentado.
+The data subject (or guardian) may request data deletion; the system MAY
+keep the legal minimum (fiscal records) with a documented retention period.
 
-## P-008 [PODE] Portabilidade dos dados do aluno
+## P-008 [MAY] Student data portability
 
-O aluno PODE exportar seu histórico (tarefas, notas, feedback) em formato
-legível por máquina.
+The student MAY export their history (tasks, grades, feedback) in a
+machine-readable format.

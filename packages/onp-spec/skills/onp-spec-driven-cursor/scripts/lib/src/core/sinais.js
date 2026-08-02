@@ -1,13 +1,14 @@
-// Histórico de sinais — a memória mecânica do motor.
+// Signals history — the engine's mechanical memory.
 //
-// Cada achado do audit e cada falha/skip do verify vira um sinal persistido
-// em .spec/verification/sinais.json. É esse histórico que dá LASTRO às
-// lições: `licoes add` só aceita uma lição se o sinal citado realmente
-// aconteceu neste projeto. Sem sinal registrado, lição é opinião — recusada.
+// Every audit finding and every verify failure/skip becomes a persisted signal
+// in .spec/verification/sinais.json. This history is what gives LASTRO
+// (backing) to lessons: `licoes add` only accepts a lesson if the cited signal
+// actually happened in this project. Without a registered signal, a lesson is
+// opinion — rejected.
 //
-// O arquivo é chaveado por (codigo, feature, ref), não append-only: o tamanho
-// cresce com o número de PONTOS DE FALHA distintos, não com o número de
-// execuções — o que o mantém limitado mesmo com centenas de features.
+// The file is keyed by (code, feature, ref), not append-only: its size grows
+// with the number of distinct FAILURE POINTS, not with the number of runs —
+// which keeps it bounded even with hundreds of features.
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import path from 'path';
@@ -36,8 +37,8 @@ export function carregarSinais(specRoot) {
   }
 }
 
-// Mantém o histórico limitado: descarta sinais fora da janela e, se ainda
-// exceder o teto, fica com os mais recentes.
+// Keeps the history bounded: drops signals outside the window and, if still
+// over the cap, keeps only the most recent ones.
 function compactar(data, opts) {
   const janelaDias = opts.janelaDias ?? SINAIS_DEFAULTS.janelaDias;
   const max = opts.maxSinais ?? SINAIS_DEFAULTS.maxSinais;
@@ -79,8 +80,8 @@ function registrar(data, { codigo, feature, ref, gitRev }) {
   }
 }
 
-// Ref conferível de um achado: o ID canônico citado (campo explícito ou o
-// primeiro da mensagem); senão o arquivo apontado.
+// Checkable ref of a finding: the cited canonical ID (explicit field or the
+// first one in the message); otherwise the pointed file.
 function refDoAchado(f) {
   if (f.principle) return f.principle;
   const m = (f.message || '').match(RE_REF);
@@ -101,11 +102,11 @@ export function registrarAchados(specRoot, findings, { gitRev = null, ...opts } 
 export function registrarVerify(specRoot, record, opts = {}) {
   const eventos = [];
   for (const [acId, r] of Object.entries(record.results || {})) {
-    if (r.status === 'fail') eventos.push({ codigo: 'VERIFY_FALHOU', ref: acId });
-    else if (r.status === 'skip') eventos.push({ codigo: 'VERIFY_PULADO', ref: acId });
+    if (r.status === 'fail') eventos.push({ codigo: 'VERIFY_FAILED', ref: acId });
+    else if (r.status === 'skip') eventos.push({ codigo: 'VERIFY_SKIPPED', ref: acId });
   }
   for (const [pId, r] of Object.entries(record.principles || {})) {
-    if (r.status !== 'pass') eventos.push({ codigo: 'VERIFY_FALHOU', ref: pId });
+    if (r.status !== 'pass') eventos.push({ codigo: 'VERIFY_FAILED', ref: pId });
   }
   if (!eventos.length || !existsSync(specRoot)) return 0;
   const data = carregarSinais(specRoot);
@@ -116,8 +117,8 @@ export function registrarVerify(specRoot, record, opts = {}) {
   return eventos.length;
 }
 
-// O sinal que dá lastro a uma lição: mesmo código, mesma feature (ou sinal
-// global, sem feature) e fonte que corresponde ao ref registrado.
+// The signal that backs a lesson: same code, same feature (or a global signal,
+// without feature) and a source matching the registered ref.
 export function buscarSinal(data, { sinal, feature, fonte }) {
   if (!fonte) return null;
   const candidatos = Object.values(data.sinais).filter(

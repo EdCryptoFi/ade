@@ -1,76 +1,76 @@
-# Constituição — princípios que a máquina verifica
+# Constitution — principles the machine verifies
 
-A constituição (`.spec/constituicao.md`) codifica restrições **inegociáveis** do
-projeto. Não é estilo; é lei. E, diferente de outras ferramentas, aqui todo
-princípio [DEVE] tem uma **verificação executável** — senão o audit acusa
-"princípio sem verificação" (`PRINCIPIO_SEM_VERIFICACAO`).
+The constitution (`.spec/constituicao.md`) encodes the project's **non-negotiable**
+constraints. It's not style; it's law. And, unlike other tools, every
+[MUST] principle here has an **executable verification** — otherwise the audit
+flags "principle without verification" (`PRINCIPIO_SEM_VERIFICACAO`).
 
-## Níveis de obrigação
+## Levels of obligation
 
-- `[DEVE]` — obrigatório. Precisa de verificação. Violação = erro no audit.
-- `[RECOMENDADO]` — forte. Verificação opcional. Violação = aviso.
-- `[PODE]` — permitido/explícito. Documenta uma escolha consciente.
+- `[MUST]` — required. Needs verification. Violation = error in the audit.
+- `[SHOULD]` — strong. Verification optional. Violation = warning.
+- `[MAY]` — allowed/explicit. Documents a conscious choice.
 
-## Quatro formas de verificação
-
-```markdown
-## P-001 [DEVE] Todo requisito tem prova executável
-- verificação(gate): intrínseca ao audit
-```
-→ satisfeita pelo próprio mecanismo do audit (critério sem teste, critério sem
-prova, tarefa concluída sem prova). Só para princípios "meta" sobre o processo
-— regras de domínio usam as formas abaixo.
+## Four forms of verification
 
 ```markdown
-## P-001 [DEVE] Nota de aluno nunca exposta a outro aluno
-- verificação(teste): @principle:P-001
+## P-001 [MUST] Every requirement has executable proof
+- verification(gate): intrinsic to the audit
 ```
-→ exige que exista pelo menos um teste com `@principle:P-001` no título e que ele
-passe no verify. Você escreve o teste que prova o princípio.
+→ satisfied by the audit mechanism itself (criterion without test, criterion
+without proof, done task without proof). Only for "meta" principles about the
+process — domain rules use the forms below.
 
 ```markdown
-## P-004 [DEVE] Dados pessoais nunca em log
-- verificação(proibido): `console\.log\(.*cpf` em `src/**/*.js`
+## P-001 [MUST] A student's grade is never exposed to another student
+- verification(test): @principle:P-001
 ```
-→ o audit faz grep do padrão nos arquivos do glob. Qualquer ocorrência = violação,
-com arquivo e linha exatos (rastreabilidade princípio → arquivo → linha).
+→ requires at least one test with `@principle:P-001` in the title and that it
+passes in verify. You write the test that proves the principle.
 
 ```markdown
-## P-010 [DEVE] Toda rota de nota passa por checarDono()
-- verificação(obrigatório): `checarDono\(` em `src/rotas/notas/**/*.js`
+## P-004 [MUST] Personal data never in logs
+- verification(forbidden): `console\.log\(.*cpf` in `src/**/*.js`
 ```
-→ se existem arquivos no glob mas nenhum contém o padrão, é violação.
+→ the audit greps the pattern in the glob's files. Any occurrence = violation,
+with exact file and line (traceability principle → file → line).
 
-## Preset LGPD + educação
+```markdown
+## P-010 [MUST] Every grade route goes through checarDono()
+- verification(required): `checarDono\(` in `src/rotas/notas/**/*.js`
+```
+→ if files exist in the glob but none contains the pattern, it's a violation.
 
-`onp-spec init --preset lgpd-educacao` já vem com princípios reais para produtos
-que guardam dados de alunos (inclusive menores):
+## LGPD + education preset
 
-- **P-001** nota nunca exposta a outro aluno (teste)
-- **P-002** acesso a nota é registrado — trilha de auditoria (teste)
-- **P-003** dados de menores só com base legal explícita (teste)
-- **P-004** dados pessoais nunca em log (proibido, grep)
-- **P-005** minimização de coleta (recomendado)
-- **P-006** erro pedagógico não é dado punitivo (recomendado)
-- **P-007** exclusão a pedido do titular (pode)
-- **P-008** portabilidade dos dados do aluno (pode)
+`onp-spec init --preset lgpd-educacao` already comes with real principles for
+products that hold student data (including minors):
 
-Ajuste os globs/regex à sua stack — eles rodam de verdade no audit, então
-precisam apontar pros seus arquivos. Guard-rails do motor:
+- **P-001** grade never exposed to another student (test)
+- **P-002** grade access is logged — audit trail (test)
+- **P-003** minors' data only with an explicit legal basis (test)
+- **P-004** personal data never in logs (forbidden, grep)
+- **P-005** collection minimization (should)
+- **P-006** pedagogical error is not punitive data (should)
+- **P-007** deletion on the data subject's request (may)
+- **P-008** student data portability (may)
 
-- glob que não casa NENHUM arquivo → "verificação não olha nenhum arquivo"
-  (`GLOB_SEM_ARQUIVOS` — verificação inerte, provável typo);
-- nível fora de [DEVE]/[RECOMENDADO]/[PODE] → "nível de princípio inválido"
-  (`NIVEL_INVALIDO` — o princípio é tratado como DEVE, nunca ignorado);
-- regex rodam em subprocesso com tempo limite (5s) — padrão patológico
-  (catastrophic backtracking) vira "verificação malformada"
-  (`VERIFICACAO_MALFORMADA`), não trava o gate;
-- o esqueleto dos testes de princípio (`verificação(teste)`) nasce no
-  `scaffold`, junto com os testes dos critérios de aceite.
+Adjust the globs/regexes to your stack — they really run in the audit, so they
+need to point at your files. Engine guard-rails:
 
-## Rastreabilidade que dá diferencial de segurança
+- glob matching NO file → "verification looks at no files"
+  (`GLOB_SEM_ARQUIVOS` — inert verification, likely a typo);
+- level outside [MUST]/[SHOULD]/[MAY] → "invalid principle level"
+  (`NIVEL_INVALIDO` — the principle is treated as MUST, never ignored);
+- regexes run in a subprocess with a timeout (5s) — a pathological pattern
+  (catastrophic backtracking) becomes "malformed verification"
+  (`VERIFICACAO_MALFORMADA`), it doesn't hang the gate;
+- the skeleton of principle tests (`verification(test)`) is born in
+  `scaffold`, together with the acceptance criterion tests.
 
-Um estudo de caso de microsserviços bancários relatou 73% menos defeitos de
-segurança quando os princípios eram rastreados até arquivo e linha. É exatamente
-o que `verificação(proibido)` e `verificação(obrigatório)` fazem: cada violação
-sai com `arquivo:linha`, não com "reveja o código".
+## Traceability that makes a security difference
+
+A banking-microservices case study reported 73% fewer security defects when
+principles were traced to file and line. That is exactly what
+`verification(forbidden)` and `verification(required)` do: each violation comes
+out with `file:line`, not "review the code".

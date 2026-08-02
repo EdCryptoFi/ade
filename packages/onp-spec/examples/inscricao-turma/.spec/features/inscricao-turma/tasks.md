@@ -1,18 +1,18 @@
-# Tasks: Inscrição na turma
+# Tasks: Enrolling in a class
 
 > feature: inscricao-turma
 
-## T-001 — Registrar inscrição e decrementar vaga [concluida]
+## T-001 — Record enrollment and decrement seat [done]
 
 - Refs: US-001, AC-001
-- Arquivos: src/inscricao.js
+- Files: src/inscricao.js
 
-## T-002 — Recusar inscrição em turma lotada [concluida]
+## T-002 — Refuse enrollment in a full class [done]
 
 - Refs: AC-002
-- Arquivos: src/inscricao.js
+- Files: src/inscricao.js
 
-## T-003 — Exigir consentimento de responsável para menor [concluida]
+## T-003 — Require guardian consent for minors [done]
 
 - Refs: US-002, AC-003
-- Arquivos: src/inscricao.js
+- Files: src/inscricao.js

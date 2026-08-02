@@ -1,45 +1,45 @@
-# Exemplo: inscrição na turma
+# Example: enrolling in a class
 
-Projeto real e completo, com o audit fechando limpo. Use como referência ou como
-roteiro de demonstração.
+A real, complete project with the audit closing clean. Use it as a reference or as
+a demo script.
 
-## Rodar
+## Run
 
 ```bash
 cd examples/inscricao-turma
-npx onp-spec verify inscricao-turma   # 3/3 ACs provados
-npx onp-spec audit --ci               # exit 0 — spec e código alinhados
-npx onp-spec status                   # painel
+npx onp-spec verify inscricao-turma   # 3/3 ACs proven
+npx onp-spec audit --ci               # exit 0 — spec and code aligned
+npx onp-spec status                   # dashboard
 ```
 
-## O que este exemplo mostra
+## What this example shows
 
-- **Rastreabilidade completa**: US-001/US-002 → AC-001/002/003 → T-001/002/003 →
-  testes anotados com `@spec:AC-xxx`.
-- **DoD executável**: cada AC tem um teste; `verify` grava a prova em
+- **Full traceability**: US-001/US-002 → AC-001/002/003 → T-001/002/003 →
+  tests annotated with `@spec:AC-xxx`.
+- **Executable DoD**: each AC has a test; `verify` records the proof in
   `.spec/verification/inscricao-turma.json`.
-- **Suposições resolvidas**: ASM-001 e ASM-002 estão `confirmada` — por isso a
-  feature pôde ir para `implementada`. Se estivessem `aberta`, o audit bloquearia.
-- **Constituição LGPD**: P-001/002/003 provados por teste; P-004 (PII em log)
-  checado por grep. `src/inscricao.js` não vaza dado pessoal.
+- **Resolved assumptions**: ASM-001 and ASM-002 are `confirmed` — that's why the
+  feature could move to `implemented`. If they were `open`, the audit would block.
+- **LGPD constitution**: P-001/002/003 proven by test; P-004 (PII in logs)
+  checked by grep. `src/inscricao.js` does not leak personal data.
 
-## O momento do vídeo: provar que a spec continua verdadeira
+## The video moment: proving the spec stays true
 
-Renomeie um requisito na spec e veja o audit acusar o drift na hora:
+Rename a requirement in the spec and watch the audit flag the drift right away:
 
 ```bash
-# troque AC-003 por AC-030 em .spec/features/inscricao-turma/spec.md
+# change AC-003 to AC-030 in .spec/features/inscricao-turma/spec.md
 sed -i '' 's/AC-003/AC-030/g' .spec/features/inscricao-turma/spec.md
 npx onp-spec audit --ci
 ```
 
-Saída (exit 1):
+Output (exit 1):
 
 ```
-ERRO AC_SEM_TESTE  AC-030 (...) não tem nenhum teste anotado com @spec:AC-030
-ERRO TESTE_ORFAO   teste anotado com @spec:AC-003, mas esse AC não existe (drift!)
+ERROR AC_SEM_TESTE  AC-030 (...) has no test annotated with @spec:AC-030
+ERROR TESTE_ORFAO   test annotated with @spec:AC-003, but that AC doesn't exist (drift!)
 ```
 
-A spec mudou, o teste ficou pra trás, e a ferramenta **não deixou passar**. É essa
-a diferença entre spec-first (a spec vira mentira) e spec-anchored (a máquina
-força o alinhamento). Reverta com `git checkout` ou desfazendo o sed.
+The spec changed, the test was left behind, and the tool **did not let it pass**. That's
+the difference between spec-first (the spec becomes a lie) and spec-anchored (the machine
+forces the alignment). Revert with `git checkout` or by undoing the sed.

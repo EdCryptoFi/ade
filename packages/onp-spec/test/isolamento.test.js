@@ -1,6 +1,6 @@
-// Guarda-corpo: rodar `npm test` não pode sujar a máquina de quem clonou o
-// repositório. O ledger é global por natureza (~/.onp-spec), então todo teste
-// que invoca o CLI precisa apontar ONP_SPEC_HOME para uma pasta temporária.
+// Guard-rail: running `npm test` must not dirty the machine of whoever cloned
+// the repo. The ledger is global by nature (~/.onp-spec), so every test that
+// invokes the CLI needs to point ONP_SPEC_HOME at a temporary folder.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -28,7 +28,7 @@ function fotografar(dir) {
   return arquivos.sort().join('|');
 }
 
-test('ONP_SPEC_HOME redireciona o ledger e deixa o home real intocado', () => {
+test('ONP_SPEC_HOME redirects the ledger and leaves the real home untouched', () => {
   const tmp = mkdtempSync(path.join(os.tmpdir(), 'onpspec-iso-'));
   try {
     const antes = fotografar(HOME_REAL);
@@ -38,17 +38,17 @@ test('ONP_SPEC_HOME redireciona o ledger e deixa o home real intocado', () => {
     });
     assert.equal(r.status, 0, r.stderr);
     const ledger = path.join(tmp, 'painel', 'ledger.jsonl');
-    assert.ok(existsSync(ledger), 'ledger foi escrito no ONP_SPEC_HOME');
+    assert.ok(existsSync(ledger), 'ledger was written to ONP_SPEC_HOME');
     assert.match(readFileSync(ledger, 'utf-8'), /teste-isolamento/);
-    assert.equal(fotografar(HOME_REAL), antes, 'o ~/.onp-spec do usuário não foi tocado');
+    assert.equal(fotografar(HOME_REAL), antes, 'the user ~/.onp-spec was not touched');
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
 });
 
-test('nenhuma execução de teste vazou para o ledger do usuário', () => {
+test('no test run leaked into the user ledger', () => {
   const ledger = path.join(HOME_REAL, 'painel', 'ledger.jsonl');
-  if (!existsSync(ledger)) return; // máquina limpa: nada a checar
+  if (!existsSync(ledger)) return; // clean machine: nothing to check
   const vazados = readFileSync(ledger, 'utf-8')
     .split('\n')
     .filter(Boolean)
@@ -61,10 +61,10 @@ test('nenhuma execução de teste vazou para o ledger do usuário', () => {
     })
     .filter(
       (e) =>
-        // repo na raiz do mkdtemp: o prefixo aparece no nome do projeto;
-        // repo em subpasta (<tmp>/projeto, caso dos testes reexec): o
-        // prefixo só aparece no CAMINHO — sem olhar projetoDir, um
-        // vazamento dos testes reexec passaria despercebido
+        // repo at the root of the mkdtemp: the prefix shows up in the project name;
+        // repo in a subfolder (<tmp>/projeto, the reexec test case): the prefix
+        // only shows up in the PATH — without looking at projetoDir, a leak from
+        // the reexec tests would go unnoticed
         /^onpspec-(agents|reexec|iso|painel|ledger|ui|e2e)-/.test(e.projeto || '') ||
         /onpspec-(agents|reexec|iso|painel|ledger|ui|e2e)-/.test(e.projetoDir || '')
     )
@@ -72,6 +72,6 @@ test('nenhuma execução de teste vazou para o ledger do usuário', () => {
   assert.deepEqual(
     vazados,
     [],
-    `execuções de teste no ledger do usuário — algum teste esqueceu ONP_SPEC_HOME:\n${vazados.join('\n')}`
+    `test runs in the user ledger — some test forgot ONP_SPEC_HOME:\n${vazados.join('\n')}`
   );
 });

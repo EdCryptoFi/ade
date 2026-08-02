@@ -1,7 +1,7 @@
-// Cobertura de T-001 (feature portal-dever-casa, repo dever-casa): o motor
-// precisa auditar código que mora FORA de rootDir, referenciado por globs
-// com `../` (ex.: `../automacao-wpp-onp/src/**`). Sem isso, Q-005 não tem
-// como ser resolvida com "spec e auditoria únicas neste repo".
+// Coverage of T-001 (feature portal-dever-casa, repo dever-casa): the engine
+// needs to audit code living OUTSIDE rootDir, referenced by globs with `../`
+// (e.g.: `../automacao-wpp-onp/src/**`). Without it, Q-005 has no way to be
+// resolved with "single spec and single audit in this repo".
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -22,9 +22,9 @@ function makeDir(files) {
   return root;
 }
 
-test('walkFiles: glob com ../ enxerga arquivos fora de rootDir', () => {
+test('walkFiles: glob with ../ sees files outside rootDir', () => {
   const outerRepo = makeDir({ 'src/thing.test.js': '// @spec:AC-001 dummy\n' });
-  const rootDir = makeDir({ 'src/main.js': '// nada\n' });
+  const rootDir = makeDir({ 'src/main.js': '// nothing\n' });
   const outerName = path.basename(outerRepo);
 
   const files = walkFiles(rootDir, {
@@ -36,8 +36,8 @@ test('walkFiles: glob com ../ enxerga arquivos fora de rootDir', () => {
   assert.ok(files.includes(`../${outerName}/src/thing.test.js`));
 });
 
-test('walkFiles: raiz externa inexistente degrada graciosamente (sem crash)', () => {
-  const rootDir = makeDir({ 'src/main.js': '// nada\n' });
+test('walkFiles: nonexistent external root degrades gracefully (no crash)', () => {
+  const rootDir = makeDir({ 'src/main.js': '// nothing\n' });
   const files = walkFiles(rootDir, {
     includeGlobs: ['src/**', '../onp-spec-driven-repo-que-nao-existe/src/**'],
     ignoreGlobs: [],
@@ -45,7 +45,7 @@ test('walkFiles: raiz externa inexistente degrada graciosamente (sem crash)', ()
   assert.deepEqual(files, ['src/main.js']);
 });
 
-test('walkFiles: raiz externa não duplica arquivos quando globs se sobrepõem', () => {
+test('walkFiles: external root does not duplicate files when globs overlap', () => {
   const outerRepo = makeDir({ 'src/a.js': '', 'src/b.test.js': '' });
   const rootDir = makeDir({});
   const outerName = path.basename(outerRepo);
@@ -58,10 +58,10 @@ test('walkFiles: raiz externa não duplica arquivos quando globs se sobrepõem',
   assert.deepEqual(files, [`../${outerName}/src/a.js`, `../${outerName}/src/b.test.js`]);
 });
 
-test('loadProject: srcFiles/testFiles/annotations cobrem raiz externa do config', () => {
+test('loadProject: srcFiles/testFiles/annotations cover the external root from config', () => {
   const outerRepo = makeDir({
     'src/services/thing.js': 'export const thing = 1;\n',
-    'src/services/thing.test.js': "test('@spec:AC-001 soma', () => {});\n",
+    'src/services/thing.test.js': "test('@spec:AC-001 sums', () => {});\n",
   });
   const outerName = path.basename(outerRepo);
 
@@ -70,27 +70,27 @@ test('loadProject: srcFiles/testFiles/annotations cobrem raiz externa do config'
       '# Spec: Foo',
       '',
       '> feature: foo',
-      '> status: em-implementacao',
+      '> status: in-implementation',
       '',
-      '## Histórias',
+      '## Stories',
       '',
-      '### US-001 — Uma história',
+      '### US-001 — A story',
       '',
-      'Como alguém, quero algo, para algo.',
+      'As someone, I want something, so that something.',
       '',
-      '#### AC-001 — Um critério',
+      '#### AC-001 — A criterion',
       '',
-      '- **Dado** algo',
-      '- **Quando** algo',
-      '- **Então** algo',
+      '- **Given** something',
+      '- **When** something',
+      '- **Then** something',
       '',
-      '## Suposições',
+      '## Assumptions',
       '',
-      'Nenhuma.',
+      'None.',
       '',
-      '## Perguntas em aberto',
+      '## Open Questions',
       '',
-      'Nenhuma.',
+      'None.',
       '',
     ].join('\n'),
   });
@@ -106,10 +106,10 @@ test('loadProject: srcFiles/testFiles/annotations cobrem raiz externa do config'
   assert.ok(project.srcFiles.includes(`../${outerName}/src/services/thing.js`));
   assert.ok(
     !project.srcFiles.includes(`../${outerName}/src/services/thing.test.js`),
-    'arquivo de teste não deve contar como código-fonte (dupla contagem)'
+    'a test file must not count as source code (double counting)'
   );
 
   const tag = project.annotations.specTags.find((t) => t.acId === 'AC-001');
-  assert.ok(tag, 'esperava achar @spec:AC-001 no arquivo de teste da raiz externa');
+  assert.ok(tag, 'expected to find @spec:AC-001 in the external root test file');
   assert.equal(tag.file, `../${outerName}/src/services/thing.test.js`);
 });

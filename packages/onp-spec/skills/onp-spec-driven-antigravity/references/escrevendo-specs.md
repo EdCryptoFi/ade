@@ -1,100 +1,100 @@
-# Escrevendo especificações auditáveis
+# Writing auditable specifications
 
-## Um critério de aceite precisa ser observável
+## An acceptance criterion needs to be observable
 
-O motor de auditoria não entende prosa — ele entende testes. Então cada
-critério de aceite precisa descrever algo que um teste consegue checar.
+The audit engine doesn't understand prose — it understands tests. So every
+acceptance criterion needs to describe something a test can check.
 
-| Ruim (não testável) | Bom (observável) |
+| Poor (not testable) | Good (observable) |
 |---|---|
-| O sistema deve ser rápido | **Então** a resposta chega em menos de 300ms |
-| A senha deve ser segura | **Então** senhas com menos de 8 caracteres são rejeitadas |
-| O aluno vê suas notas | **Então** a resposta contém só as notas do aluno autenticado |
+| The system must be fast | **Then** the response arrives in under 300ms |
+| The password must be secure | **Then** passwords with fewer than 8 characters are rejected |
+| The student sees their grades | **Then** the response contains only the authenticated student's grades |
 
-## E precisa ser amigável — o dono do produto vai ler
+## And it needs to be friendly — the product owner will read it
 
-O critério de aceite é o contrato com quem NÃO programa. Escreva o título e o
-Então como **resultado que o usuário consegue ver e conferir**, não como
-detalhe interno:
+The acceptance criterion is the contract with whoever doesn't code. Write the
+title and the Then as a **result the user can see and verify**, not as an
+internal detail:
 
-| Técnico demais | Amigável (e igualmente testável) |
+| Too technical | Friendly (and just as testable) |
 |---|---|
-| **Então** o endpoint retorna 403 | **Então** a tela avisa "você não tem acesso" (e a resposta é 403) |
-| **Então** o job grava no Redis | **Então** o aviso de atraso aparece em até 1 minuto |
-| AC-004 — flag `is_late` true | AC-004 — Entrega atrasada é sinalizada ao professor |
+| **Then** the endpoint returns 403 | **Then** the screen warns "you don't have access" (and the response is 403) |
+| **Then** the job writes to Redis | **Then** the delay warning appears within 1 minute |
+| AC-004 — flag `is_late` true | AC-004 — Late submission is flagged to the teacher |
 
-Regra prática: leia o critério em voz alta para alguém de fora — se a pessoa
-não entende o que vai acontecer, reescreva. O detalhe técnico pode ficar entre
-parênteses; a frase principal é para gente.
+Rule of thumb: read the criterion out loud to someone outside the project — if
+the person can't understand what will happen, rewrite it. The technical detail
+can go in parentheses; the main sentence is for people.
 
-## Dado / Quando / Então — os três são obrigatórios
+## Given / When / Then — all three are required
 
-O audit acusa "critério de aceite incompleto" (`AC_INCOMPLETO`) se faltar
-qualquer cláusula. O parser tolera indentação, marcador `-` ou `*` e
-maiúsculas/minúsculas no keyword (e arquivos salvos em NFD no macOS) — mas o
-formato canônico é `- **Dado** ...`. Use `E` para continuar a última:
+The audit flags "incomplete acceptance criterion" (`AC_INCOMPLETO`) if any
+clause is missing. The parser tolerates indentation, the `-` or `*` bullet and
+keyword case (and files saved in NFD on macOS) — but the canonical format is
+`- **Given** ...`. Use `And` to continue the last one:
 
 ```markdown
-#### AC-003 — Aviso de atraso
+#### AC-003 — Delay notice
 
-- **Dado** um aluno com tarefa vencida
-- **Quando** ele abre a tarefa
-- **Então** vê um aviso de atraso
-- **E** o botão de envio fica desabilitado
+- **Given** a student with an overdue assignment
+- **When** they open the assignment
+- **Then** they see a delay notice
+- **And** the submit button is disabled
 ```
 
-## Suposições vs. perguntas em aberto
+## Assumptions vs. open questions
 
-- **Suposição (ASM-xxx)**: você preencheu uma lacuna com um palpite razoável e
-  **seguiu em frente**. Ex.: "assumo que o prazo é sempre no fim do dia".
-  Status: `aberta` → `confirmada` (o dono do produto validou) ou `invalidada`.
-- **Pergunta em aberto (Q-xxx)**: você **parou** porque falta informação.
-  Ex.: "qual fuso?". Status: `aberta` → `respondida`.
+- **Assumption (ASM-xxx)**: you filled a gap with a reasonable guess and
+  **moved on**. E.g.: "I assume the deadline is always end of day."
+  Status: `open` → `confirmed` (the product owner validated) or `invalidated`.
+- **Open question (Q-xxx)**: you **stopped** because information is missing.
+  E.g.: "which timezone?". Status: `open` → `answered`.
 
-Regra dura: uma feature não vira `implementada`/`auditada` com suposição
-`aberta`. Isso força a conversa "olha, assumi X — é isso mesmo?" antes de
-considerar pronto. Se o usuário estiver na conversa, pergunte na hora
-(AskUserQuestion) em vez de deixar a suposição envelhecer.
+Hard rule: a feature cannot become `implemented`/`audited` with an `open`
+assumption. That forces the conversation "look, I assumed X — is that right?"
+before considering it done. If the user is in the conversation, ask on the spot
+(AskUserQuestion) instead of letting the assumption age.
 
-Regra mais dura ainda: a AUSÊNCIA das seções `## Suposições` e
-`## Perguntas em aberto` também é problema (`SECAO_AUSENTE` — erro com a spec
-madura). Não tem nenhuma? Escreva "Nenhuma." explicitamente — e desconfie:
-quase toda feature esconde uma suposição.
+Even harder rule: the ABSENCE of the `## Assumptions` and `## Open Questions`
+sections is also a problem (`SECAO_AUSENTE` — an error on a mature spec). None
+at all? Write "None." explicitly — and be suspicious: almost every feature
+hides an assumption.
 
-## Códigos de rastreio são globais e únicos
+## Tracking codes are global and unique
 
-`US-xxx` (história de usuário), `AC-xxx` (critério de aceite), `ASM-xxx`
-(suposição), `Q-xxx` (pergunta), `T-xxx` (tarefa) e `P-xxx` (princípio) são
-únicos no projeto inteiro. `onp-spec new` continua a numeração
-automaticamente. Se você duplicar, o audit acusa código duplicado
+`US-xxx` (user story), `AC-xxx` (acceptance criterion), `ASM-xxx`
+(assumption), `Q-xxx` (question), `T-xxx` (task) and `P-xxx` (principle) are
+unique across the whole project. `onp-spec new` continues the numbering
+automatically. If you duplicate one, the audit flags a duplicate code
 (`ID_DUPLICADO`).
 
-## O ciclo de vida do status da especificação
+## The specification status lifecycle
 
 ```
-rascunho → pronta → em-implementacao → implementada → auditada
+draft → ready → in-implementation → implemented → audited
 ```
 
-- `rascunho`: escrevendo.
-- `pronta`: especificação revisada, suposições e perguntas tratadas, pronta
-  para implementar.
-- `em-implementacao`: código em andamento. Perguntas abertas viram aviso.
-- `implementada`: código pronto. Suposições abertas viram **erro**.
-- `auditada`: `audit --ci` saiu 0 com prova de todos os critérios de aceite.
+- `draft`: writing.
+- `ready`: spec reviewed, assumptions and questions handled, ready to
+  implement.
+- `in-implementation`: code in progress. Open questions become warnings.
+- `implemented`: code done. Open assumptions become **errors**.
+- `audited`: `audit --ci` exited 0 with proof for every acceptance criterion.
 
-## Tarefas: formato dos campos
+## Tasks: field formats
 
-- `Refs:` — códigos separados por vírgula/espaço. Códigos são GLOBAIS: uma
-  tarefa pode referenciar critério de aceite de outra feature.
-- `Arquivos:` — caminhos separados por VÍRGULA (espaços dentro do caminho são
-  válidos): `Arquivos: src/meu modulo.js, src/outro.js`. Capriche aqui: é este
-  campo que decide o que o plano de execução roda EM PARALELO (arquivos
-  disjuntos) e o que roda em sequência (arquivo compartilhado).
-- `Modelo:` e `Esforço:` (opcionais) — usados por `onp-spec plano` para o
-  executor da tarefa: `- Modelo: claude-opus-5` · `- Esforço: alto`
-  (baixo|medio|alto|xalto|max). Sem eles, valem os defaults da config
+- `Refs:` — codes separated by comma/space. Codes are GLOBAL: a task can
+  reference an acceptance criterion from another feature.
+- `Files:` — paths separated by COMMA (spaces inside a path are valid):
+  `Files: src/meu modulo.js, src/outro.js`. Be thorough here: this is the
+  field that decides what the execution plan runs IN PARALLEL (disjoint
+  files) and what runs sequentially (shared file).
+- `Model:` and `Effort:` (optional) — used by `onp-spec plano` for the task's
+  executor: `- Model: claude-opus-5` · `- Effort: high`
+  (low|medium|high|xhigh|max). Without them, the config defaults apply
   (`paralelo.model`, `paralelo.esforco`).
-- Status: `[pendente]` / `[em-andamento]` / `[concluida]` — acentos e
-  maiúsculas tolerados (`[Concluída]` conta); token fora da lista é "status de
-  tarefa inválido" (`TASK_STATUS_INVALIDO`, erro), nunca ignorado em silêncio.
-  Para atualizar sem editar na mão: `onp-spec tarefa <feature> <T-xxx> <status>`.
+- Status: `[pending]` / `[in-progress]` / `[done]` — accents and
+  capitalization tolerated (`[Done]` counts); a token outside the list is
+  "invalid task status" (`TASK_STATUS_INVALIDO`, error), never silently
+  ignored. To update without editing by hand: `onp-spec tarefa <feature> <T-xxx> <status>`.

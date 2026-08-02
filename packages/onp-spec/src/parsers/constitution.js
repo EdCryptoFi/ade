@@ -1,24 +1,24 @@
-// Parser de constituicao.md — princípios P-xxx com nível de obrigação
-// e verificações executáveis.
+// Parser for constituicao.md — P-xxx principles with obligation level
+// and executable checks.
 //
-//   # Constituição — v1.0.0
-//   ## P-001 [DEVE] Título do princípio
-//   Texto livre do princípio.
-//   - verificação(teste): @principle:P-001
-//   - verificação(proibido): `regex` em `src/**/*.js`
-//   - verificação(obrigatório): `regex` em `src/**/*.js`
+//   # Constitution — v1.0.0
+//   ## P-001 [MUST] Principle title
+//   Free principle text.
+//   - verification(test): @principle:P-001
+//   - verification(forbidden): `regex` in `src/**/*.js`
+//   - verification(required): `regex` in `src/**/*.js`
 
 import { splitLines } from '../util/text.js';
 
 const RE_VERSION = /v(\d+\.\d+\.\d+)/;
-const RE_PRINCIPLE = /^##\s+(P-\d{3,})\s+\[(DEVE|RECOMENDADO|PODE)\]\s*[—–-]?\s*(.+?)\s*$/;
-// heading de princípio com QUALQUER coisa entre colchetes — para acusar nível
-// inválido em vez de ignorar o princípio em silêncio
+const RE_PRINCIPLE = /^##\s+(P-\d{3,})\s+\[(MUST|SHOULD|MAY)\]\s*[—–-]?\s*(.+?)\s*$/;
+// principle heading with ANYTHING in brackets — to report an invalid level
+// instead of silently ignoring the principle
 const RE_PRINCIPLE_ANY = /^##\s+(P-\d{3,})\s+\[([^\]]+)\]\s*[—–-]?\s*(.+?)\s*$/;
-const RE_CHECK = /^\s*[-*]\s*verifica(?:ção|cao)\((teste|proibido|obrigat(?:ório|orio)|gate)\)\s*:\s*(.+?)\s*$/i;
-const RE_PATTERN_GLOB = /^`(.+?)`\s+em\s+`(.+?)`$/;
+const RE_CHECK = /^\s*[-*]\s*verification\((test|forbidden|required|gate)\)\s*:\s*(.+?)\s*$/i;
+const RE_PATTERN_GLOB = /^`(.+?)`\s+in\s+`(.+?)`$/;
 
-export const OBLIGATION_LEVELS = ['DEVE', 'RECOMENDADO', 'PODE'];
+export const OBLIGATION_LEVELS = ['MUST', 'SHOULD', 'MAY'];
 
 export function parseConstitution(content, { file = 'constituicao.md' } = {}) {
   const lines = splitLines(content);
@@ -54,13 +54,13 @@ export function parseConstitution(content, { file = 'constituicao.md' } = {}) {
       result.parseIssues.push({
         code: 'NIVEL_INVALIDO',
         line: lineNo,
-        message: `${badLevel[1]}: nível "[${badLevel[2]}]" não é um de: ${OBLIGATION_LEVELS.join(', ')} — princípio seria ignorado`,
+        message: `${badLevel[1]}: level "[${badLevel[2]}]" is not one of: ${OBLIGATION_LEVELS.join(', ')} — principle would be ignored`,
       });
-      // ainda registra o princípio (como DEVE, o mais conservador) para
-      // que as verificações dele não sumam
+      // still registers the principle (as MUST, the most conservative) so
+      // that its checks don't disappear
       current = {
         id: badLevel[1],
-        level: 'DEVE',
+        level: 'MUST',
         title: badLevel[3],
         line: lineNo,
         body: [],
@@ -74,20 +74,21 @@ export function parseConstitution(content, { file = 'constituicao.md' } = {}) {
 
     const check = line.match(RE_CHECK);
     if (check) {
-      const kindRaw = check[1].toLowerCase();
-      const kind = kindRaw.startsWith('obrigat') ? 'obrigatorio' : kindRaw;
+      // internal kind values: 'test' | 'forbidden' | 'required' | 'gate'
+      // (audit.js/scaffold.js must compare against these English values)
+      const kind = check[1].toLowerCase();
       const value = check[2];
 
-      if (kind === 'teste') {
+      if (kind === 'test') {
         const tag = value.match(/@principle:(P-\d{3,})/);
         current.checks.push({
-          kind: 'teste',
+          kind: 'test',
           principleTag: tag ? tag[1] : current.id,
           line: lineNo,
         });
       } else if (kind === 'gate') {
-        // satisfeita pelo próprio mecanismo do audit (AC_SEM_TESTE/AC_SEM_PROVA
-        // etc.) — usada por princípios "meta" como o P-001 do preset base
+        // satisfied by the audit mechanism itself (AC_SEM_TESTE/AC_SEM_PROVA
+        // etc.) — used by "meta" principles such as P-001 of the base preset
         current.checks.push({ kind: 'gate', line: lineNo });
       } else {
         const pg = value.match(RE_PATTERN_GLOB);
@@ -97,7 +98,7 @@ export function parseConstitution(content, { file = 'constituicao.md' } = {}) {
           result.parseIssues.push({
             code: 'VERIFICACAO_MALFORMADA',
             line: lineNo,
-            message: `${current.id}: verificação(${kind}) precisa do formato \`regex\` em \`glob\``,
+            message: `${current.id}: verification(${kind}) needs the format \`regex\` in \`glob\``,
           });
         }
       }

@@ -1,8 +1,8 @@
-// verify — roda o comando de teste do projeto, extrai o resultado POR TESTE
-// e cruza com os ACs da feature via tag @spec:AC-xxx no título do teste.
-// Grava .spec/verification/<feature>.json — a "prova" que o audit consome.
+// verify — runs the project test command, extracts the result PER TEST
+// and cross-references the feature's ACs via @spec:AC-xxx tags in test titles.
+// Writes .spec/verification/<feature>.json — the "proof" the audit consumes.
 //
-// O agente (ou o dev) não decide se o AC passou. O test runner decide.
+// Neither the agent (nor the dev) decides whether an AC passed. The test runner decides.
 
 import { execSync, spawnSync } from 'child_process';
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'fs';
@@ -12,11 +12,11 @@ import { allAcs } from '../parsers/spec.js';
 const RE_SPEC_TAG = /@spec:(AC-\d{3,})/g;
 const RE_PRINCIPLE_TAG = /@principle:(P-\d{3,})/g;
 
-// ---------- parsers de saída ----------
+// ---------- output parsers ----------
 
-// TAP (node:test, tape, etc.): "ok 1 - título" / "not ok 2 - título".
-// Diretivas "# SKIP"/"# TODO" chegam como "ok" no TAP mas NÃO são prova:
-// um teste pulado não pode provar um AC (senão skip = bypass do gate).
+// TAP (node:test, tape, etc.): "ok 1 - title" / "not ok 2 - title".
+// "# SKIP"/"# TODO" directives come through as "ok" in TAP but are NOT proof:
+// a skipped test cannot prove an AC (otherwise skip = gate bypass).
 export function parseTap(output) {
   const tests = [];
   for (const line of output.split(/\r?\n/)) {
@@ -29,15 +29,15 @@ export function parseTap(output) {
       title = directive[1].trim();
       skip = true;
     }
-    // ignora linhas de resumo de suíte do node:test (duplicam subtests)
+    // ignore node:test suite summary lines (they duplicate subtests)
     if (/^tests \d+$/.test(title)) continue;
     tests.push({ title, pass: !m[1] && !skip, skip });
   }
   return tests;
 }
 
-// Formato "spec" (reporter default do node:test desde v23/v25): "✔ título" /
-// "✖ título (ms)". Fallback quando o testCommand não força --test-reporter=tap.
+// "spec" format (node:test default reporter since v23/v25): "✔ title" /
+// "✖ title (ms)". Fallback when the testCommand doesn't force --test-reporter=tap.
 export function parseSpecFormat(output) {
   const tests = [];
   for (const line of output.split(/\r?\n/)) {
@@ -48,8 +48,8 @@ export function parseSpecFormat(output) {
   return tests;
 }
 
-// vitest --reporter=json / jest --json (mesmo shape de assertionResults).
-// "skipped"/"pending"/"todo"/"disabled" não são prova.
+// vitest --reporter=json / jest --json (same assertionResults shape).
+// "skipped"/"pending"/"todo"/"disabled" are not proof.
 export function parseJsonReport(jsonText) {
   const data = JSON.parse(jsonText);
   const tests = [];
@@ -71,9 +71,9 @@ export function extractTags(title) {
   return { acs, principles };
 }
 
-// Reduz a lista de testes a um veredito por tag.
-// Regra: falha domina passe, passe domina skip. Um AC só provado por testes
-// pulados fica "skip" — que NUNCA conta como prova.
+// Reduces the test list to one verdict per tag.
+// Rule: fail beats pass, pass beats skip. An AC only proven by skipped
+// tests stays "skip" — which NEVER counts as proof.
 const STATUS_RANK = { fail: 3, pass: 2, skip: 1 };
 
 export function resultsByTag(tests) {
@@ -110,28 +110,28 @@ export function gitRev(rootDir) {
   }
 }
 
-// ---------- execução ----------
+// ---------- execution ----------
 
 export function runVerify(project, featureName) {
   const { config } = project;
   const feature = project.features.find((f) => f.name === featureName);
   if (!feature) {
     throw new Error(
-      `feature "${featureName}" não encontrada em ${config.specDir}/features/`
+      `feature "${featureName}" not found in ${config.specDir}/features/`
     );
   }
   if (!feature.spec) {
-    throw new Error(`feature "${featureName}" não tem spec.md`);
+    throw new Error(`feature "${featureName}" has no spec.md`);
   }
   if (!config.testCommand) {
     throw new Error(
-      'defina "testCommand" em onpspec.config.json (ex.: "node --test" ou "npx vitest run --reporter=json --outputFile=.spec/verification/raw.json")'
+      'set "testCommand" in onpspec.config.json (e.g. "node --test --test-reporter=tap" or "npx vitest run --reporter=json --outputFile=.spec/verification/raw.json")'
     );
   }
 
-  // Ambiente limpo: se o verify roda dentro de outro test runner (CI, ou os
-  // próprios testes da lib), variáveis como NODE_TEST_CONTEXT/NODE_OPTIONS
-  // fariam o `node --test` filho trocar o protocolo de saída e não emitir TAP.
+  // Clean environment: if verify runs inside another test runner (CI, or the
+  // lib's own tests), variables like NODE_TEST_CONTEXT/NODE_OPTIONS would make
+  // the child `node --test` switch its output protocol and stop emitting TAP.
   const childEnv = { ...process.env };
   delete childEnv.NODE_TEST_CONTEXT;
   delete childEnv.NODE_OPTIONS;
@@ -148,9 +148,9 @@ export function runVerify(project, featureName) {
   let tests = [];
   if (config.reporter === 'tap') {
     tests = parseTap(output);
-    // node:test desde ~v23 trocou o reporter default para "spec" (✔/✖) —
-    // se o testCommand é só "node --test" sem --test-reporter=tap, o TAP não
-    // vem. Cai no spec como fallback em vez de ler 0 testes.
+    // node:test since ~v23 switched its default reporter to "spec" (✔/✖) —
+    // if the testCommand is just "node --test" without --test-reporter=tap, TAP
+    // won't come. Fall back to spec instead of reading 0 tests.
     if (tests.length === 0) tests = parseSpecFormat(output);
   } else if (config.reporter === 'vitest-json' || config.reporter === 'jest-json') {
     let jsonText = null;
@@ -159,27 +159,27 @@ export function runVerify(project, featureName) {
       if (existsSync(p)) jsonText = readFileSync(p, 'utf-8');
     }
     if (jsonText === null) {
-      // tenta achar o JSON no stdout (jest --json escreve no stdout)
+      // try to find the JSON in stdout (jest --json writes to stdout)
       const start = (proc.stdout || '').indexOf('{');
       if (start >= 0) jsonText = (proc.stdout || '').slice(start);
     }
     if (jsonText === null) {
       throw new Error(
-        `reporter ${config.reporter}: não achei o JSON — configure "reporterOutputFile" ou garanta o JSON no stdout`
+        `reporter ${config.reporter}: could not find JSON — set "reporterOutputFile" or ensure JSON on stdout`
       );
     }
     tests = parseJsonReport(jsonText);
   } else if (config.reporter === 'exitcode') {
-    tests = []; // sem granularidade por teste
+    tests = []; // no per-test granularity
   } else {
-    throw new Error(`reporter desconhecido: ${config.reporter}`);
+    throw new Error(`unknown reporter: ${config.reporter}`);
   }
 
   const { acResults, principleResults } = resultsByTag(tests);
 
-  // ACs com teste anotado (tag @spec em arquivo de teste) — o reporter
-  // exitcode só concede prova a esses; sem isso, exit 0 provaria até AC
-  // sem teste nenhum.
+  // ACs with an annotated test (@spec tag in a test file) — the exitcode
+  // reporter only grants proof to those; without this, exit 0 would prove
+  // even an AC with no test at all.
   const testFileSet = new Set(project.testFiles);
   const annotatedAcs = new Set(
     project.annotations.specTags.filter((t) => testFileSet.has(t.file)).map((t) => t.acId)
@@ -191,21 +191,21 @@ export function runVerify(project, featureName) {
     if (acResults[ac.id]) {
       results[ac.id] = { ...acResults[ac.id], method: config.reporter };
     } else if (config.reporter === 'exitcode' && annotatedAcs.has(ac.id)) {
-      // sem per-teste: só o exit code global prova (fraco, mas explícito)
+      // no per-test: only the global exit code proves (weak, but explicit)
       results[ac.id] = {
         status: proc.status === 0 ? 'pass' : 'fail',
         testName: null,
         method: 'exitcode',
       };
     }
-    // sem tag correspondente → sem entrada → audit acusa AC_SEM_PROVA
+    // no matching tag → no entry → audit flags AC_SEM_PROVA
   }
 
-  // dica de UX: rodou testes mas nenhum título carrega tag de AC da feature
+  // UX hint: tests ran but no title carries an AC tag for this feature
   const anyTagMatched = featureAcs.some((ac) => acResults[ac.id]);
   const hint =
     tests.length > 0 && !anyTagMatched && config.reporter !== 'exitcode'
-      ? `nenhum título de teste contém @spec:${featureAcs[0]?.id || 'AC-xxx'} — a tag vai no TÍTULO do teste`
+      ? `no test title contains @spec:${featureAcs[0]?.id || 'AC-xxx'} — the tag goes in the TEST TITLE`
       : null;
 
   const record = {

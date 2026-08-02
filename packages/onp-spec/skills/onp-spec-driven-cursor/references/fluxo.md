@@ -1,134 +1,138 @@
-# Fluxo detalhado — do zero ao audit limpo
+# Detailed flow — from zero to a clean audit
 
-## Exemplo completo: "entrega de dever de casa"
+## Complete example: "homework submission"
 
-> `onp-spec <cmd>` abrevia `node <dir-desta-skill>/scripts/onp-spec.mjs <cmd>`,
-> sempre a partir da RAIZ do projeto (motor embarcado — nada a instalar).
+> `onp-spec <cmd>` abbreviates `node <this-skill-dir>/scripts/onp-spec.mjs <cmd>`,
+> always from the project ROOT (embedded engine — nothing to install).
 
 ```bash
-# 1. inicializa o projeto (uma vez)
+# 1. initialize the project (once)
 onp-spec init --preset lgpd-educacao
 
-# 2. nova feature
+# 2. new feature
 onp-spec new entrega-dever-casa
 ```
 
-Edite `.spec/features/entrega-dever-casa/spec.md`:
+Edit `.spec/features/entrega-dever-casa/spec.md`:
 
 ```markdown
-# Spec: Entrega de dever de casa
+# Spec: Homework submission
 
 > feature: entrega-dever-casa
-> status: em-implementacao
+> status: in-implementation
 
-## Histórias
+## Stories
 
-### US-001 — Aluno entrega dentro do prazo
+### US-001 — Student submits on time
 
-Como aluno, quero enviar meu dever antes do prazo, para que conte como no prazo.
+As a student, I want to submit my homework before the deadline, so that it counts as on time.
 
-#### AC-001 — Entrega antes do prazo é "no prazo"
+#### AC-001 — Submission before the deadline is "on time"
 
-- **Dado** um aluno autenticado com uma tarefa aberta
-- **Quando** ele envia o arquivo antes do horário-limite
-- **Então** a entrega é registrada com status "no prazo"
+- **Given** an authenticated student with an open assignment
+- **When** they submit the file before the deadline
+- **Then** the submission is recorded with status "on time"
 
-#### AC-002 — Entrega após o prazo é "atrasada"
+#### AC-002 — Submission after the deadline is "late"
 
-- **Dado** um aluno autenticado com uma tarefa aberta
-- **Quando** ele envia depois do horário-limite
-- **Então** a entrega é registrada com status "atrasada"
+- **Given** an authenticated student with an open assignment
+- **When** they submit after the deadline
+- **Then** the submission is recorded with status "late"
 
-## Suposições
+## Assumptions
 
-| ID | Suposição | Status | Resolução |
+| ID | Assumption | Status | Resolution |
 |---|---|---|---|
-| ASM-001 | Trabalho não pode ser reenviado após correção | aberta | — |
+| ASM-001 | Homework cannot be resubmitted after grading | open | — |
 
-## Perguntas em aberto
+## Open Questions
 
-| ID | Pergunta | Status | Resposta |
+| ID | Question | Status | Answer |
 |---|---|---|---|
-| Q-001 | Qual fuso horário define o prazo? | aberta | — |
+| Q-001 | Which timezone defines the deadline? | open | — |
 ```
 
 ```bash
-# 3. cada critério de aceite vira um teste executável (a definição de pronto)
+# 3. each acceptance criterion becomes an executable test (the definition of done)
 onp-spec scaffold entrega-dever-casa
-# → cria test/entrega-dever-casa.spec.test.js com testes que FALHAM
-#   (inclui esqueletos p/ princípios da constituição com verificação(teste))
+# → creates test/entrega-dever-casa.spec.test.js with tests that FAIL
+#   (includes skeletons for constitution principles with verification(test))
 ```
 
-## Paralelizando: `onp-spec plano` (2+ tarefas pendentes)
+## Parallelizing: `onp-spec plano` (2+ pending tasks)
 
-Com as tarefas escritas em `tasks.md` (com `Arquivos:` honestos), o motor
-monta o plano de execução:
+With the tasks written in `tasks.md` (with honest `Files:`), the engine
+assembles the execution plan:
 
 ```bash
 onp-spec plano entrega-dever-casa
 ```
 
-- Tarefas de **arquivos disjuntos** viram **faixas paralelas**: 1 faixa =
-  1 git worktree + 1 branch (`spec/<feature>-faixa-N`) + 1 janela de contexto
-  limpa. Tarefas que compartilham arquivo caem na mesma faixa, em sequência;
-  tarefa sem `Arquivos:` roda sozinha ao final.
-- Campos opcionais por tarefa em tasks.md: `- Modelo: claude-sonnet-5` e
-  `- Esforço: alto` (baixo|medio|alto|xalto|max) — o plano usa nos executores.
-- Sai sempre `plano-execucao.md` (faixas, ondas, gestão de branches/commits,
-  ordem de merge e gate final). Na skill do **Claude Code**, saem também
-  `executar-tarefas.sh` (claude headless em paralelo, com `--model`/`--effort`
-  por tarefa) e `plano-execucao.html` (visual, com o botão "Executar todas as
-  tarefas em janelas limpas e paralelas"). Na skill do **Antigravity**, o
-  plano traz um prompt pronto por faixa para os agentes paralelos nativos.
-- A gestão de commits é do plano: **1 tarefa = 1 commit** (`T-003 <feature>:
-  <título>`), merges `--no-ff` de volta na branch de trabalho `spec/<feature>`,
-  e o gate final (verify + audit) roda depois de tudo mesclado.
+- Tasks on **disjoint files** become **parallel lanes**: 1 lane =
+  1 git worktree + 1 branch (`spec/<feature>-faixa-N`) + 1 clean context
+  window. Tasks sharing a file fall into the same lane, sequentially; a task
+  without `Files:` runs alone at the end.
+- Optional per-task fields in tasks.md: `- Model: claude-sonnet-5` and
+  `- Effort: high` (low|medium|high|xhigh|max) — the plan uses them in the
+  executors.
+- Always outputs `plano-execucao.md` (lanes, waves, branch/commit management,
+  merge order and the final gate). On the **Claude Code** skill it also
+  outputs `executar-tarefas.sh` (headless claude in parallel, with
+  `--model`/`--effort` per task) and `plano-execucao.html` (visual, with the
+  "Run all tasks in clean parallel windows" button). On the **Antigravity**
+  skill, the plan brings a ready prompt per lane for the native parallel
+  agents.
+- Commit management belongs to the plan: **1 task = 1 commit**
+  (`T-003 <feature>: <title>`), `--no-ff` merges back into the working branch
+  `spec/<feature>`, and the final gate (verify + audit) runs after everything
+  is merged.
 
-Regenere o plano sempre que tasks.md ou a config `paralelo` mudarem — os
-artefatos avisam que não devem ser editados à mão.
+Regenerate the plan whenever tasks.md or the `paralelo` config changes — the
+artifacts warn that they must not be edited by hand.
 
-Agora implemente a lógica e preencha os testes (ou deixe o plano executar). Rode:
+Now implement the logic and fill in the tests (or let the plan execute). Run:
 
 ```bash
-# 4. o runner prova (ou não) — teste PULADO não conta como prova
+# 4. the runner proves (or not) — a SKIPPED test doesn't count as proof
 onp-spec verify entrega-dever-casa
 
-# 5. o gate — cole a saída; exit 0 ou não está pronto
+# 5. the gate — paste the output; exit 0 or it's not done
 onp-spec audit --ci
 ```
 
-## A tabela de status
+## The status table
 
-Rode `onp-spec status` a qualquer momento:
+Run `onp-spec status` anytime:
 
 ```
-feature                        status             critérios  com-teste  provados  suposições?  perguntas?
+feature                        status             criteria  with-test  proven  assumptions?  questions?
 ────────────────────────────────────────────────────────────────────────────────────────────────────────
-entrega-dever-casa             em-implementacao           2          2         1            1           1
+entrega-dever-casa             in-implementation         2          2       1            1           1
 ```
 
-Lê-se: 2 critérios de aceite, ambos com teste anotado, mas só 1 provado até
-agora; 1 suposição e 1 pergunta ainda abertas. A feature **não pode** ir para
-`implementada` com a suposição ASM-001 aberta — o audit vai bloquear com
-"suposição em aberto" (`ASM_ABERTA`).
+It reads: 2 acceptance criteria, both with an annotated test, but only 1
+proven so far; 1 assumption and 1 question still open. The feature **cannot**
+go to `implemented` with assumption ASM-001 open — the audit will block with
+"open assumption" (`ASM_ABERTA`).
 
-## Integração com CI
+## CI integration
 
-No seu pipeline (GitHub Actions, GitLab CI):
+In your pipeline (GitHub Actions, GitLab CI):
 
-No CI você pode usar o mesmo motor embarcado (commitado junto com a skill) ou
-o pacote npm `@onovoprogramador/onp-spec` (modo CI):
+In CI you can use the same embedded engine (committed together with the skill)
+or the `@onovoprogramador/onp-spec` npm package (CI mode):
 
 ```yaml
 - run: node .claude/skills/onp-spec-driven/scripts/onp-spec.mjs verify entrega-dever-casa
 - run: node .claude/skills/onp-spec-driven/scripts/onp-spec.mjs audit --ci
 ```
 
-## Por que isso mata o vibecoding
+## Why this kills vibecoding
 
-O agente de IA não consegue dizer "implementei tudo" e passar batido: se um
-critério de aceite não tem teste, o audit acusa; se o teste nunca passou, o
-audit acusa; se o agente renomeou um requisito e esqueceu o teste, o audit
-acusa teste órfão (`TESTE_ORFAO`); se o agente PULOU o teste (skip/todo), o
-verify recusa a prova e o audit acusa critério sem prova (`AC_SEM_PROVA`). A
-prova não é a palavra do agente — é o exit code.
+The AI agent can't say "I implemented everything" and get away with it: if an
+acceptance criterion has no test, the audit flags it; if the test never
+passed, the audit flags it; if the agent renamed a requirement and forgot the
+test, the audit flags an orphan test (`TESTE_ORFAO`); if the agent SKIPPED the
+test (skip/todo), verify refuses the proof and the audit flags a criterion
+without proof (`AC_SEM_PROVA`). The proof isn't the agent's word — it's the
+exit code.

@@ -23,8 +23,8 @@ import {
   LICOES_DEFAULTS,
 } from '../src/core/licoes.js';
 
-// A tese da camada: o agente fraseia, o motor decide o que É lição —
-// lastro obrigatório, promoção por recorrência, poda, quarentena.
+// The layer's thesis: the agent phrases, the engine decides what IS a lesson —
+// mandatory backing, promotion by recurrence, pruning, quarantine.
 
 const roots = [];
 function specRoot() {
@@ -39,12 +39,12 @@ after(() => {
 });
 
 function achado(code, feature, ref, extra = {}) {
-  return { code, severity: 'erro', message: `${ref} sem prova`, feature, ...extra };
+  return { code, severity: 'error', message: `${ref} without proof`, feature, ...extra };
 }
 
-// ---------- lastro (o gate mecânico) ----------
+// ---------- backing (the mechanical gate) ----------
 
-test('lição sem nenhum sinal registrado é recusada (LICAO_SEM_LASTRO)', () => {
+test('a lesson without any recorded signal is rejected (LICAO_SEM_LASTRO)', () => {
   const spec = specRoot();
   const data = carregarLicoes(spec);
   const r = adicionarLicao(data, carregarSinais(spec), {
@@ -57,7 +57,7 @@ test('lição sem nenhum sinal registrado é recusada (LICAO_SEM_LASTRO)', () =>
   assert.equal(data.licoes.length, 0);
 });
 
-test('sinal registrado pelo audit dá lastro e a lição nasce candidata', () => {
+test('a signal recorded by the audit gives backing and the lesson is born a candidate', () => {
   const spec = specRoot();
   registrarAchados(spec, [achado('AC_SEM_PROVA', 'pagamentos', 'AC-042')]);
   const data = carregarLicoes(spec);
@@ -73,7 +73,7 @@ test('sinal registrado pelo audit dá lastro e a lição nasce candidata', () =>
   assert.equal(r.licao.recorrencia, 1);
 });
 
-test('fonte que não corresponde ao ref registrado é recusada, com dica das refs válidas', () => {
+test('a source that does not match the registered ref is rejected, with a hint of the valid refs', () => {
   const spec = specRoot();
   registrarAchados(spec, [achado('AC_SEM_PROVA', 'pagamentos', 'AC-042')]);
   const r = adicionarLicao(carregarLicoes(spec), carregarSinais(spec), {
@@ -86,7 +86,7 @@ test('fonte que não corresponde ao ref registrado é recusada, com dica das ref
   assert.match(r.erro, /AC-042/);
 });
 
-test('sinal de outra feature não dá lastro', () => {
+test('a signal from another feature gives no backing', () => {
   const spec = specRoot();
   registrarAchados(spec, [achado('AC_SEM_PROVA', 'pagamentos', 'AC-042')]);
   const r = adicionarLicao(carregarLicoes(spec), carregarSinais(spec), {
@@ -98,10 +98,10 @@ test('sinal de outra feature não dá lastro', () => {
   assert.match(r.erro, /LICAO_SEM_LASTRO/);
 });
 
-test('sinal global (sem feature, ex.: TESTE_ORFAO) dá lastro a qualquer feature', () => {
+test('a global signal (no feature, e.g.: TESTE_ORFAO) gives backing to any feature', () => {
   const spec = specRoot();
   registrarAchados(spec, [
-    { code: 'TESTE_ORFAO', severity: 'erro', message: 'teste @spec:AC-777 órfão', file: 'test/x.test.js' },
+    { code: 'TESTE_ORFAO', severity: 'error', message: 'teste @spec:AC-777 órfão', file: 'test/x.test.js' },
   ]);
   const r = adicionarLicao(carregarLicoes(spec), carregarSinais(spec), {
     texto: 'Ao renomear um AC, atualize as tags @spec dos testes no mesmo commit',
@@ -112,7 +112,7 @@ test('sinal global (sem feature, ex.: TESTE_ORFAO) dá lastro a qualquer feature
   assert.equal(r.evento, 'criada');
 });
 
-test('fonte pode ser o arquivo registrado ou conter o ref (match parcial)', () => {
+test('the source can be the registered file or contain the ref (partial match)', () => {
   const spec = specRoot();
   registrarAchados(spec, [achado('AC_SEM_PROVA', 'pagamentos', 'AC-042')]);
   const r = adicionarLicao(carregarLicoes(spec), carregarSinais(spec), {
@@ -124,7 +124,7 @@ test('fonte pode ser o arquivo registrado ou conter o ref (match parcial)', () =
   assert.equal(r.evento, 'criada');
 });
 
-test('texto longo demais é recusado — lição é UMA frase', () => {
+test('text that is too long is rejected — a lesson is ONE sentence', () => {
   const spec = specRoot();
   registrarAchados(spec, [achado('AC_SEM_PROVA', 'pagamentos', 'AC-042')]);
   const r = adicionarLicao(carregarLicoes(spec), carregarSinais(spec), {
@@ -136,7 +136,7 @@ test('texto longo demais é recusado — lição é UMA frase', () => {
   assert.match(r.erro, /280/);
 });
 
-test('flag sem valor (true booleano) não quebra: campo vira ausente', () => {
+test('a flag without a value (boolean true) does not break: the field becomes absent', () => {
   const spec = specRoot();
   registrarAchados(spec, [achado('AC_SEM_PROVA', 'pagamentos', 'AC-042')]);
   const data = carregarLicoes(spec);
@@ -154,9 +154,9 @@ test('flag sem valor (true booleano) não quebra: campo vira ausente', () => {
   assert.equal(escopoSolto.licao.escopo, null);
 });
 
-// ---------- dedup e promoção ----------
+// ---------- dedup and promotion ----------
 
-test('mesma lição refraseada (caixa/acentos/pontuação) na mesma feature deduplica sem promover', () => {
+test('the same lesson rephrased (case/accents/punctuation) in the same feature dedups without promoting', () => {
   const spec = specRoot();
   registrarAchados(spec, [achado('AC_SEM_PROVA', 'pagamentos', 'AC-042')]);
   const data = carregarLicoes(spec);
@@ -174,7 +174,7 @@ test('mesma lição refraseada (caixa/acentos/pontuação) na mesma feature dedu
   assert.equal(r.licao.status, 'candidata');
 });
 
-test('recorrência em 2ª feature distinta promove candidata a confirmada', () => {
+test('recurrence in a 2nd distinct feature promotes candidate to confirmed', () => {
   const spec = specRoot();
   registrarAchados(spec, [
     achado('AC_SEM_PROVA', 'pagamentos', 'AC-042'),
@@ -190,7 +190,7 @@ test('recorrência em 2ª feature distinta promove candidata a confirmada', () =
   assert.deepEqual(r.licao.features, ['pagamentos', 'cobranca']);
 });
 
-test('mesmo texto com sinal diferente é outra lição (chave inclui o sinal)', () => {
+test('the same text with a different signal is another lesson (the key includes the signal)', () => {
   const spec = specRoot();
   registrarAchados(spec, [
     achado('AC_SEM_PROVA', 'pagamentos', 'AC-042'),
@@ -204,9 +204,9 @@ test('mesmo texto com sinal diferente é outra lição (chave inclui o sinal)', 
   assert.equal(data.licoes.length, 2);
 });
 
-// ---------- listagem (o guia carregado no Especificar) ----------
+// ---------- listing (the guide loaded into Specifying) ----------
 
-test('list: default só confirmadas, ordenadas por recorrência, com teto', () => {
+test('list: default only confirmed, ordered by recurrence, with a ceiling', () => {
   const data = { schema: 1, proximoId: 4, licoes: [] };
   const t = new Date().toISOString();
   const licao = (id, status, recorrencia, escopo = null) => ({
@@ -225,7 +225,7 @@ test('list: default só confirmadas, ordenadas por recorrência, com teto', () =
   assert.equal(listarLicoes(data, { status: 'todas' }).length, 4);
 });
 
-test('list: filtro de escopo casa por prefixo hierárquico e query é normalizada', () => {
+test('list: scope filter matches by hierarchical prefix and query is normalized', () => {
   const t = new Date().toISOString();
   const data = {
     schema: 1,
@@ -249,9 +249,9 @@ test('list: filtro de escopo casa por prefixo hierárquico e query é normalizad
   assert.deepEqual(listarLicoes(data, { query: 'IDEMPOTÊNCIA' }).map((l) => l.id), ['L-001']);
 });
 
-// ---------- penalização e quarentena ----------
+// ---------- penalization and quarantine ----------
 
-test('2 penalidades movem confirmada para quarentena; re-registro é recusado', () => {
+test('2 penalties move confirmed to quarantine; re-registering is rejected', () => {
   const spec = specRoot();
   registrarAchados(spec, [
     achado('AC_SEM_PROVA', 'pagamentos', 'AC-042'),
@@ -270,10 +270,10 @@ test('2 penalidades movem confirmada para quarentena; re-registro é recusado', 
   assert.equal(listarLicoes(data).length, 0);
 
   const readd = adicionarLicao(data, sinais, { texto, sinal: 'AC_SEM_PROVA', feature: 'pagamentos', fonte: 'AC-042' });
-  assert.match(readd.erro, /quarentena/);
+  assert.match(readd.erro, /quarantine/);
 });
 
-test('penalizar candidata ou lição inexistente é erro', () => {
+test('penalizing a candidate or a nonexistent lesson is an error', () => {
   const t = new Date().toISOString();
   const data = {
     schema: 1, proximoId: 2,
@@ -283,12 +283,12 @@ test('penalizar candidata ou lição inexistente é erro', () => {
     }],
   };
   assert.match(penalizarLicao(data, 'L-001').erro, /candidata/);
-  assert.match(penalizarLicao(data, 'L-999').erro, /não existe/);
+  assert.match(penalizarLicao(data, 'L-999').erro, /does not exist/);
 });
 
-// ---------- poda ----------
+// ---------- pruning ----------
 
-test('poda remove candidata estagnada fora da janela; confirmada e recente ficam', () => {
+test('pruning removes a stagnant candidate outside the window; confirmed and recent stay', () => {
   const velha = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString();
   const recente = new Date().toISOString();
   const licao = (id, status, ultimaVez) => ({
@@ -304,9 +304,9 @@ test('poda remove candidata estagnada fora da janela; confirmada e recente ficam
   assert.deepEqual(data.licoes.map((l) => l.id), ['L-002', 'L-003']);
 });
 
-// ---------- sugerir (mineração mecânica) ----------
+// ---------- suggest (mechanical mining) ----------
 
-test('sugerir aponta sinais recorrentes em features distintas e conta lições existentes', () => {
+test('suggest points to signals recurring across distinct features and counts existing lessons', () => {
   const spec = specRoot();
   registrarAchados(spec, [
     achado('AC_SEM_PROVA', 'pagamentos', 'AC-042'),
@@ -331,9 +331,9 @@ test('sugerir aponta sinais recorrentes em features distintas e conta lições e
   assert.equal(sugestoes[0].licoesExistentes, 1);
 });
 
-// ---------- histórico de sinais ----------
+// ---------- signals history ----------
 
-test('registrarVerify grava VERIFY_FALHOU/VERIFY_PULADO por AC e princípio; pass não gera sinal', () => {
+test('registrarVerify records VERIFY_FAILED/VERIFY_SKIPPED per AC and principle; pass generates no signal', () => {
   const spec = specRoot();
   const n = registrarVerify(spec, {
     feature: 'pagamentos',
@@ -348,10 +348,10 @@ test('registrarVerify grava VERIFY_FALHOU/VERIFY_PULADO por AC e princípio; pas
   assert.equal(n, 3);
   const sinais = carregarSinais(spec);
   const codigos = Object.values(sinais.sinais).map((s) => `${s.codigo}:${s.ref}`).sort();
-  assert.deepEqual(codigos, ['VERIFY_FALHOU:AC-001', 'VERIFY_FALHOU:P-001', 'VERIFY_PULADO:AC-002']);
+  assert.deepEqual(codigos, ['VERIFY_FAILED:AC-001', 'VERIFY_FAILED:P-001', 'VERIFY_SKIPPED:AC-002']);
 });
 
-test('sinal repetido acumula ocorrências na mesma chave em vez de duplicar', () => {
+test('a repeated signal accumulates occurrences in the same key instead of duplicating', () => {
   const spec = specRoot();
   registrarAchados(spec, [achado('AC_SEM_TESTE', 'pagamentos', 'AC-042')]);
   registrarAchados(spec, [achado('AC_SEM_TESTE', 'pagamentos', 'AC-042')]);
@@ -361,7 +361,7 @@ test('sinal repetido acumula ocorrências na mesma chave em vez de duplicar', ()
   assert.equal(entradas[0].ocorrencias, 2);
 });
 
-test('compactação: fora da janela cai, e o teto mantém só os mais recentes', () => {
+test('compaction: outside the window drops, and the cap keeps only the most recent', () => {
   const spec = specRoot();
   const data = { schema: 1, sinais: {} };
   const velho = new Date(Date.now() - 200 * 24 * 60 * 60 * 1000).toISOString();
@@ -380,7 +380,7 @@ test('compactação: fora da janela cai, e o teto mantém só os mais recentes',
   assert.deepEqual(refs, ['AC-100', 'AC-101', 'AC-102', 'AC-103', 'AC-104']);
 });
 
-test('buscarSinal exige fonte e não aceita fonte curta em match parcial', () => {
+test('buscarSinal requires a source and does not accept a short source in partial match', () => {
   const data = {
     schema: 1,
     sinais: {
@@ -394,7 +394,7 @@ test('buscarSinal exige fonte e não aceita fonte curta em match parcial', () =>
 
 // ---------- render ----------
 
-test('salvarLicoes gera licoes.json + LICOES.md com as três seções', () => {
+test('salvarLicoes generates licoes.json + LICOES.md with the three sections', () => {
   const spec = specRoot();
   registrarAchados(spec, [achado('AC_SEM_PROVA', 'pagamentos', 'AC-042')]);
   const data = carregarLicoes(spec);
@@ -405,18 +405,18 @@ test('salvarLicoes gera licoes.json + LICOES.md com as três seções', () => {
 
   assert.ok(existsSync(path.join(spec, 'licoes.json')));
   const md = readFileSync(path.join(spec, 'LICOES.md'), 'utf-8');
-  assert.match(md, /## Confirmadas/);
-  assert.match(md, /## Candidatas/);
-  assert.match(md, /## Quarentena/);
+  assert.match(md, /## Confirmed/);
+  assert.match(md, /## Candidates/);
+  assert.match(md, /## Quarantined/);
   assert.match(md, /L-001 — Asserte o valor persistido/);
-  assert.match(md, /escopo: `cobranca`/);
+  assert.match(md, /scope: `cobranca`/);
 
   const relido = carregarLicoes(spec);
   assert.equal(relido.licoes.length, 1);
   assert.equal(relido.proximoId, 2);
 });
 
-// ---------- fluxo real via CLI (init → audit → licoes) ----------
+// ---------- real flow via CLI (init → audit → licoes) ----------
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BIN = path.join(__dirname, '..', 'bin', 'onp-spec.js');
@@ -451,7 +451,7 @@ Como usuário, quero ${feature}, para que funcione.
 `;
 }
 
-test('CLI ponta-a-ponta: audit registra sinais, add exige lastro, recorrência promove', () => {
+test('end-to-end CLI: audit records signals, add requires backing, recurrence promotes', () => {
   const root = mkdtempSync(path.join(os.tmpdir(), 'onpspec-licoes-e2e-'));
   roots.push(root);
   const cli = (...args) => {
@@ -470,7 +470,7 @@ test('CLI ponta-a-ponta: audit registra sinais, add exige lastro, recorrência p
 
   const audit = cli('audit');
   assert.equal(audit.code, 1);
-  assert.match(audit.out, /sinal\(is\) registrados no histórico/);
+  assert.match(audit.out, /signal\(s\) recorded in the history/);
   assert.ok(existsSync(path.join(root, '.spec', 'verification', 'sinais.json')));
 
   const semLastro = cli(
@@ -484,14 +484,14 @@ test('CLI ponta-a-ponta: audit registra sinais, add exige lastro, recorrência p
   const texto = 'Todo AC nasce com teste via scaffold antes de implementar';
   const add1 = cli('licoes', 'add', '--sinal', 'AC_SEM_TESTE', '--feature', 'pagamentos', '--fonte', 'AC-101', '--texto', texto, '--escopo', 'cobranca');
   assert.equal(add1.code, 0, add1.out);
-  assert.match(add1.out, /candidata/);
+  assert.match(add1.out, /candidate/);
 
   const listVazia = cli('licoes', 'list');
-  assert.match(listVazia.out, /nenhuma lição confirmada/);
+  assert.match(listVazia.out, /no confirmed lessons yet/);
 
   const add2 = cli('licoes', 'add', '--sinal', 'AC_SEM_TESTE', '--feature', 'cobranca', '--fonte', 'AC-201', '--texto', texto);
   assert.equal(add2.code, 0, add2.out);
-  assert.match(add2.out, /PROMOVIDA/);
+  assert.match(add2.out, /PROMOTED/);
 
   const list = cli('licoes', 'list');
   assert.match(list.out, /L-001 \[confirmada\]/);
@@ -502,6 +502,6 @@ test('CLI ponta-a-ponta: audit registra sinais, add exige lastro, recorrência p
   assert.match(sugerir.out, /AC_SEM_TESTE/);
 
   const status = cli('licoes', 'status');
-  assert.match(status.out, /1 confirmada\(s\)/);
-  assert.match(status.out, /ponto\(s\) de falha distintos/);
+  assert.match(status.out, /1 confirmed/);
+  assert.match(status.out, /distinct failure point\(s\)/);
 });
