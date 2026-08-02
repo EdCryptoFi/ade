@@ -82,7 +82,7 @@ export default function Playground() {
       setResult(flattenResult(rest))
       setFiles(f)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido")
+      setError(err instanceof Error ? err.message : "Unknown error")
     } finally {
       setLoading(false)
     }

@@ -39,7 +39,23 @@ apps/api/     → Cloudflare Worker (POST /analyze, POST /audit)
 apps/mcp/     → MCP Server (16 tools, 4-step wizard, security audit)
 apps/site/    → Next.js playground
 packages/ade-core/ → Core engine (zero runtime deps, Zod + Vitest)
+packages/onp-spec/ → Spec-driven engine: specs auditable against code, DoD, explicit assumptions (MIT, from onp-spec-driven)
 ```
+
+## Spec-Driven Development
+
+`packages/onp-spec` (from [onp-spec-driven](https://github.com/onovoprogramador/onp-spec-driven)) is a zero-dependency engine for spec-anchored development: the spec stays true as code evolves.
+
+```
+onp-spec init [--preset base|lgpd-educacao] [--agents claude|codex|cursor]
+onp-spec new <feature>        # spec.md + tasks.md under .spec/features/<feature>/
+onp-spec scaffold <feature>   # one failing test per acceptance criterion
+onp-spec plano <feature>      # parallel lanes + execution artifacts
+onp-spec verify <feature>     # test runner records proof of each AC
+onp-spec audit [--ci]         # spec ↔ tasks ↔ tests ↔ code ↔ constitution (exit 1 on error)
+```
+
+Programmatic API: `loadProject`, `auditProject`, `runVerify`, `scaffoldTests`, `parseSpec`, `parseTasks` (see `packages/onp-spec/src/index.js`).
 
 ## Security Audit
 

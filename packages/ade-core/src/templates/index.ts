@@ -17,19 +17,19 @@ const LAYER_LABEL: Record<SecurityLayer, string> = {
 function generateVision(plan: PlanData): string {
   return `# Vision
 
-## Projeto
-Aplicação do domínio **${plan.domain}** com arquitetura orientada a decisões.
+## Project
+**${plan.domain}** application with a decision-driven architecture.
 
-## Stack Principal
+## Main Stack
 - Frontend: ${plan.infrastructure.frontend}
 - Backend: ${plan.infrastructure.backend}
 - Database: ${plan.infrastructure.database}
 - Deploy: ${plan.infrastructure.deploy}
 
-## Estruturas de Dados
+## Data Structures
 ${plan.data.structures.map(s => `- ${s}`).join("\n")}
 
-## Componentes Principais
+## Main Components
 ${renderTree(plan.components.tree, 1)}
 `
 }

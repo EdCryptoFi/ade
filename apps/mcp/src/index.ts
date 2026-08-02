@@ -267,7 +267,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           features: {
             type: "array",
             items: { type: "string" },
-            description: "Features do projeto",
+            description: "Project features",
           },
           users: { type: "number", description: "Estimated number of users" },
           blockchain: { type: "boolean" },
@@ -296,13 +296,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "ade-security-audit",
-      description: "Auditoria de segurança Zero-Trust: 15 leis, 12 vetores de ataque, 10 anti-padrões de vibe coding, scorecard e Security TDD",
+      description: "Zero-Trust security audit: 15 laws, 12 attack vectors, 10 vibe coding anti-patterns, scorecard and Security TDD",
       inputSchema: {
         type: "object",
         properties: {
           description: { type: "string", description: "Project description" },
           domain: { type: "string", description: "Project domain" },
-          features: { type: "array", items: { type: "string" }, description: "Features do projeto" },
+          features: { type: "array", items: { type: "string" }, description: "Project features" },
           users: { type: "number", description: "Estimated number of users" },
           blockchain: { type: "boolean" },
           auth: { type: "boolean" },
@@ -725,7 +725,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 message: "Here are the recommended features for your project. Confirm which ones you want (true=yes, false=no).",
                 recommendedFeatures: settings.features,
                 users: { type: "number", description: "How many users do you expect?" },
-                hint: "Passe um objeto features com { blockchain: true, auth: false, ... }",
+                hint: "e.g. Pass an object features with { blockchain: true, auth: false, ... }",
               }, null, 2),
             }],
           }

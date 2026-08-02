@@ -218,7 +218,7 @@ export function decideComponents(input: ProjectInput, domain: DomainCategory): C
   addConditionalChildren(tree, input)
   return {
     tree,
-    reasoning: `Template ${domain} com ${countNodes(tree)} componentes baseado em: ${input.features.join(", ")}`,
+    reasoning: `Template ${domain} with ${countNodes(tree)} components based on: ${input.features.join(", ")}`,
   }
 }
 

@@ -66,10 +66,10 @@ export default {
     if (request.method === "GET" && path === "/schema") {
       return json({
         endpoints: [
-          { method: "POST", path: "/analyze", description: "Gera arquitetura completa (plano + settings + security audit)" },
-          { method: "POST", path: "/audit", description: "Auditoria de segurança Zero-Trust (15 leis, vetores, anti-padrões, scorecard)" },
+          { method: "POST", path: "/analyze", description: "Generates full architecture (plan + settings + security audit)" },
+          { method: "POST", path: "/audit", description: "Zero-Trust security audit (15 laws, vectors, anti-patterns, scorecard)" },
           { method: "GET", path: "/health", description: "Health check" },
-          { method: "GET", path: "/schema", description: "Este documento" },
+          { method: "GET", path: "/schema", description: "This document" },
         ],
         input: {
           description: "string (min 3 chars) — project description",
