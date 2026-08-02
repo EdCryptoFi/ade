@@ -389,6 +389,42 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["step"],
       },
     },
+    {
+      name: "ade-spec-audit",
+      description: "Spec-driven audit: cross-checks spec ↔ tasks ↔ tests ↔ code ↔ constitution of a project (exit code 1 = drift). Points to .spec/ root of an onp-spec project.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          rootDir: { type: "string", description: "Project root directory containing .spec/ and onpspec.config.json" },
+          ci: { type: "boolean", description: "CI mode: escalates warnings to errors (AC_SEM_PROVA, TASK_CONCLUIDA_SEM_PROVA, ...)" },
+        },
+        required: ["rootDir"],
+      },
+    },
+    {
+      name: "ade-spec-status",
+      description: "Spec-driven status: overview of features, acceptance criteria with proof, open assumptions and questions of an onp-spec project",
+      inputSchema: {
+        type: "object",
+        properties: {
+          rootDir: { type: "string", description: "Project root directory containing .spec/" },
+        },
+        required: ["rootDir"],
+      },
+    },
+    {
+      name: "ade-spec-scaffold",
+      description: "Spec-driven scaffold: generates one failing test per acceptance criterion without test yet (TDD skeleton)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          rootDir: { type: "string", description: "Project root directory containing .spec/" },
+          feature: { type: "string", description: "Feature name (directory under .spec/features/)" },
+          force: { type: "boolean", description: "Regenerate even if the test file already exists" },
+        },
+        required: ["rootDir", "feature"],
+      },
+    },
   ],
 }))
 
@@ -807,6 +843,77 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         throw new Error(`Unknown wizard step: ${step}`)
+      }
+
+      case "ade-spec-audit": {
+        const rootDir = String(args.rootDir)
+        const onp = await import("@ade/onp-spec")
+        const { loadConfig, loadProject, auditProject } = onp
+        let config
+        try {
+          config = loadConfig(rootDir)
+        } catch (err) {
+          return { isError: true, content: [{ type: "text", text: String(err) }] }
+        }
+        const project = loadProject(config)
+        const result = auditProject(project, { ci: args.ci === true })
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(
+              {
+                ok: result.ok,
+                exitCode: result.exitCode,
+                stats: result.stats,
+                findings: result.findings,
+                project: { errors: project.errors },
+              },
+              null, 2,
+            ),
+          }],
+        }
+      }
+
+      case "ade-spec-status": {
+        const rootDir = String(args.rootDir)
+        const onp = await import("@ade/onp-spec")
+        const { loadConfig, loadProject, auditProject } = onp
+        const config = loadConfig(rootDir)
+        const project = loadProject(config)
+        const result = auditProject(project)
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(
+              {
+                ok: result.ok,
+                stats: result.stats,
+                errors: project.errors,
+              },
+              null, 2,
+            ),
+          }],
+        }
+      }
+
+      case "ade-spec-scaffold": {
+        const rootDir = String(args.rootDir)
+        const feature = String(args.feature)
+        const onp = await import("@ade/onp-spec")
+        const { loadConfig, loadProject, scaffoldTests } = onp
+        const config = loadConfig(rootDir)
+        const project = loadProject(config)
+        try {
+          const out = scaffoldTests(project, feature, { force: args.force === true })
+          return {
+            content: [{
+              type: "text",
+              text: typeof out === "string" ? out : JSON.stringify(out, null, 2),
+            }],
+          }
+        } catch (err) {
+          return { isError: true, content: [{ type: "text", text: String(err) }] }
+        }
       }
 
       default:

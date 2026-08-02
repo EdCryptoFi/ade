@@ -36,7 +36,7 @@ Configure in `.opencode.json` or `claude_desktop_config.json`:
 
 ```
 apps/api/     → Cloudflare Worker (POST /analyze, POST /audit)
-apps/mcp/     → MCP Server (16 tools, 4-step wizard, security audit)
+apps/mcp/     → MCP Server (19 tools, 4-step wizard, security audit, spec-driven audit)
 apps/site/    → Next.js playground
 packages/ade-core/ → Core engine (zero runtime deps, Zod + Vitest)
 packages/onp-spec/ → Spec-driven engine: specs auditable against code, DoD, explicit assumptions (MIT, from onp-spec-driven)
@@ -56,6 +56,8 @@ onp-spec audit [--ci]         # spec ↔ tasks ↔ tests ↔ code ↔ constituti
 ```
 
 Programmatic API: `loadProject`, `auditProject`, `runVerify`, `scaffoldTests`, `parseSpec`, `parseTasks` (see `packages/onp-spec/src/index.js`).
+
+Exposed via MCP: `ade-spec-audit`, `ade-spec-status`, `ade-spec-scaffold` (point `rootDir` at any project with `.spec/`). Working example: `packages/onp-spec/examples/inscricao-turma/`.
 
 ## Security Audit
 

@@ -11,11 +11,12 @@
   "dependencies": {
     "@ade/core": "workspace:*",
     "@ade/onp-spec": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.30.0"
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "ajv": "8.20.0"
   },
   "devDependencies": {
+    "@types/node": "^26.1.2",
     "tsx": "^4.19.0",
-    "typescript": "^5.8.0",
-    "@types/node": "^26.1.2"
+    "typescript": "^5.8.0"
   }
 }
