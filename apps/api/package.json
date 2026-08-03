@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "test": "node --test src/security.test.ts",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit"
   },
@@ -14,6 +15,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260728.1",
+    "@types/node": "^26.1.2",
     "typescript": "^5.8.0",
     "wrangler": "^4.115.0"
   }

@@ -3,8 +3,8 @@ import { z } from "zod"
 export const ProjectInputSchema = z.object({
   description: z.string().min(3, "Description must have at least 3 characters").max(2000),
   domain: z.string().min(2, "Domain must have at least 2 characters").max(100),
-  features: z.array(z.string()).min(1, "At least one feature is required"),
-  users: z.number().int().positive().optional(),
+  features: z.array(z.string().min(1).max(200)).min(1, "At least one feature is required").max(50, "At most 50 features allowed"),
+  users: z.number().int().positive().max(1_000_000_000).optional(),
   blockchain: z.boolean().optional().default(false),
   auth: z.boolean().optional().default(false),
   upload: z.boolean().optional().default(false),
@@ -25,13 +25,13 @@ export const ProjectInputSchema = z.object({
   search: z.boolean().optional().default(false),
   backgroundJobs: z.boolean().optional().default(false),
   cms: z.boolean().optional().default(false),
-})
+}).strict()
 
 export const PartialProjectInputSchema = z.object({
   description: z.string().min(3).max(2000).optional(),
   domain: z.string().min(2).max(100).optional(),
-  features: z.array(z.string()).optional(),
-  users: z.number().int().positive().optional(),
+  features: z.array(z.string().min(1).max(200)).max(50).optional(),
+  users: z.number().int().positive().max(1_000_000_000).optional(),
   blockchain: z.boolean().optional(),
   auth: z.boolean().optional(),
   upload: z.boolean().optional(),
@@ -52,7 +52,7 @@ export const PartialProjectInputSchema = z.object({
   search: z.boolean().optional(),
   backgroundJobs: z.boolean().optional(),
   cms: z.boolean().optional(),
-})
+}).strict()
 
 export function validate(input: unknown) {
   const result = ProjectInputSchema.safeParse(input)

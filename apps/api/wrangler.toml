@@ -7,3 +7,14 @@ name = "ade-api-prod"
 
 [vars]
 ENVIRONMENT = "production"
+# Comma-separated CORS allowlist (LAW-4). The playground on Vercel + localhost.
+ALLOWED_ORIGINS = "https://ade-vibe.vercel.app,http://localhost:3000"
+
+# Optional: production-grade rate limiting (LAW-3). Uncomment and `wrangler deploy`
+# after creating the binding in the Cloudflare dashboard. When present, the Worker
+# uses it (cross-isolate); otherwise it falls back to in-memory burst protection.
+# [[rate-limits]]
+# binding = "RATE_LIMITER"
+# name = "ade-api-rate-limit"
+# namespace_id = "<create via dashboard>"
+# simple = { limit = 30, period = 60 }

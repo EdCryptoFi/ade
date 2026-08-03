@@ -7,6 +7,7 @@ import {
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs"
 import { join, dirname } from "node:path"
 import { fileURLToPath } from "node:url"
+import { randomUUID } from "node:crypto"
 
 import { generateArchitecture } from "@ade/core/ade"
 import { generateSettings } from "@ade/core/settings"
@@ -21,7 +22,11 @@ function loadSessions(): Map<string, ProjectSession> {
       const data = JSON.parse(readFileSync(SESSIONS_PATH, "utf-8"))
       return new Map(Object.entries(data))
     }
-  } catch { /* ignore corrupt file */ }
+  } catch (e) {
+    // 🔒 SECURITY [A6/LAW-14]: never swallow — log so corrupt/untrusted
+    // sessions.json is visible in server logs instead of silently lost.
+    console.error(JSON.stringify({ scope: "loadSessions", level: "error", error: String(e) }))
+  }
   return new Map()
 }
 
@@ -39,7 +44,28 @@ const sessions = loadSessions()
 function persist() { saveSessions(sessions) }
 
 function newId(): string {
-  return `proj_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+  // 🔒 SECURITY [LAW-5]: crypto-grade session id — Math.random() is
+  // predictable and would let an attacker guess/forge other sessions.
+  return `proj_${randomUUID()}`
+}
+
+// 🔒 SECURITY [LAW-3]: hard length caps on any free-text input, applied
+// before coercion. Mirrors the backend schema limits (validation.ts).
+const MAX_DESCRIPTION = 2000
+const MAX_DOMAIN = 100
+const MAX_FEATURE_LEN = 200
+const MAX_FEATURES = 50
+
+function clampText(v: unknown, max: number): string {
+  return String(v ?? "").slice(0, max)
+}
+
+function clampFeatures(v: unknown): string[] {
+  if (!Array.isArray(v)) return []
+  return v
+    .map((x) => String(x).slice(0, MAX_FEATURE_LEN))
+    .filter(Boolean)
+    .slice(0, MAX_FEATURES)
 }
 
 const server = new Server(
@@ -430,10 +456,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 
 function buildInput(params: Record<string, unknown>): ProjectInput {
   return {
-    description: String(params.description ?? ""),
-    domain: String(params.domain ?? ""),
-    features: Array.isArray(params.features) ? params.features.map(String) : [],
-    users: typeof params.users === "number" ? params.users : undefined,
+    description: clampText(params.description, MAX_DESCRIPTION),
+    domain: clampText(params.domain, MAX_DOMAIN),
+    features: clampFeatures(params.features),
+    users: typeof params.users === "number" && Number.isFinite(params.users) ? params.users : undefined,
     blockchain: !!params.blockchain,
     auth: !!params.auth,
     upload: !!params.upload,
@@ -455,6 +481,15 @@ function buildInput(params: Record<string, unknown>): ProjectInput {
     backgroundJobs: !!params.backgroundJobs,
     cms: !!params.cms,
   }
+}
+
+// 🔒 SECURITY [LAW-5]: session ids are opaque tokens — only accept the
+// generated format, reject anything else (path traversal / junk lookups).
+const SESSION_ID_RE = /^proj_[0-9a-f-]{36}$/
+
+function sessionIdOf(v: unknown): string | null {
+  const s = String(v ?? "")
+  return SESSION_ID_RE.test(s) ? s : null
 }
 
 const featureKeys = [
@@ -482,6 +517,31 @@ function sessionToFullInput(session: ProjectSession): ProjectInput {
     ...sessionToPartialInput(session),
     users: session.users ?? 0,
   } as ProjectInput
+}
+
+// 🔒 SECURITY [LAW-5/LAW-2]: resolves a session id from tool args, rejecting
+// anything that isn't a generated id. Throws a safe, generic error.
+function getSession(args: Record<string, unknown>, label: string): ProjectSession {
+  const id = sessionIdOf(args.sessionId)
+  if (!id) throw new Error(`Invalid ${label}: expected a valid session id`)
+  const session = sessions.get(id)
+  if (!session) throw new Error(`Session ${id} not found`)
+  return session
+}
+
+// 🔒 SECURITY [LAW-2]: only known feature keys can be enabled; unknown keys
+// are rejected instead of silently accepted (mass assignment protection).
+function sanitizeFeatureFlags(v: unknown): string[] {
+  if (!v || typeof v !== "object") return []
+  const known = new Set(featureKeys)
+  for (const key of Object.keys(v as Record<string, unknown>)) {
+    if (!known.has(key as (typeof featureKeys)[number])) {
+      throw new Error(`Unknown feature: ${key}`)
+    }
+  }
+  return Object.entries(v as Record<string, boolean>)
+    .filter(([, val]) => val === true)
+    .map(([k]) => k)
 }
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
@@ -518,7 +578,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "ade-recommend-features": {
-        const session = sessions.get(String(args.sessionId))
+        const session = getSession(args, "session")
         const description = String(args.description ?? session?.description ?? "")
         const domain = String(args.domain ?? session?.domain ?? "")
         const settings = generateSettings({ description, domain })
@@ -532,14 +592,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "ade-confirm-features": {
-        const sessionId = String(args.sessionId)
-        const session = sessions.get(sessionId)
-        if (!session) throw new Error(`Session ${sessionId} not found`)
+        const session = getSession(args, "session")
+        const sessionId = session.id
 
-        const features = args.features as Record<string, boolean>
-        session.features = Object.entries(features)
-          .filter(([, v]) => v)
-          .map(([k]) => k)
+        const features = sanitizeFeatureFlags(args.features)
+        session.features = features
         session.users = typeof args.users === "number" ? args.users : undefined
         session.updatedAt = new Date().toISOString()
         persist()
@@ -553,9 +610,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "ade-settings": {
-        const sessionId = String(args.sessionId)
-        const session = sessions.get(sessionId)
-        if (!session) throw new Error(`Session ${sessionId} not found`)
+        const session = getSession(args, "session")
+        const sessionId = session.id
 
         const input = sessionToPartialInput(session)
         const settings = generateSettings(input)
@@ -572,9 +628,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "ade-generate-plan": {
-        const sessionId = String(args.sessionId)
-        const session = sessions.get(sessionId)
-        if (!session) throw new Error(`Session ${sessionId} not found`)
+        const session = getSession(args, "session")
+        const sessionId = session.id
 
         const input = sessionToFullInput(session)
         const plan = generateArchitecture(input)
@@ -670,9 +725,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "ade-session-status": {
-        const sessionId = String(args.sessionId)
-        const session = sessions.get(sessionId)
-        if (!session) throw new Error(`Session ${sessionId} not found`)
+        const session = getSession(args, "session")
         return {
           content: [{
             type: "text",
@@ -693,9 +746,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "ade-scaffold": {
-        const sessionId = String(args.sessionId)
-        const session = sessions.get(sessionId)
-        if (!session) throw new Error(`Session ${sessionId} not found`)
+        const session = getSession(args, "session")
         const input = sessionToFullInput(session)
         const { generateArchitecture } = await import("@ade/core/ade")
         const { generateScaffold } = await import("@ade/core/scaffold")
@@ -736,13 +787,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           }
         }
 
-        const sessionId = String(args.sessionId)
-        const session = sessions.get(sessionId)
-        if (!session) throw new Error(`Session ${sessionId} not found`)
+        const session = getSession(args, "session")
+        const sessionId = session.id
 
         if (step === "describe" || (step === "next" && session.wizardStep === "describe")) {
-          session.description = String(args.description ?? session.description)
-          session.domain = String(args.domain ?? session.domain)
+          session.description = clampText(args.description ?? session.description, MAX_DESCRIPTION)
+          session.domain = clampText(args.domain ?? session.domain, MAX_DOMAIN)
           session.wizardStep = "features"
           session.updatedAt = new Date().toISOString()
           persist()
@@ -768,12 +818,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         if (step === "features" || (step === "next" && session.wizardStep === "features")) {
-          const features = args.features as Record<string, boolean> | undefined
-          if (features) {
-            const activeFeatures = Object.entries(features).filter(([, v]) => v).map(([k]) => k)
-            session.features = activeFeatures
-          }
-          if (typeof args.users === "number") session.users = args.users
+          if (args.features) session.features = sanitizeFeatureFlags(args.features)
+          if (typeof args.users === "number" && Number.isFinite(args.users)) session.users = args.users
           session.wizardStep = "settings"
           session.updatedAt = new Date().toISOString()
           persist()
@@ -920,9 +966,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         throw new Error(`Unknown tool: ${name}`)
     }
   } catch (err) {
+    // 🔒 SECURITY [LAW-14/A6]: log the full detail server-side with tool
+    // context; return a safe message to the model (no stack traces / internals).
+    const message = err instanceof Error ? err.message : String(err)
+    console.error(JSON.stringify({ scope: "tool", level: "error", tool: name, error: { name: err instanceof Error ? err.name : "Unknown", message } }))
     return {
       isError: true,
-      content: [{ type: "text", text: String(err) }],
+      content: [{ type: "text", text: `Error: ${message}` }],
     }
   }
 })

@@ -5,3 +5,5 @@ dist/
 .env.local
 .turbo/
 *.tsbuildinfo
+# runtime state — sessions contain user project data (LAW-11: never commit)
+apps/mcp/sessions.json
