@@ -11,7 +11,8 @@ An architecture layer for Product Engineering. Decides the architecture **before
 
 ```bash
 pnpm install
-pnpm --filter @ade/core test
+pnpm --filter @ade/core test        # architecture engine
+pnpm --filter @ade/onp-spec test    # spec-driven engine
 ```
 
 ## MCP Server (recommended)
@@ -30,7 +31,7 @@ Configure in `.opencode.json` or `claude_desktop_config.json`:
 }
 ```
 
-16 MCP tools: wizard, tradeoffs, scaffold, settings, plan, security audit, and individual analyses.
+19 MCP tools: wizard, tradeoffs, scaffold, settings, plan, security audit, individual analyses, and the spec-driven tools (ade-spec-audit/status/scaffold).
 
 ## Structure
 
@@ -38,7 +39,7 @@ Configure in `.opencode.json` or `claude_desktop_config.json`:
 apps/api/     → Cloudflare Worker (POST /analyze, POST /audit)
 apps/mcp/     → MCP Server (19 tools, 4-step wizard, security audit, spec-driven audit)
 apps/site/    → Next.js playground
-packages/ade-core/ → Core engine (zero runtime deps, Zod + Vitest)
+packages/ade-core/ → Architecture engine (zero runtime deps, Zod + Vitest)
 packages/onp-spec/ → Spec-driven engine: specs auditable against code, DoD, explicit assumptions (MIT, from onp-spec-driven)
 ```
 
