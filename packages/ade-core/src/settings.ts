@@ -13,7 +13,7 @@ import type {
 export function recommendFeatures(input: Partial<ProjectInput>): FeatureSuggestion[] {
   const text = `${input.domain ?? ""} ${input.description ?? ""}`.toLowerCase()
 
-  return [
+  const suggestions: FeatureSuggestion[] = [
     {
       feature: "Blockchain",
       key: "blockchain",
@@ -135,6 +135,18 @@ export function recommendFeatures(input: Partial<ProjectInput>): FeatureSuggesti
       reason: "Content management or blog",
     },
   ]
+
+  // Explicit input flags always win over text-only heuristics. Without this,
+  // a caller passing auth:true gets recommended:false when the description
+  // doesn't mention login words — and inputFromSettings round-trips it away.
+  for (const suggestion of suggestions) {
+    const flag = (input as Record<string, unknown>)[suggestion.key]
+    if (typeof flag === "boolean") {
+      suggestion.recommended = suggestion.recommended || flag
+    }
+  }
+
+  return suggestions
 }
 
 export function recommendDataStructures(input: Partial<ProjectInput>): DataRecommendation[] {
