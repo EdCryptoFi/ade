@@ -113,6 +113,79 @@ const domainTemplates: Record<DomainCategory, ComponentNode> = {
       { name: "Notifications" },
     ],
   },
+  transportation: {
+    name: "App",
+    children: [
+      {
+        name: "Fleet",
+        children: [
+          { name: "VehicleList", children: [{ name: "VehicleCard" }, { name: "StatusBadge" }, { name: "MaintenanceAlert" }] },
+          { name: "DriverList", children: [{ name: "DriverCard" }, { name: "LicenseStatus" }, { name: "TripHistory" }] },
+          { name: "VehicleDetail", children: [{ name: "TelemetryPanel" }, { name: "FuelLog" }, { name: "InspectionHistory" }] },
+        ],
+      },
+      {
+        name: "Freights",
+        children: [
+          { name: "FreightBoard", children: [{ name: "FreightCard" }, { name: "RouteMap" }, { name: "Filters" }] },
+          { name: "TripPlanning", children: [{ name: "RouteOptimizer" }, { name: "VehicleAssignment" }, { name: "DriverAssignment" }] },
+          { name: "FreightDetail", children: [{ name: "Milestones" }, { name: "Documents" }, { name: "PaymentStatus" }] },
+        ],
+      },
+      {
+        name: "Finance",
+        children: [
+          { name: "PaymentsDashboard", children: [{ name: "FreightPayments" }, { name: "ReceivablesTable" }, { name: "ReconciliationView" }] },
+          { name: "Invoices", children: [{ name: "NfeList" }, { name: "NfeEmissionForm" }, { name: "NfeStatus" }] },
+          { name: "FinancialReports", children: [{ name: "RevenueChart" }, { name: "CostBreakdown" }, { name: "ExportButton" }] },
+        ],
+      },
+      {
+        name: "Operations",
+        children: [
+          { name: "RealtimeMap", children: [{ name: "LiveVehicleMarkers" }, { name: "TripProgress" }] },
+          { name: "AlertsCenter", children: [{ name: "DelayAlerts" }, { name: "MaintenanceAlerts" }] },
+          { name: "CompliancePanel", children: [{ name: "FiscalStatus" }, { name: "RegulatoryChecks" }] },
+        ],
+      },
+      { name: "Settings", children: [{ name: "CompanyProfile" }, { name: "IntegrationSettings" }, { name: "UserPermissions" }] },
+    ],
+  },
+  fintech: {
+    name: "App",
+    children: [
+      {
+        name: "Accounts",
+        children: [
+          { name: "AccountList", children: [{ name: "AccountCard" }, { name: "BalanceBadge" }] },
+          { name: "AccountDetail", children: [{ name: "Statement" }, { name: "TransactionsTable" }, { name: "ExportButton" }] },
+        ],
+      },
+      {
+        name: "Payments",
+        children: [
+          { name: "PaymentCenter", children: [{ name: "PaymentForm" }, { name: "PaymentMethods" }, { name: "ScheduledPayments" }] },
+          { name: "PaymentHistory", children: [{ name: "TransactionList" }, { name: "StatusFilters" }, { name: "RefundAction" }] },
+        ],
+      },
+      {
+        name: "Invoicing",
+        children: [
+          { name: "InvoiceList", children: [{ name: "InvoiceRow" }, { name: "StatusBadge" }, { name: "Filters" }] },
+          { name: "InvoiceEditor", children: [{ name: "LineItems" }, { name: "TaxComputation" }, { name: "NfePreview" }] },
+          { name: "NfeStatusTracker", children: [{ name: "AuthorizationStatus" }, { name: "RejectionReasons" }] },
+        ],
+      },
+      {
+        name: "Compliance",
+        children: [
+          { name: "FiscalDashboard", children: [{ name: "TaxObligations" }, { name: "FilingStatus" }, { name: "Deadlines" }] },
+          { name: "AuditTrail", children: [{ name: "EventLog" }, { name: "Export" }] },
+        ],
+      },
+      { name: "Settings", children: [{ name: "CompanyProfile" }, { name: "BankAccounts" }, { name: "Integrations" }] },
+    ],
+  },
   other: {
     name: "App",
     children: [

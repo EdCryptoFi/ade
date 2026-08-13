@@ -34,7 +34,7 @@ export function generatePlan(input: ProjectInput, domain: DomainCategory): Devel
     },
     {
       name: "Sprint 3",
-      focus: isSaaS ? "Core SaaS" : (input.blockchain ? "Blockchain" : "Core Features"),
+      focus: isSaaS ? "Core SaaS" : (input.blockchain ? "Blockchain" : (domain === "transportation" || domain === "fintech" ? "Core Domain" : "Core Features")),
       tasks: isSaaS ? [
         "Implement main dashboard",
         "Implement workspace management",
@@ -46,6 +46,16 @@ export function generatePlan(input: ProjectInput, domain: DomainCategory): Devel
         "Implement wallet connection",
         "Implement transactions",
         "Implement contract reading",
+      ].filter(Boolean) : domain === "transportation" ? [
+        "Implement fleet and driver CRUD",
+        "Implement freight board and route planning",
+        "Implement realtime vehicle tracking",
+        "Implement driver/vehicle assignment",
+      ].filter(Boolean) : domain === "fintech" ? [
+        "Implement payments and reconciliation",
+        "Implement NFe emission and status tracking",
+        "Implement fiscal compliance dashboard",
+        "Implement audit trail (LAW-14)",
       ].filter(Boolean) : [
         "Implement CRUD of main entities",
         "Implement forms and validation",

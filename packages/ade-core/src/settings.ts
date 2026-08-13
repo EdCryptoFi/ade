@@ -47,7 +47,7 @@ export function recommendFeatures(input: Partial<ProjectInput>): FeatureSuggesti
     {
       feature: "Artificial Intelligence",
       key: "ai",
-      recommended: /ai|ia|inteligência|inteligencia|llm|gpt|chat|claude|openai|recomendação|recommendation|agente|agent|automation|automação|chatbot|assistente|assistant|copilot|analise|análise|anomalia|anomaly/i.test(text),
+      recommended: /\b(ai|ia)\b|inteligência|inteligencia|llm|\bgpt\b|chatbot|claude|openai|recomendação|recommendation|agente|agent|automação|automation|assistente|assistant|copilot|anomalia|anomaly/i.test(text),
       reason: "AI, LLMs or autonomous agents",
     },
     {
@@ -225,8 +225,12 @@ export function recommendDataStructures(input: Partial<ProjectInput>): DataRecom
 }
 
 export function recommendInfrastructure(input: Partial<ProjectInput>): InfrastructureDecision {
-  const hasDashboard = /dashboard|chart|gráfico|graph|analytics|kpi|métrica|metric|admin/i.test(`${input.domain} ${input.description ?? ""}`)
-  const isSaaS = input.multiTenant || input.teams || /saas|assinatura|subscription|tenant|billing/i.test(`${input.domain} ${input.description ?? ""}`)
+  const hasDashboard = /\b(dashboard|chart|gráfico|graph|analytics|kpi|métrica|metric|admin)\b/i.test(`${input.domain} ${input.description ?? ""}`)
+  const isSaaS = input.multiTenant || input.teams || /\b(saas|assinatura|subscription|tenant|billing|multitenant)\b/i.test(`${input.domain} ${input.description ?? ""}`)
+  const isFiscal = /\b(nfe|nf-e|nota.fiscal|invoice|fiscal|tributário|tributario|compliance|sefaz|conciliação|reconciliação|contábil|contabil)\b/i.test(`${input.domain} ${input.description ?? ""}`)
+  const defaultJobs = isFiscal
+    ? "BullMQ + Redis (self-hosted) or Inngest / Trigger.dev — NFe emission, SEFAZ status polling, reconciliation jobs"
+    : "None"
 
   const searchService = input.search
     ? "Meilisearch / Typesense (self-hosted) or Algolia (SaaS)"
@@ -234,7 +238,7 @@ export function recommendInfrastructure(input: Partial<ProjectInput>): Infrastru
 
   const jobsService = input.backgroundJobs
     ? "BullMQ + Redis (self-hosted) or Inngest / Trigger.dev (SaaS)"
-    : "None"
+    : defaultJobs
 
   const cmsService = input.cms
     ? "Sanity / Strapi (headless CMS)"
@@ -243,7 +247,7 @@ export function recommendInfrastructure(input: Partial<ProjectInput>): Infrastru
   return {
     frontend: hasDashboard ? "Next.js + shadcn/ui" : "Next.js",
     backend: isSaaS ? "Next.js API Routes + tRPC" : "Next.js API Routes",
-    database: input.blockchain ? "Supabase PostgreSQL + Own indexer" : "Supabase PostgreSQL",
+    database: isFiscal ? "Supabase PostgreSQL + ledger tables (payments/invoices) + RLS" : input.blockchain ? "Supabase PostgreSQL + Own indexer" : "Supabase PostgreSQL",
     storage: input.upload ? "Supabase Storage" : "Supabase Storage (if needed)",
     deploy: "Vercel",
     auth: input.auth ? "Supabase Auth + NextAuth (if SSO)" : "None (public)",
@@ -258,7 +262,7 @@ export function recommendInfrastructure(input: Partial<ProjectInput>): Infrastru
     reasoning: {
       frontend: hasDashboard ? "Dashboard with charts → Next.js + shadcn/ui" : "Default stack → Next.js",
       backend: isSaaS ? "Standard SaaS API → Next.js + tRPC" : "Simplified architecture → API Routes",
-      database: input.blockchain ? "Blockchain needs indexing → Supabase + Indexer" : "Default database → Supabase PostgreSQL",
+      database: isFiscal ? "Ledger-heavy domain → Supabase PostgreSQL + RLS" : input.blockchain ? "Blockchain needs indexing → Supabase + Indexer" : "Default database → Supabase PostgreSQL",
       storage: input.upload ? "Upload detected → Supabase Storage" : "Default storage",
       deploy: "Default deploy → Vercel",
       auth: input.sso ? "SSO detected → NextAuth with providers" : input.auth ? "Login needed → Supabase Auth" : "No authentication",
@@ -268,7 +272,7 @@ export function recommendInfrastructure(input: Partial<ProjectInput>): Infrastru
       ai: input.ai ? "AI detected → OpenAI" : "No AI",
       memory: input.aiMemory ? "AI memory → Walrus + Vector Database" : "No memory needed",
       search: input.search ? `Text search → ${searchService}` : "No text search",
-      backgroundJobs: input.backgroundJobs ? `Async jobs → ${jobsService}` : "No background jobs",
+      backgroundJobs: input.backgroundJobs ? `Async jobs → ${jobsService}` : (isFiscal ? "NFe/SEFAZ jobs → background queue" : "No background jobs"),
       cms: input.cms ? `CMS → ${cmsService}` : "No CMS",
     },
   }
@@ -304,6 +308,7 @@ export function recommendSecurity(input: Partial<ProjectInput>): SecurityDecisio
       ...(input.multiTenant ? ["Implement Row Level Security (RLS) in Supabase for tenant isolation", "Each tenant has its own schema or prefix"] : input.auth ? ["Implement Row Level Security (RLS) in Supabase"] : []),
       ...(input.upload ? ["Sanitize files (type, size, virus scan)", "Use signed URLs for access"] : []),
       ...(input.payments ? ["Never trust the frontend for validation", "Verify webhook signatures", "PCI-DSS compliance"] : []),
+      ...(input.auditLog || input.payments ? ["Immutable financial ledger (append-only) with hash-chaining for audit integrity", "Retention policy for fiscal documents (NFe storage)"] : []),
       ...(input.blockchain ? ["Audit smart contracts", "Multi-sig wallet for admin"] : []),
       ...(input.apiAccess ? ["API Keys with permission scopes", "Rate limiting per key", "API call logging"] : []),
       ...(input.webhooks ? ["Verify HMAC signature of webhooks", "Retry with backoff + dead letter queue"] : []),

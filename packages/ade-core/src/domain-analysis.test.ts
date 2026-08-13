@@ -48,6 +48,24 @@ describe("analyzeDomain", () => {
     expect(analyzeDomain(input("sales", "customer pipeline", ["lead"]))).toBe("crm")
   })
 
+  it("detects transportation", () => {
+    expect(analyzeDomain(input("transportes", "gestão de frotas e fretes", ["motorista"]))).toBe("transportation")
+    expect(analyzeDomain(input("logistics", "fleet management and freight", ["driver", "route"]))).toBe("transportation")
+  })
+
+  it("detects fintech from fiscal keywords", () => {
+    expect(analyzeDomain(input("financas", "emissão de notas fiscais e conciliação de pagamentos", ["nfe"]))).toBe("fintech")
+  })
+
+  it("does NOT match ai-agent on fiscal words (regression)", () => {
+    // 'ai' inside "fiscais" and 'ia' inside "conciliação" must not trigger ai-agent
+    expect(analyzeDomain(input("transportes", "controle de pagamentos e emissão de notas fiscais", ["conciliação"]))).not.toBe("ai-agent")
+  })
+
+  it("detects saas with explicit domain hint", () => {
+    expect(analyzeDomain(input("saas", "notas fiscais para transportadoras", []))).toBe("saas")
+  })
+
   it("returns other for unknown", () => {
     expect(analyzeDomain(input("random", "something vague", []))).toBe("other")
   })

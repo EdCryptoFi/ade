@@ -3,6 +3,8 @@ import type { InfrastructureDecision, ProjectInput } from "./types.ts"
 export function decideInfrastructure(input: ProjectInput): InfrastructureDecision {
   const reasoning: Record<string, string> = {}
 
+  const isFiscal = input.domain === "fintech" || /\b(nfe|nf-e|nota.fiscal|invoice|fiscal|tributário|tributario|compliance|sefaz|conciliação|reconciliação|contábil|contabil|pagamento|payment)\b/i.test(input.description)
+
   const frontend = input.features.some(f => /dashboard|chart|gráfico|admin/i.test(f))
     ? { value: "Next.js + shadcn/ui", reason: "Dashboard with charts → Next.js + shadcn/ui" }
     : { value: "Next.js", reason: "Default stack → Next.js" }
@@ -13,7 +15,9 @@ export function decideInfrastructure(input: ProjectInput): InfrastructureDecisio
 
   const database = input.blockchain
     ? { value: "Supabase PostgreSQL + Own indexer", reason: "Blockchain needs indexing → Supabase + Indexer" }
-    : { value: "Supabase PostgreSQL", reason: "Default database → Supabase PostgreSQL" }
+    : isFiscal
+      ? { value: "Supabase PostgreSQL + ledger tables (payments/invoices) + RLS", reason: "Ledger-heavy domain → Supabase PostgreSQL + RLS" }
+      : { value: "Supabase PostgreSQL", reason: "Default database → Supabase PostgreSQL" }
   reasoning.database = database.reason
 
   const storage = input.upload
@@ -58,7 +62,9 @@ export function decideInfrastructure(input: ProjectInput): InfrastructureDecisio
 
   const backgroundJobs = input.backgroundJobs
     ? { value: "BullMQ + Redis (self-hosted) or Inngest / Trigger.dev (SaaS)", reason: "Async jobs → BullMQ + Redis / Inngest" }
-    : { value: "None", reason: "No background jobs" }
+    : isFiscal
+      ? { value: "BullMQ + Redis (self-hosted) or Inngest / Trigger.dev — NFe emission, SEFAZ status polling, reconciliation jobs", reason: "NFe/SEFAZ jobs → background queue" }
+      : { value: "None", reason: "No background jobs" }
   reasoning.backgroundJobs = backgroundJobs.reason
 
   const cms = input.cms

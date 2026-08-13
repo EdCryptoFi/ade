@@ -36,6 +36,8 @@ export type DomainCategory =
   | "landing-page"
   | "game"
   | "social-network"
+  | "transportation"
+  | "fintech"
   | "other"
 
 export type DataStructure =
