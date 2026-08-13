@@ -1,4 +1,5 @@
 {
+  "$schema": "https://opencode.ai/config.json",
   "permission": {
     "read": {
       "/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/*": "allow"
@@ -6,6 +7,14 @@
     "external_directory": {
       "/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/*": "allow"
     }
+  },
+  "skills": {
+    "paths": [
+      ".opencode/skills/graphify",
+      ".opencode/skills/design",
+      ".opencode/skills/eng",
+      ".opencode/skills/gsd"
+    ]
   },
   "mcp": {
     "gsd": {
