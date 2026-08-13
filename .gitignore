@@ -7,3 +7,8 @@ dist/
 *.tsbuildinfo
 # runtime state — sessions contain user project data (LAW-11: never commit)
 apps/mcp/sessions.json
+# GSD runtime artifacts (re-created by `npx @opengsd/gsd-core` installer)
+.opencode/gsd-file-manifest.json
+.opencode/gsd-install-state.json
+.opencode/.gsd-profile
+.opencode/gsd-migration-journal/

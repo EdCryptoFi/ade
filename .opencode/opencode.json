@@ -1,0 +1,23 @@
+{
+  "permission": {
+    "read": {
+      "/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/*": "allow"
+    },
+    "external_directory": {
+      "/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/*": "allow"
+    }
+  },
+  "mcp": {
+    "gsd": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "-p",
+        "@opengsd/gsd-core",
+        "gsd-mcp-server"
+      ],
+      "enabled": true
+    }
+  }
+}
