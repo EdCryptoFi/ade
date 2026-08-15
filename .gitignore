@@ -3,6 +3,9 @@ dist/
 .next/
 .env
 .env.local
+.env.*.local
+.env.*
+.dev.vars
 .turbo/
 *.tsbuildinfo
 # runtime state — sessions contain user project data (LAW-11: never commit)

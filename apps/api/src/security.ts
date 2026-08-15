@@ -20,6 +20,15 @@ interface Bucket {
   windowStart: number
 }
 
+// 🔒 SECURITY [LAW-5/LAW-2]: decide the rate-limit key. A client-supplied
+// `x-api-key` is ONLY honoured when it appears in the server-side allowlist;
+// returns null otherwise, so the caller falls back to the IP-derived key.
+export function resolveRateLimitKey(presented: string | null, allowlist: string[]): string | null {
+  const key = (presented ?? "").trim()
+  if (key && allowlist.includes(key)) return key
+  return null
+}
+
 // key = `${ip}` or `${apiKey}` (user-based when an API key is presented)
 export function createRateLimiter(config: RateLimitConfig) {
   const buckets = new Map<string, Bucket>()
@@ -49,9 +58,34 @@ export function createRateLimiter(config: RateLimitConfig) {
 
 // 🔒 SECURITY [LAW-4]: CORS allowlist. The playground (Vercel) and localhost
 // are allowed; anything else is refused instead of the permissive `*`.
+// Hostname-suffix matching only applies to registered domains (an entry with
+// a dot in the host), so `evil.localhost:3000` / suffix-crafted origins on
+// localhost entries are never auto-allowed.
 export function isAllowedOrigin(origin: string | null, allowed: string[]): boolean {
   if (!origin) return false
-  return allowed.some((a) => origin === a || origin.endsWith(`.${a.replace(/^\./, "")}`))
+  try {
+    const hostname = new URL(origin).hostname.toLowerCase()
+    return allowed.some((a) => {
+      const entry = a.trim()
+      if (origin === entry) return true
+      // subdomain allow (e.g. `app.example.com` for entry `example.com`) only
+      // when the entry host has a dot (a real domain, not `localhost` or IPS).
+      const entryHost = safeHostname(entry)
+      if (!entryHost || !entryHost.includes(".")) return false
+      if (hostname === entryHost) return true
+      return hostname.endsWith(`.${entryHost}`)
+    })
+  } catch {
+    return false
+  }
+}
+
+function safeHostname(entry: string): string | null {
+  try {
+    return new URL(entry.startsWith("/") ? `https://${entry}` : entry).hostname.toLowerCase().replace(/^\./, "")
+  } catch {
+    return null
+  }
 }
 
 export function securityHeaders(): Record<string, string> {

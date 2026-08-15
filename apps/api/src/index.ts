@@ -1,7 +1,7 @@
 import { generateArchitecture } from "@ade/core/ade"
 import { validate } from "@ade/core/validation"
 import { runSecurityAudit } from "@ade/core/security-audit"
-import { createRateLimiter, isAllowedOrigin, securityHeaders, logError } from "./security.ts"
+import { createRateLimiter, isAllowedOrigin, securityHeaders, logError, resolveRateLimitKey } from "./security.ts"
 
 interface Env {
   ENVIRONMENT?: string
@@ -11,6 +11,11 @@ interface Env {
     limit: (opts: { key: string }) => Promise<{ success: boolean }>
   }
   ALLOWED_ORIGINS?: string
+  // 🔒 SECURITY [LAW-5]: comma-separated allowlist of API keys. A client's
+  // `x-api-key` is only honoured (higher per-key quota) when it matches an
+  // entry server-side; unlisted/absent keys always key on IP. Without this,
+  // a forged `x-api-key` would mint a fresh rate-limit bucket per request.
+  ADE_API_KEYS?: string
 }
 
 // Sensible defaults (LAW-3): 30 req / 60s per IP, 300 req / 60s per key.
@@ -36,9 +41,13 @@ function corsHeaders(request: Request, allowed: string[]): Record<string, string
 }
 
 async function rateLimit(request: Request, env: Env): Promise<Response | null> {
-  // key = user-based when an API key is presented, else IP-based (LAW-3).
+  // key = user-based when a server-issued API key is presented, else IP-based
+  // (LAW-3). The key MUST be validated against a server-side allowlist — a
+  // client-supplied header alone is never a trusted identity (LAW-5/LAW-2).
   const ip = request.headers.get("CF-Connecting-IP") ?? request.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() ?? "unknown"
-  const apiKey = request.headers.get("x-api-key")
+  const presented = request.headers.get("x-api-key")
+  const allowlist = (env.ADE_API_KEYS ?? "").split(",").map((s) => s.trim()).filter(Boolean)
+  const apiKey = resolveRateLimitKey(presented, allowlist)
 
   const key = apiKey ?? `ip:${ip}`
 
