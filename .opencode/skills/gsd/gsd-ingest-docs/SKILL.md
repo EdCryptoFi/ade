@@ -17,10 +17,10 @@ Auto-synthesizes most conflicts using the precedence rule `ADR > SPEC > PRD > DO
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/ingest-docs.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/ui-brand.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/gate-prompts.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/doc-conflict-engine.md
+@.opencode/gsd-core/workflows/ingest-docs.md
+@.opencode/gsd-core/references/ui-brand.md
+@.opencode/gsd-core/references/gate-prompts.md
+@.opencode/gsd-core/references/doc-conflict-engine.md
 </execution_context>
 
 <context>

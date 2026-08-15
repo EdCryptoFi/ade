@@ -32,8 +32,8 @@ Context budget: ~15% orchestrator, 100% fresh per subagent.
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/execute-phase.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/ui-brand.md
+@.opencode/gsd-core/workflows/execute-phase.md
+@.opencode/gsd-core/references/ui-brand.md
 </execution_context>
 
 <runtime_note>

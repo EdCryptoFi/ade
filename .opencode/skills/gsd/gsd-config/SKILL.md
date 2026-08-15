@@ -25,9 +25,9 @@ Mode routing:
 </routing>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/settings.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/settings-advanced.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/settings-integrations.md
+@.opencode/gsd-core/workflows/settings.md
+@.opencode/gsd-core/workflows/settings-advanced.md
+@.opencode/gsd-core/workflows/settings-integrations.md
 </execution_context>
 
 <context>

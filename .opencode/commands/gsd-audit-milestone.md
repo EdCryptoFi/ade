@@ -17,7 +17,7 @@ Verify milestone achieved its definition of done. Check requirements coverage, c
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/audit-milestone.md
+@.opencode/gsd-core/workflows/audit-milestone.md
 </execution_context>
 
 <context>

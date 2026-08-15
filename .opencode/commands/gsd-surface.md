@@ -9,9 +9,9 @@ tools:
 ---
 
 <objective>
-Manage the runtime skill surface without reinstall. Reads/writes `/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/.gsd-surface.json`
-(sibling to `/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/.gsd-profile`) and re-stages the active skills directory in place.
-Skill dirs live at `/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/skills/gsd-*/`.
+Manage the runtime skill surface without reinstall. Reads/writes `.opencode/.gsd-surface.json`
+(sibling to `.opencode/.gsd-profile`) and re-stages the active skills directory in place.
+Skill dirs live at `.opencode/skills/gsd-*/`.
 
 Sub-commands: list · status · profile · disable · enable · reset
 </objective>
@@ -122,11 +122,11 @@ Valid cluster names: `core_loop`, `audit_review`, `milestone`, `research_ideate`
 ## runtimeConfigDir resolution
 
 The `runtimeConfigDir` for `applySurface` is the **base the agent config directory**
-(`~/.config/opencode`), NOT the skills sub-directory (`/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/skills`).
+(`~/.config/opencode`), NOT the skills sub-directory (`.opencode/skills`).
 
 This matches `installRuntimeArtifacts` and `uninstallRuntimeArtifacts`, which also
 receive `~/.config/opencode` as `configDir`. The skill dirs themselves live at
-`/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/skills/gsd-*/` because the `claude global` layout has `destSubpath =
+`.opencode/skills/gsd-*/` because the `claude global` layout has `destSubpath =
 'skills'` — they are derived from `configDir`, not the root for it.
 
 ```bash
@@ -140,7 +140,7 @@ SCOPE="global"
 ```
 
 Surface state is stored at `${RUNTIME_CONFIG_DIR}/.gsd-surface.json`
-(i.e. `/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/.gsd-surface.json`).
+(i.e. `.opencode/.gsd-surface.json`).
 
 All paths can be overridden by reading the `CLAUDE_CONFIG_DIR` env var if set.
 
@@ -153,9 +153,9 @@ All paths can be overridden by reading the `CLAUDE_CONFIG_DIR` env var if set.
 - Missing `surface.cjs` → prompt: "Run `npm i -g @opengsd/gsd-core` to reinstall GSD."
 
 <execution_context>
-Surface state file: `/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/.gsd-surface.json`
-Install profile marker: `/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/.gsd-profile`
-Skill dirs: `/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/skills/gsd-*/`
-Engine module: `/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/bin/lib/surface.cjs`
-Cluster definitions: `/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/bin/lib/clusters.cjs`
+Surface state file: `.opencode/.gsd-surface.json`
+Install profile marker: `.opencode/.gsd-profile`
+Skill dirs: `.opencode/skills/gsd-*/`
+Engine module: `.opencode/gsd-core/bin/lib/surface.cjs`
+Cluster definitions: `.opencode/gsd-core/bin/lib/clusters.cjs`
 </execution_context>

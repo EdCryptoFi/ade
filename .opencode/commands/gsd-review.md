@@ -19,7 +19,7 @@ planning via /gsd-plan-phase --reviews.
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/review.md
+@.opencode/gsd-core/workflows/review.md
 </execution_context>
 
 <context>

@@ -22,7 +22,7 @@ Output: updated VALIDATION.md + generated test files.
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/validate-phase.md
+@.opencode/gsd-core/workflows/validate-phase.md
 </execution_context>
 
 <context>

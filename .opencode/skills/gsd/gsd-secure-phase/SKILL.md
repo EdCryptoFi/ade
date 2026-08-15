@@ -13,7 +13,7 @@ Output: updated SECURITY.md.
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/secure-phase.md
+@.opencode/gsd-core/workflows/secure-phase.md
 </execution_context>
 
 <context>

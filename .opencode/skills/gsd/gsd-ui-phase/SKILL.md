@@ -10,8 +10,8 @@ Flow: Validate → Research UI → Verify UI-SPEC → Done
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/ui-phase.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/ui-brand.md
+@.opencode/gsd-core/workflows/ui-phase.md
+@.opencode/gsd-core/references/ui-brand.md
 </execution_context>
 
 <context>

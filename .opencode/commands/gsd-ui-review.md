@@ -18,8 +18,8 @@ Output: {phase_num}-UI-REVIEW.md
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/ui-review.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/ui-brand.md
+@.opencode/gsd-core/workflows/ui-review.md
+@.opencode/gsd-core/references/ui-brand.md
 </execution_context>
 
 <context>

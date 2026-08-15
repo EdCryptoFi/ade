@@ -16,7 +16,7 @@ Routes to the resume-project workflow which handles:
   </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/resume-project.md
+@.opencode/gsd-core/workflows/resume-project.md
 </execution_context>
 
 <process>

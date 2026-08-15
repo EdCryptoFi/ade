@@ -27,7 +27,7 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 </available_agent_types>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/debug.md
+@.opencode/gsd-core/workflows/debug.md
 </execution_context>
 
 <context>

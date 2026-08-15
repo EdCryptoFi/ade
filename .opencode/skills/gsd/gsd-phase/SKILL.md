@@ -25,10 +25,10 @@ Mode routing:
 </routing>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/add-phase.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/insert-phase.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/remove-phase.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/edit-phase.md
+@.opencode/gsd-core/workflows/add-phase.md
+@.opencode/gsd-core/workflows/insert-phase.md
+@.opencode/gsd-core/workflows/remove-phase.md
+@.opencode/gsd-core/workflows/edit-phase.md
 </execution_context>
 
 <context>

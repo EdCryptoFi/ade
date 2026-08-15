@@ -17,13 +17,13 @@ Does not require prior new-project setup — auto-creates `.planning/sketches/` 
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/sketch.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/sketch-wrap-up.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/ui-brand.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/sketch-theme-system.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/sketch-interactivity.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/sketch-tooling.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/sketch-variant-patterns.md
+@.opencode/gsd-core/workflows/sketch.md
+@.opencode/gsd-core/workflows/sketch-wrap-up.md
+@.opencode/gsd-core/references/ui-brand.md
+@.opencode/gsd-core/references/sketch-theme-system.md
+@.opencode/gsd-core/references/sketch-interactivity.md
+@.opencode/gsd-core/references/sketch-tooling.md
+@.opencode/gsd-core/references/sketch-variant-patterns.md
 </execution_context>
 
 <runtime_note>

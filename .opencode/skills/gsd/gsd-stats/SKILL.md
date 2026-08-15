@@ -8,7 +8,7 @@ Display comprehensive project statistics including phase progress, plan executio
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/stats.md
+@.opencode/gsd-core/workflows/stats.md
 </execution_context>
 
 <process>

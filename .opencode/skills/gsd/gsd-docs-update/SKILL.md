@@ -16,7 +16,7 @@ Flag handling rule:
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/docs-update.md
+@.opencode/gsd-core/workflows/docs-update.md
 </execution_context>
 
 <context>

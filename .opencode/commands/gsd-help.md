@@ -15,7 +15,7 @@ Output ONLY the reference content of the chosen tier. Do NOT add:
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/help.md
+@.opencode/gsd-core/workflows/help.md
 </execution_context>
 
 <context>
@@ -23,5 +23,5 @@ Arguments: $ARGUMENTS
 </context>
 
 <process>
-Follow /Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/help.md with $ARGUMENTS.
+Follow .opencode/gsd-core/workflows/help.md with $ARGUMENTS.
 </process>

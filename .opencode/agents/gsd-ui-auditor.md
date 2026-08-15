@@ -43,7 +43,7 @@ Before auditing, discover project context:
 
 **Project skills:** Check `.claude/skills/` or `.agents/skills/` directory if either exists:
 
-**agent_skills:** self-load per @/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/agent-skills-bootstrap.md
+**agent_skills:** self-load per @.opencode/gsd-core/references/agent-skills-bootstrap.md
 1. List available skills (subdirectories)
 2. Read `SKILL.md` for each skill
 3. 

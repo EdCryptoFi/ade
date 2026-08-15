@@ -17,8 +17,8 @@ Uses ROADMAP.md phase discovery and Skill() flat invocations for each phase comm
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/autonomous.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/ui-brand.md
+@.opencode/gsd-core/workflows/autonomous.md
+@.opencode/gsd-core/references/ui-brand.md
 </execution_context>
 
 <context>

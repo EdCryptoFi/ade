@@ -16,7 +16,7 @@ Extract structured learnings from completed phase artifacts (PLAN.md, SUMMARY.md
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/extract-learnings.md
+@.opencode/gsd-core/workflows/extract-learnings.md
 </execution_context>
 
-Execute the extract-learnings workflow from @/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/extract-learnings.md end-to-end.
+Execute the extract-learnings workflow from @.opencode/gsd-core/workflows/extract-learnings.md end-to-end.

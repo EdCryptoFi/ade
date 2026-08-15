@@ -10,7 +10,7 @@ Closes the plan → execute → verify → ship loop.
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/ship.md
+@.opencode/gsd-core/workflows/ship.md
 </execution_context>
 
-Execute the ship workflow from @/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/ship.md end-to-end.
+Execute the ship workflow from @.opencode/gsd-core/workflows/ship.md end-to-end.

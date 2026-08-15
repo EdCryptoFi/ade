@@ -17,9 +17,9 @@ Spawned by `discuss-phase-assumptions` via `Task()`. You do NOT present output d
 - Flag topics where codebase analysis alone is insufficient (needs external research)
 </role>
 
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/untrusted-input-boundary.md
+@.opencode/gsd-core/references/untrusted-input-boundary.md
 
-**agent_skills:** self-load per @/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/agent-skills-bootstrap.md
+**agent_skills:** self-load per @.opencode/gsd-core/references/agent-skills-bootstrap.md
 
 <input>
 Agent receives via prompt:

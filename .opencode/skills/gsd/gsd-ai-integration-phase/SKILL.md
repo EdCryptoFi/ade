@@ -10,9 +10,9 @@ Flow: Select Framework → Research Docs → Research Domain → Design Eval Str
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/ai-integration-phase.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/ai-frameworks.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/ai-evals.md
+@.opencode/gsd-core/workflows/ai-integration-phase.md
+@.opencode/gsd-core/references/ai-frameworks.md
+@.opencode/gsd-core/references/ai-evals.md
 </execution_context>
 
 <context>

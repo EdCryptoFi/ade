@@ -8,7 +8,7 @@
 ## Dispatch
 
 ```
-Read @/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/discuss-phase-power.md
+Read @.opencode/gsd-core/workflows/discuss-phase-power.md
 ```
 
 Execute it end-to-end. Do not continue with the standard interactive steps.

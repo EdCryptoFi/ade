@@ -19,8 +19,8 @@ Output: Milestone archived (roadmap + requirements), PROJECT.md evolved, git tag
 <execution_context>
 **Load these files NOW (before proceeding):**
 
-- @/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/complete-milestone.md (main workflow)
-- @/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/templates/milestone-archive.md (archive template)
+- @.opencode/gsd-core/workflows/complete-milestone.md (main workflow)
+- @.opencode/gsd-core/templates/milestone-archive.md (archive template)
   </execution_context>
 
 <context>

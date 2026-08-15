@@ -2,8 +2,9 @@
 
 Custom reviewer instances for `/gsd-review`: run one model-capable adapter (e.g. OpenCode)
 as several independent reviewer identities in a single review pass. Loaded lazily by
-`gsd-core/workflows/review.md` when `review.reviewer_instances` is configured. See
-[ADR-1517](../docs/adr/1517-reviewer-instances-config-surface.md) for the contract.
+`gsd-core/workflows/review.md` when `review.reviewer_instances` is configured. The
+config surface (ADR-1517) is validated in `bin/lib/config.cjs`; the contract is
+documented in this file.
 
 ---
 

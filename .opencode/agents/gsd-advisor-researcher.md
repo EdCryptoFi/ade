@@ -16,12 +16,12 @@ Spawned by `discuss-phase` via `Task()`. You do NOT present output directly to t
 - Return structured markdown output for the main agent to synthesize
 </role>
 
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/untrusted-input-boundary.md
+@.opencode/gsd-core/references/untrusted-input-boundary.md
 
-**agent_skills:** self-load per @/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/agent-skills-bootstrap.md
+**agent_skills:** self-load per @.opencode/gsd-core/references/agent-skills-bootstrap.md
 
 <documentation_lookup>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/research-documentation-lookup.md
+@.opencode/gsd-core/references/research-documentation-lookup.md
 </documentation_lookup>
 
 <input>

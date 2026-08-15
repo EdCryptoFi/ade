@@ -14,7 +14,7 @@ you could describe in one sentence and execute in under 2 minutes.
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/fast.md
+@.opencode/gsd-core/workflows/fast.md
 </execution_context>
 
 <process>

@@ -15,7 +15,7 @@ Routes to the settings workflow which handles:
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/settings.md
+@.opencode/gsd-core/workflows/settings.md
 </execution_context>
 
 <process>

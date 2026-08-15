@@ -31,10 +31,10 @@ Three modes:
 </flags>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/progress.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/next.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/do.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/ui-brand.md
+@.opencode/gsd-core/workflows/progress.md
+@.opencode/gsd-core/workflows/next.md
+@.opencode/gsd-core/workflows/do.md
+@.opencode/gsd-core/references/ui-brand.md
 </execution_context>
 
 <process>

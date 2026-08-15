@@ -20,8 +20,8 @@ Output: {phase_num}-UAT.md tracking all test results. If issues found: diagnosed
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/verify-work.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/templates/UAT.md
+@.opencode/gsd-core/workflows/verify-work.md
+@.opencode/gsd-core/templates/UAT.md
 </execution_context>
 
 <context>

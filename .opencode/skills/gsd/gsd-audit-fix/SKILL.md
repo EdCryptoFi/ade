@@ -15,7 +15,7 @@ Flags:
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/audit-fix.md
+@.opencode/gsd-core/workflows/audit-fix.md
 </execution_context>
 
 <process>

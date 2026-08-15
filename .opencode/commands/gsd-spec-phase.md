@@ -28,8 +28,8 @@ Clarify phase requirements through structured Socratic questioning with quantita
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/spec-phase.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/templates/spec.md
+@.opencode/gsd-core/workflows/spec-phase.md
+@.opencode/gsd-core/templates/spec.md
 </execution_context>
 
 <runtime_note>

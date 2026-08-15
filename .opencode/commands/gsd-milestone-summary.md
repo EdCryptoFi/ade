@@ -18,7 +18,7 @@ Output: MILESTONE_SUMMARY written to `.planning/reports/`, presented inline, opt
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/milestone-summary.md
+@.opencode/gsd-core/workflows/milestone-summary.md
 </execution_context>
 
 <context>

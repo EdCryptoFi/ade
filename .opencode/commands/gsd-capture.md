@@ -37,13 +37,13 @@ Mode routing:
 </routing>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/add-todo.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/note.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/add-backlog.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/plant-seed.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/check-todos.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/list-seeds.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/ui-brand.md
+@.opencode/gsd-core/workflows/add-todo.md
+@.opencode/gsd-core/workflows/note.md
+@.opencode/gsd-core/workflows/add-backlog.md
+@.opencode/gsd-core/workflows/plant-seed.md
+@.opencode/gsd-core/workflows/check-todos.md
+@.opencode/gsd-core/workflows/list-seeds.md
+@.opencode/gsd-core/references/ui-brand.md
 </execution_context>
 
 <context>

@@ -1,6 +1,6 @@
 ---
 name: awesome-design-md
-description: "Use when generating, styling, or auditing UI that should match a known brand design system. A curáted set of DESIGN.md files from popular design systems (Vercel, Linear, Stripe, Supabase, Notion, Apple, Spotify, Figma, etc., in references/design-md/). Load the matching DESIGN.md and follow its primitives, color tokens, typography, and spacing. Also use to reproduce a site's look, or when the user asks for pixel-consistent brand UI."
+description: "Use when generating, styling, or auditing UI that should match a known brand design system. A curated set of DESIGN.md files from popular design systems (Vercel, Linear, Stripe, Supabase, Notion, Apple, Spotify, Figma, etc., in references/design-md/). Load the matching DESIGN.md and follow its primitives, color tokens, typography, and spacing. Also use to reproduce a site's look, or when the user asks for pixel-consistent brand UI."
 ---
 
 # Awesome Design.md
@@ -37,6 +37,6 @@ Listed by `ls references/design-md/`:
 - **spotify** — green accent, media/audio
 - **figma** — design-tool purple
 - **cursor** — AI editor dark theme
-- **slack, sentry, posthog, airbnb, miro, warp, raycast, opencode** — more styles
+- **slack, sentry, posthog, airbnb, miro, warp, raycast, opencode.ai** — more styles
 
 Load the file for the relevant one before generating UI.

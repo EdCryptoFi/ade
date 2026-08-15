@@ -29,9 +29,9 @@ Does not require prior new-project setup — auto-creates `.planning/spikes/` if
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/spike.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/spike-wrap-up.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/ui-brand.md
+@.opencode/gsd-core/workflows/spike.md
+@.opencode/gsd-core/workflows/spike-wrap-up.md
+@.opencode/gsd-core/references/ui-brand.md
 </execution_context>
 
 <runtime_note>

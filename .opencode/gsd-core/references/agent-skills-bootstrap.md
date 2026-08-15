@@ -7,7 +7,7 @@
 > delegation does not reliably execute the delegated workflow's bash, such as Cursor;
 > see open-gsd/gsd-core#1600 / #1601). This is the durable counterpart to the
 > orchestrator-side injection documented under
-> [Agent Skills Injection](../../docs/CONFIGURATION.md#agent-skills-injection).
+> [Agent Skills Injection](../../workflows/settings-integrations.md#agent-skills-injection).
 
 ## When to run
 

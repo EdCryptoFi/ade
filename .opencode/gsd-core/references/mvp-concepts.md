@@ -2,7 +2,7 @@
 
 Cross-reference for the six MVP-related reference files. Each file has a single, narrow purpose. This index exists so future readers (and agents resolving `@`-refs) can find the right file without grepping the directory.
 
-Canonical domain terms for the concepts named below live in [CONTEXT.md](../../CONTEXT.md) under "Domain terms" — start there if you need a precise definition.
+Canonical domain terms for the concepts named below live in [context.md](../../templates/context.md) under "Domain terms" — start there if you need a precise definition.
 
 ## File map
 

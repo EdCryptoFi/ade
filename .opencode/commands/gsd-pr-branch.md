@@ -17,7 +17,7 @@ changes that are irrelevant to code review.
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/pr-branch.md
+@.opencode/gsd-core/workflows/pr-branch.md
 </execution_context>
 
 <process>

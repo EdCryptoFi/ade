@@ -16,7 +16,7 @@ Validate `.planning/` directory integrity and report actionable issues. Checks f
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/health.md
+@.opencode/gsd-core/workflows/health.md
 </execution_context>
 
 <process>

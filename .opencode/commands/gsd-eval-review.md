@@ -18,8 +18,8 @@ Produces EVAL-REVIEW.md with score, verdict, gaps, and remediation plan.
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/eval-review.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/ai-evals.md
+@.opencode/gsd-core/workflows/eval-review.md
+@.opencode/gsd-core/references/ai-evals.md
 </execution_context>
 
 <context>

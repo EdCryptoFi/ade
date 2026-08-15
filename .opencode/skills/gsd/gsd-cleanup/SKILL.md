@@ -10,7 +10,7 @@ Use when `.planning/phases/` has accumulated directories from past milestones.
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/cleanup.md
+@.opencode/gsd-core/workflows/cleanup.md
 </execution_context>
 
 <process>

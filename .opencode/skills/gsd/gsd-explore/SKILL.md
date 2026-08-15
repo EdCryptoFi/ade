@@ -12,7 +12,7 @@ Accepts an optional topic argument: `/gsd-explore authentication strategy`
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/explore.md
+@.opencode/gsd-core/workflows/explore.md
 </execution_context>
 
 <process>

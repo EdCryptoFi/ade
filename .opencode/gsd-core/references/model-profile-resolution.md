@@ -26,7 +26,7 @@ string** when nothing resolved.
 
 ## Lookup Table
 
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/model-profiles.md
+@.opencode/gsd-core/references/model-profiles.md
 
 ## Passing the model to a spawn
 

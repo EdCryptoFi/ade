@@ -24,7 +24,7 @@ Routes to the update workflow which handles:
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/update.md
+@.opencode/gsd-core/workflows/update.md
 </execution_context>
 
 <flags>
@@ -43,6 +43,6 @@ Parse the first token of $ARGUMENTS:
 </process>
 
 <execution_context_extended>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/sync-skills.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/reapply-patches.md
+@.opencode/gsd-core/workflows/sync-skills.md
+@.opencode/gsd-core/workflows/reapply-patches.md
 </execution_context_extended>

@@ -25,11 +25,11 @@ Brownfield equivalent of new-project. Project exists, PROJECT.md has history. Ga
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/new-milestone.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/questioning.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/ui-brand.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/templates/project.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/templates/requirements.md
+@.opencode/gsd-core/workflows/new-milestone.md
+@.opencode/gsd-core/references/questioning.md
+@.opencode/gsd-core/references/ui-brand.md
+@.opencode/gsd-core/templates/project.md
+@.opencode/gsd-core/templates/requirements.md
 </execution_context>
 
 <context>

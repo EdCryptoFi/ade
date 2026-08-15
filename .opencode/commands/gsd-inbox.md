@@ -20,7 +20,7 @@ and optionally applies labels or closes non-compliant submissions.
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/inbox.md
+@.opencode/gsd-core/workflows/inbox.md
 </execution_context>
 
 <context>

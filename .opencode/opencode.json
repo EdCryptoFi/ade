@@ -2,10 +2,10 @@
   "$schema": "https://opencode.ai/config.json",
   "permission": {
     "read": {
-      "/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/*": "allow"
+      ".opencode/gsd-core/*": "allow"
     },
     "external_directory": {
-      "/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/*": "allow"
+      ".opencode/gsd-core/*": "allow"
     }
   },
   "skills": {

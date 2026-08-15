@@ -15,7 +15,7 @@ doesn't belong to any specific phase.
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/thread.md
+@.opencode/gsd-core/workflows/thread.md
 </execution_context>
 
 <process>

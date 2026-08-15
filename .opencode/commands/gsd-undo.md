@@ -20,9 +20,9 @@ Three modes:
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/undo.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/ui-brand.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/gate-prompts.md
+@.opencode/gsd-core/workflows/undo.md
+@.opencode/gsd-core/references/ui-brand.md
+@.opencode/gsd-core/references/gate-prompts.md
 </execution_context>
 
 <context>

@@ -23,10 +23,10 @@ Mode routing:
 </routing>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/new-workspace.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/list-workspaces.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/remove-workspace.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/ui-brand.md
+@.opencode/gsd-core/workflows/new-workspace.md
+@.opencode/gsd-core/workflows/list-workspaces.md
+@.opencode/gsd-core/workflows/remove-workspace.md
+@.opencode/gsd-core/references/ui-brand.md
 </execution_context>
 
 <context>

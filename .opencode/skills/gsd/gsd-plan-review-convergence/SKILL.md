@@ -15,10 +15,10 @@ Replaces gsd-plan-phase's internal gsd-plan-checker with external AI reviewers (
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/plan-review-convergence.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/revision-loop.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/gates.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/agent-contracts.md
+@.opencode/gsd-core/workflows/plan-review-convergence.md
+@.opencode/gsd-core/references/revision-loop.md
+@.opencode/gsd-core/references/gates.md
+@.opencode/gsd-core/references/agent-contracts.md
 </execution_context>
 
 <runtime_note>

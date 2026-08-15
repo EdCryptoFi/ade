@@ -25,7 +25,7 @@ Output: Test files committed with message `test(phase-{N}): add unit and E2E tes
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/add-tests.md
+@.opencode/gsd-core/workflows/add-tests.md
 </execution_context>
 
 <context>

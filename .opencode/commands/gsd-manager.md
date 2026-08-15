@@ -25,8 +25,8 @@ Designed for power users who want to parallelize work across phases from one ter
 </objective>
 
 <execution_context>
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/manager.md
-@/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/references/ui-brand.md
+@.opencode/gsd-core/workflows/manager.md
+@.opencode/gsd-core/references/ui-brand.md
 </execution_context>
 
 <context>
@@ -37,7 +37,7 @@ Project context, phase list, dependencies, and recommendations are resolved insi
 
 <process>
 If `--analyze-deps` is in $ARGUMENTS:
-Read and execute `/Volumes/VibeCode/Architeture Decision Engine/ade/.opencode/gsd-core/workflows/analyze-dependencies.md` end-to-end.
+Read and execute `.opencode/gsd-core/workflows/analyze-dependencies.md` end-to-end.
 
 Execute end-to-end.
 Maintain the dashboard refresh loop until the user exits or all phases complete.
