@@ -139,10 +139,10 @@ after(() => {
   rmSync(path.join(path.dirname(tmp), 'onp-worktrees'), { recursive: true, force: true });
 });
 
-test('plano registra a execução no ledger global (com projeto e faixas)', () => {
+test('plano records the execution in the global ledger (with project and lanes)', () => {
   const r = cli(['plano', 'pagamentos']);
   assert.equal(r.status, 0, r.stderr);
-  assert.ok(caminhos().ledger.startsWith(path.join(tmp, 'home')), 'ledger isolado no tmp do teste');
+  assert.ok(caminhos().ledger.startsWith(path.join(tmp, 'home')), 'ledger isolated in the test tmp');
   const ex = execucao();
   assert.equal(ex.feature, 'pagamentos');
   assert.equal(ex.faixas.length, 2, 'T-001 and T-002 have disjoint files → 2 parallel lanes');

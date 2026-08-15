@@ -115,6 +115,35 @@ The command does two things:
 **To activate:** open a new conversation and you're done — parallel execution
 uses Antigravity's native agents, without depending on any CLI.
 
+### opencode
+
+At the **root of your project**, run:
+
+```bash
+npx @onovoprogramador/onp-spec init --agents opencode
+```
+
+The command does two things:
+
+1. creates the project's `.spec/` structure;
+2. installs the skill in `.opencode/skills/onp-spec-driven/` — the skills
+   directory opencode reads in this project.
+
+**To activate:** open a new conversation in opencode. The skill engages on its
+own when the request matches it ("specify feature X", "audit against the
+spec"...), or invoke it explicitly with the skill name.
+
+Parallel execution runs `opencode run` headless per lane. Models use opencode's
+`provider/model` format — a bare `claude-*` config default becomes
+`anthropic/<slug>` automatically. Reasoning effort goes to opencode's
+`--variant` flag.
+
+> **Your tokens, your choice:** before executing any plan, the agent shows the
+> **model and effort of each task** and asks whether they fit within your
+> license. You answer in the conversation (keep them, economize on everything,
+> adjust one task, or propose another model) and the agent adjusts it for you.
+> Without your confirmation, nothing runs.
+
 ### Without npm/npx (manual installation, per project)
 
 Download the repository once and copy your agent's skill folder into the
@@ -138,6 +167,10 @@ cp -r /tmp/onp-spec/skills/onp-spec-driven-cursor .cursor/skills/onp-spec-driven
 # Antigravity (in this workspace)
 mkdir -p .agents/skills
 cp -r /tmp/onp-spec/skills/onp-spec-driven-antigravity .agents/skills/onp-spec-driven
+
+# opencode (in this project)
+mkdir -p .opencode/skills
+cp -r /tmp/onp-spec/skills/onp-spec-driven-opencode .opencode/skills/onp-spec-driven
 ```
 
 ### Global installation — the skill in all your projects
@@ -166,6 +199,10 @@ cp -r /tmp/onp-spec/skills/onp-spec-driven-cursor ~/.cursor/skills/onp-spec-driv
 # Antigravity (global)
 mkdir -p ~/.gemini/config/skills
 cp -r /tmp/onp-spec/skills/onp-spec-driven-antigravity ~/.gemini/config/skills/onp-spec-driven
+
+# opencode (global)
+mkdir -p ~/.config/opencode/skills
+cp -r /tmp/onp-spec/skills/onp-spec-driven-opencode ~/.config/opencode/skills/onp-spec-driven
 ```
 
 With the global skill, the `.spec/` structure stays per project — but you don't
@@ -176,7 +213,8 @@ of it).
 > **Important:** each agent has ITS OWN skill — the Claude Code one executes
 > the plan with parallel headless sessions of Claude itself; the Codex one,
 > with `codex exec` headless sessions; the Cursor one, with headless sessions
-> of the Cursor CLI (`agent -p`); the Antigravity one uses its native parallel
+> of the Cursor CLI (`agent -p`); the opencode one, with headless `opencode
+> run` sessions; the Antigravity one uses its native parallel
 > agents. **Codex and Antigravity read the same directory** (`.agents/skills/`),
 > so install there the skill of the agent you use in this project — `init`
 > refuses to overwrite one agent's skill with another's. **Watch out with

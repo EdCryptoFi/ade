@@ -31,12 +31,12 @@
 import path from 'path';
 import { foldStatus } from '../util/text.js';
 
-export const AGENTES = ['claude', 'antigravity', 'codex', 'cursor'];
+export const AGENTES = ['claude', 'antigravity', 'codex', 'cursor', 'opencode'];
 
 // agents whose plan generates executar-tarefas.sh + plano-execucao.html (their
 // own headless CLI); antigravity runs with its native agents
 export function usaExecutorSh(agent) {
-  return agent === 'claude' || agent === 'codex' || agent === 'cursor';
+  return agent === 'claude' || agent === 'codex' || agent === 'cursor' || agent === 'opencode';
 }
 
 // effort accepted in PT or EN → CLI level (`claude --effort <level>`)
@@ -62,6 +62,9 @@ export function normalizarEsforco(raw) {
 // has claude defaults; a model from another CLI would break codex exec)
 const MODELO_CODEX = 'gpt-5.6-terra';
 const RESUMO_MODEL_CODEX = 'gpt-5.6-luna';
+// opencode takes provider/model — a bare claude slug becomes anthropic/<slug>;
+// the cheap default becomes an openai-qualified slug
+const RESUMO_MODEL_OPENCODE = 'openai/gpt-5.6-luna';
 const ehModeloClaude = (m) => /^claude-/.test(String(m || ''));
 
 // in Cursor, claude-* models are VALID slugs (Cursor serves Claude, GPT,
@@ -71,7 +74,8 @@ const ehModeloClaude = (m) => /^claude-/.test(String(m || ''));
 const RESUMO_MODEL_CURSOR = 'composer';
 const RESUMO_MODEL_DEFAULT = 'claude-haiku-4-5';
 
-// codex has no "max" level — the ceiling of model_reasoning_effort is xhigh
+// codex has no "max" level — the ceiling of model_reasoning_effort is xhigh.
+// opencode mirrors codex: its --variant reasoning effort tops out at "max".
 export function esforcoParaAgente(esforcoCli, agent) {
   if (agent === 'codex' && esforcoCli === 'max') return 'xhigh';
   return esforcoCli;
@@ -81,6 +85,8 @@ export function resumoModelParaAgente(cfg, agent) {
   const m = cfg.resumoModel || RESUMO_MODEL_DEFAULT;
   if (agent === 'codex' && ehModeloClaude(m)) return RESUMO_MODEL_CODEX;
   if (agent === 'cursor' && m === RESUMO_MODEL_DEFAULT) return RESUMO_MODEL_CURSOR;
+  if (agent === 'opencode' && ehModeloClaude(m)) return RESUMO_MODEL_OPENCODE;
+  if (agent === 'opencode') return m;
   return m;
 }
 
@@ -121,6 +127,11 @@ export function montarPlano(project, featureName, opts = {}) {
       erro: `--modelo "${modeloForcado}" is a Claude model — this plan is for codex (use a Codex model, e.g.: gpt-5.6-terra, gpt-5.6-luna)`,
     };
   }
+  if (modeloForcado && agent === 'opencode' && !modeloForcado.includes('/') && !ehModeloClaude(modeloForcado)) {
+    return {
+      erro: `--modelo "${modeloForcado}" is not a valid opencode model — opencode takes provider/model (e.g.: anthropic/claude-sonnet-5, openai/gpt-5.6-terra, bedrock/...)`,
+    };
+  }
 
   // titles of the acceptance criteria, for human context in the prompts
   const acTitulo = {};
@@ -148,6 +159,10 @@ export function montarPlano(project, featureName, opts = {}) {
     if (agent === 'codex' && ehModeloClaude(model)) {
       if (t.model) avisos.push(`${t.id}: model "${model}" is a Claude model — under codex it will run with "${MODELO_CODEX}"`);
       model = MODELO_CODEX;
+    }
+    if (agent === 'opencode' && ehModeloClaude(model) && !model.includes('/')) {
+      if (t.model) avisos.push(`${t.id}: model "${model}" is a bare Claude slug — under opencode it will run as "anthropic/${model}"`);
+      model = `anthropic/${model}`;
     }
     pendentes.push({
       ...t,
@@ -236,10 +251,12 @@ export function montarPlano(project, featureName, opts = {}) {
   for (const fx of faixas) fx.tasks.sort((a, b) => a.line - b.line);
 
   const repoName = path.basename(project.config.rootDir);
+  const featureSlug = shellTok(featureName);
+  const repoSlug = shellTok(repoName);
   faixas.forEach((fx, i) => {
     fx.id = `faixa-${i + 1}`;
-    fx.branch = `spec/${featureName}-faixa-${i + 1}`;
-    fx.worktree = `../onp-worktrees/${repoName}-${featureName}-faixa-${i + 1}`;
+    fx.branch = `spec/${featureSlug}-faixa-${i + 1}`;
+    fx.worktree = `../onp-worktrees/${repoSlug}-${featureSlug}-faixa-${i + 1}`;
   });
 
   // waves: at most maxParalelas simultaneous lanes
@@ -279,7 +296,7 @@ function fecharPlano(project, featureName, { agent, opts, cfg, avisos, acTitulo,
     modo,
     feature: featureName,
     // identity of this execution in the global ledger (changes on each generated plan)
-    runId: opts.runId || `${repoName}-${featureName}-${Date.now().toString(36)}`,
+    runId: opts.runId || `${shellTok(repoName)}-${shellTok(featureName)}-${Date.now().toString(36)}`,
     specDir: project.config.specDir,
     baseDir: `${project.config.specDir}/features/${featureName}`,
     branchTrabalho: `spec/${featureName}`,
@@ -324,15 +341,15 @@ function descreveTarefa(plan, t) {
     `${t.id} — "${t.title}"`,
     `  criteria/refs: ${refs}`,
     `  allowed files (and their tests): ${arquivos}`,
-    `  commit message: "${t.id} ${plan.feature}: ${t.title}"`,
+    `  commit message: "${t.id} ${shellTok(plan.feature)}: ${t.title}"`,
   ];
 }
 
 // prompt for ONE task (claude headless script and sequential tasks)
 export function promptTarefa(plan, t) {
   return [
-    `You execute ONE task of feature "${plan.feature}" (onp-spec flow, spec-anchored).`,
-    `Read first: ${plan.baseDir}/spec.md, ${plan.baseDir}/tasks.md and .spec/constituicao.md.`,
+    `You execute ONE task of feature "${shellTok(plan.feature)}" (onp-spec flow, spec-anchored).`,
+    `Read first: ${baseDirPrompt(plan)}/spec.md, ${baseDirPrompt(plan)}/tasks.md and .spec/constituicao.md.`,
     '',
     'Your task (only it):',
     ...descreveTarefa(plan, t),
@@ -347,9 +364,9 @@ export function promptFaixa(plan, fx, { worktree = true } = {}) {
     ? `Work ONLY inside the worktree ${fx.worktree} (branch ${fx.branch}) — already prepared.`
     : 'Work on the repository\'s main tree.';
   return [
-    `You execute the tasks of ${fx.id} of feature "${plan.feature}" (onp-spec flow, spec-anchored).`,
+    `You execute the tasks of ${fx.id} of feature "${shellTok(plan.feature)}" (onp-spec flow, spec-anchored).`,
     onde,
-    `Read first: ${plan.baseDir}/spec.md, ${plan.baseDir}/tasks.md and .spec/constituicao.md.`,
+    `Read first: ${baseDirPrompt(plan)}/spec.md, ${baseDirPrompt(plan)}/tasks.md and .spec/constituicao.md.`,
     '',
     `Execute IN THIS ORDER (1 task = 1 commit):`,
     ...fx.tasks.flatMap((t) => descreveTarefa(plan, t)),
@@ -502,18 +519,29 @@ export function renderPlanoMd(plan) {
   if (usaExecutorSh(plan.agent)) {
     const codex = plan.agent === 'codex';
     const cursor = plan.agent === 'cursor';
-    const cliTarefa = codex ? '`codex exec`' : cursor ? '`agent -p` (Cursor CLI)' : '`claude -p`';
+    const opencode = plan.agent === 'opencode';
+    const cliTarefa = codex
+      ? '`codex exec`'
+      : cursor
+        ? '`agent -p` (Cursor CLI)'
+        : opencode
+          ? '`opencode run`'
+          : '`claude -p`';
     const ajustes = codex
       ? `\`--model\` and \`model_reasoning_effort\` already set per task and sandbox \`${plan.cfg.sandbox}\``
       : cursor
         ? '`--model` already set per task and `--force` (without it Cursor\'s print mode doesn\'t modify files)'
-        : `\`--model\` and \`--effort\` already set per task and permissions \`${plan.cfg.permissionMode}\``;
+        : opencode
+          ? '`--model` and `--variant` already set per task'
+          : `\`--model\` and \`--effort\` already set per task and permissions \`${plan.cfg.permissionMode}\``;
     L.push(
       codex
         ? '### ▶ Execution — Codex headless (codex exec)'
         : cursor
           ? '### ▶ Execution — Cursor headless (agent CLI)'
-          : '### ▶ Execution — Claude Code headless'
+          : opencode
+            ? '### ▶ Execution — opencode headless (opencode run)'
+            : '### ▶ Execution — Claude Code headless'
     );
     L.push('');
     L.push('```bash');
@@ -537,6 +565,14 @@ export function renderPlanoMd(plan) {
       L.push('within his license/quota (strong model + high effort burns tokens).');
       L.push(`To spend less: \`onp-spec plano ${plan.feature} --modelo gpt-5.6-luna --esforco baixo\``);
       L.push(`(all) or per task \`onp-spec tarefa ${plan.feature} T-xxx --modelo <m> --esforco <level>\` — and regenerate the plan.`);
+    }
+    if (opencode) {
+      L.push('');
+      L.push('**Cost confirmation — before executing**: the models per task are in the');
+      L.push('tables above (opencode format `provider/model`); the agent CONFIRMS with');
+      L.push('the user that they are within his license/quota. To spend less:');
+      L.push(`\`onp-spec plano ${plan.feature} --modelo openai/gpt-5.6-luna --esforco baixo\``);
+      L.push(`(all) or per task \`onp-spec tarefa ${plan.feature} T-xxx --modelo <provider/model> --esforco <level>\` — and regenerate the plan.`);
     }
     if (cursor) {
       L.push('');
@@ -701,6 +737,16 @@ export function renderPlanoMd(plan) {
 
 const shq = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;
 
+// 🔒 SECURITY: repository names, feature names and config values flow into the
+// generated `executar-tarefas.sh`. Any `$(...)`, backtick, `;`, `"`, newline
+// or space would be command-injected when the script runs. Render a shell-safe
+// token (alnum, dot, underscore, hyphen) — real worktree/log paths and branch
+// names never need anything else.
+const shellTok = (s) => String(s).replace(/[^A-Za-z0-9._-]/g, '_');
+
+// path with every segment shell-tokenized (used in prompts quoted into the script)
+const baseDirPrompt = (plan) => plan.baseDir.split('/').map(shellTok).join('/');
+
 function allowedTools(plan) {
   if (plan.cfg.allowedTools) return plan.cfg.allowedTools;
   const base = ['Bash(git add:*)', 'Bash(git commit:*)', 'Bash(git status:*)', 'Bash(git diff:*)', 'Bash(git log:*)'];
@@ -715,8 +761,16 @@ export function renderPlanoSh(plan) {
   const L = [];
   const P = (...linhas) => L.push(...linhas);
 
+  // 🔒 SECURITY: never interpolate raw project/feature/config strings into the
+  // shell script — sanitize them at the render boundary (see shellTok).
+  const repoName = shellTok(plan.repoName);
+  const feature = shellTok(plan.feature);
+  const permissionMode = shellTok(plan.cfg.permissionMode);
+  const baseBranch = shellTok(plan.branchTrabalho);
+  const baseDirShell = plan.baseDir.split('/').map(shellTok).join('/');
+
   P('#!/usr/bin/env bash');
-  P(`# executar-tarefas.sh — generated by \`onp-spec plano ${plan.feature}\` at ${plan.geradoEm}`);
+  P(`# executar-tarefas.sh — generated by \`onp-spec plano ${feature}\` at ${plan.geradoEm}`);
   P('# do NOT edit by hand: changed tasks.md or the config, regenerate the plan.');
   P('#');
   P('# usage:');
@@ -727,15 +781,16 @@ export function renderPlanoSh(plan) {
   P('#   bash executar-tarefas.sh --listar         shows lanes, tasks and states');
   P('#   (add --sem-gate to skip the gate at the end)');
   P('#');
-  P(`# what is going on, at any time: onp-spec resumo ${plan.feature}`);
+  P(`# what is going on, at any time: onp-spec resumo ${feature}`);
   P('set -u');
   P('set -o pipefail');
   P('');
   const codex = plan.agent === 'codex';
   const cursor = plan.agent === 'cursor';
+  const opencode = plan.agent === 'opencode';
   P(`RUN_ID=${shq(plan.runId)}`);
-  P(`FEATURE=${shq(plan.feature)}`);
-  P(`BASE_BRANCH=${shq(plan.branchTrabalho)}`);
+  P(`FEATURE=${shq(feature)}`);
+  P(`BASE_BRANCH=${shq(baseBranch)}`);
   P(`ENGINE=${shq(plan.engine)}`);
   if (codex) {
     P(`CODEX_FLAGS=(--sandbox ${shq(plan.cfg.sandbox || 'workspace-write')})`);
@@ -745,8 +800,13 @@ export function renderPlanoSh(plan) {
     P('# Fine control is the user\'s: permissions.deny in .cursor/cli.json WINS over --force.');
     P('CURSOR_FLAGS=(--force)');
     P('STREAM_FLAGS=(--output-format stream-json)');
+  } else if (opencode) {
+    P('# --auto approves permissions not explicitly denied — the executor must WRITE.');
+    P('# Fine control is the user\'s: .opencode/opencode.json permission rules still win.');
+    P('OPENCODE_FLAGS=(--auto)');
+    P('STREAM_FLAGS=(--format json)');
   } else {
-    P(`CLAUDE_FLAGS=(--permission-mode ${plan.cfg.permissionMode} --allowedTools ${shq(allowedTools(plan))})`);
+    P(`CLAUDE_FLAGS=(--permission-mode ${permissionMode} --allowedTools ${shq(allowedTools(plan))})`);
     P('STREAM_FLAGS=(--output-format stream-json --verbose)');
   }
   P('FALHAS=""');
@@ -773,6 +833,8 @@ export function renderPlanoSh(plan) {
   } else if (cursor) {
     P('  # current binary of the Cursor CLI is `agent`; `cursor-agent` is the legacy name');
     P('  CURSOR_BIN=$(command -v agent || command -v cursor-agent) || falhar "Cursor CLI (agent) not found — install: curl https://cursor.com/install -fsS | bash"');
+  } else if (opencode) {
+    P('  command -v opencode >/dev/null 2>&1 || falhar "opencode CLI (opencode) not found — install it or follow the manual mode in plano-execucao.md"');
   } else {
     P('  command -v claude >/dev/null 2>&1 || falhar "Claude Code CLI (claude) not found — install it or follow the manual mode in plano-execucao.md"');
   }
@@ -789,7 +851,7 @@ export function renderPlanoSh(plan) {
   P('      falhar "tree dirty beyond the plan artifacts — commit or git stash before (the worktrees start from the last commit)"');
   P('    fi');
   P('  fi');
-  P(`  git ls-files --error-unmatch -- ${shq(`${plan.baseDir}/spec.md`)} >/dev/null 2>&1 || falhar "spec.md is not committed — the lane worktrees need it in git"`);
+  P(`  git ls-files --error-unmatch -- ${shq(`${baseDirShell}/spec.md`)} >/dev/null 2>&1 || falhar "spec.md is not committed — the lane worktrees need it in git"`);
   P('  ATUAL=$(git rev-parse --abbrev-ref HEAD)');
   P('  [ "$ATUAL" != "HEAD" ] || falhar "detached HEAD — switch to a branch"');
   P('  if [ "$ATUAL" != "$BASE_BRANCH" ]; then');
@@ -801,8 +863,8 @@ export function renderPlanoSh(plan) {
   P('    info "work branch: $BASE_BRANCH (from $ATUAL)"');
   P('  fi');
   P('  git worktree prune');
-  P(`  LOG_DIR="$(dirname "$TOPLEVEL")/onp-worktrees/${plan.repoName}-${plan.feature}-logs"`);
-  P(`  WT_BASE="$(dirname "$TOPLEVEL")/onp-worktrees/${plan.repoName}-${plan.feature}"`);
+  P(`  LOG_DIR="$(dirname "$TOPLEVEL")/onp-worktrees/${repoName}-${feature}-logs"`);
+  P(`  WT_BASE="$(dirname "$TOPLEVEL")/onp-worktrees/${repoName}-${feature}"`);
   P('  STREAMS_DIR="${ONP_SPEC_HOME:-$HOME/.onp-spec}/painel/streams/$RUN_ID"');
   P('  mkdir -p "$LOG_DIR" "$STREAMS_DIR"');
   P('}');
@@ -823,7 +885,7 @@ export function renderPlanoSh(plan) {
   P('  printf "%s" "$n"');
   P('}');
   P('');
-  P(`# one task = one ${codex ? 'codex exec' : cursor ? 'agent (Cursor)' : 'claude'} headless session with clean context.`);
+  P(`# one task = one ${codex ? 'codex exec' : cursor ? 'agent (Cursor)' : opencode ? 'opencode run' : 'claude'} headless session with clean context.`);
   P('# the session\'s JSONL becomes the task\'s stream in the ledger');
   P('rodar_tarefa() { # $1=scope(lane|seq) $2=T-xxx $3=prompt $4=model $5=effort');
   P('  local chave="$1--$2"');
@@ -839,6 +901,11 @@ export function renderPlanoSh(plan) {
     P('  # $5 (effort) does NOT become a flag: the Cursor CLI has no reasoning effort —');
     P('  # the level goes embedded in the model slug (e.g.: gpt-5.6-terra-high)');
     P('  if "$CURSOR_BIN" -p "$3" --model "$4" "${STREAM_FLAGS[@]}" "${CURSOR_FLAGS[@]}" > "$stream" 2>>"$LOG_DIR/$1.log"; then');
+  } else if (opencode) {
+    P('  info "$2 — opencode run ($4 · $5) · stream: $chave"');
+    P('  # effort → --variant (reasoning depth); opencode has no "max", codex-like');
+    P('  # the worked tree is the CWD, so opencode writes where the task expects');
+    P('  if opencode run "$3" --model "$4" --variant "$5" "${STREAM_FLAGS[@]}" "${OPENCODE_FLAGS[@]}" > "$stream" 2>>"$LOG_DIR/$1.log"; then');
   } else {
     P('  info "$2 — claude -p ($4 · $5) · stream: $chave"');
     P('  if claude -p "$3" --model "$4" --effort "$5" "${STREAM_FLAGS[@]}" "${CLAUDE_FLAGS[@]}" > "$stream" 2>>"$LOG_DIR/$1.log"; then');
@@ -856,7 +923,7 @@ export function renderPlanoSh(plan) {
   P('  if [ "$4" -ne 0 ]; then');
   P('    evento --tipo faixa --faixa "$1" --estado failed');
   P('    vermelho "✘ $1 failed (log: $LOG_DIR/$1.log) — worktree kept for inspection: $3"');
-  P(`    amarelo "  re-run only it: bash ${plan.baseDir}/executar-tarefas.sh --faixa $1"`);
+  P(`    amarelo "  re-run only it: bash ${baseDirShell}/executar-tarefas.sh --faixa $1"`);
   P('    FALHAS="$FALHAS $1"; return 1');
   P('  fi');
   P('  evento --tipo faixa --faixa "$1" --estado merging');
@@ -879,7 +946,7 @@ export function renderPlanoSh(plan) {
   P('');
   P('# ── general progress summary: 1/min while the execution runs ──────────');
   P(
-    `# written by AI (${codex ? 'codex exec read-only' : cursor ? 'agent -p without --force, read-only' : 'claude -p, no tools'}) with engine fallback; goes`
+    `# written by AI (${codex ? 'codex exec read-only' : cursor ? 'agent -p without --force, read-only' : opencode ? 'opencode run without --auto, read-only' : 'claude -p, no tools'}) with engine fallback; goes`
   );
   P('# to the terminal and to the ledger — the agent relays the text in the chat.');
   P('gerar_resumo() {');
@@ -887,13 +954,13 @@ export function renderPlanoSh(plan) {
   P('  ctx=$(node "$ENGINE" resumo "$FEATURE" --contexto 2>/dev/null) || ctx=""');
   P('  [ -n "$ctx" ] || return 0');
   P(
-    `  ia=$(${codex ? 'codex exec' : cursor ? '"$CURSOR_BIN" -p' : 'claude -p'} "You narrate, for the product owner, a running execution of coding tasks. Mechanical state:`
+    `  ia=$(${codex ? 'codex exec' : cursor ? '"$CURSOR_BIN" -p' : opencode ? 'opencode run' : 'claude -p'} "You narrate, for the product owner, a running execution of coding tasks. Mechanical state:`
   );
   P('');
   P('$ctx');
   P('');
   P(
-    `Write the GENERAL PROGRESS SUMMARY: a single paragraph of 2 to 4 sentences, in plain English, saying what is happening now, what already finished, what failed and whether the user needs to act. No markdown, no lists." --model "$RESUMO_MODEL"${codex ? ' --sandbox read-only --ephemeral' : ''} 2>/dev/null)`
+    `Write the GENERAL PROGRESS SUMMARY: a single paragraph of 2 to 4 sentences, in plain English, saying what is happening now, what already finished, what failed and whether the user needs to act. No markdown, no lists." --model "$RESUMO_MODEL"${codex ? ' --sandbox read-only --ephemeral' : opencode ? ' --format default' : ''} 2>/dev/null)`
   );
   P('  if [ -n "$ia" ]; then');
   P('    node "$ENGINE" resumo "$FEATURE" --gravar --origem ai --texto "$ia" >/dev/null 2>&1 || true');
@@ -953,14 +1020,14 @@ export function renderPlanoSh(plan) {
     P(`  if rodar_tarefa seq ${shq(t.id)} ${shq(promptTarefa(plan, t))} ${shq(t.model)} ${t.esforcoCli} >> "$LOG_DIR/seq.log" 2>&1; then`);
     P('    # safety commit if the agent forgot (traceability > perfection)');
     P('    if [ -n "$(git status --porcelain)" ]; then');
-    P(`      git add -A && git commit -q -m ${shq(`${t.id} ${plan.feature}: ${t.title} (plan auto-commit)`)}`);
+    P(`      git add -A && git commit -q -m ${shq(`${t.id} ${feature}: ${t.title} (plan auto-commit)`)}`);
     P('    fi');
     P(`    marcar_concluidas ${t.id}`);
     P(`    verde "✔ ${t.id} done"`);
     P('    return 0');
     P('  fi');
     P(`  vermelho "✘ ${t.id} failed (log: $LOG_DIR/seq.log)"`);
-    P(`  amarelo "  re-run only it: bash ${plan.baseDir}/executar-tarefas.sh --seq ${t.id}"`);
+    P(`  amarelo "  re-run only it: bash ${baseDirShell}/executar-tarefas.sh --seq ${t.id}"`);
     P(`  FALHAS="$FALHAS ${t.id}"`);
     P('  return 1');
     P('}');
@@ -996,7 +1063,7 @@ export function renderPlanoSh(plan) {
   P('    evento --tipo end --exit 1 --escopo "$1"');
   P('    if [ -z "$FALHAS" ]; then');
   P('      amarelo "○ \'$1\' work finished WITHOUT the gate (--sem-gate) — this is NOT proof of anything"');
-  P(`      amarelo "  for the verdict: bash ${plan.baseDir}/executar-tarefas.sh --gate"`);
+  P(`      amarelo "  for the verdict: bash ${baseDirShell}/executar-tarefas.sh --gate"`);
   P('      exit 0');
   P('    fi');
   P('    vermelho "and there are still failures — fix them and run the gate"');
@@ -1104,12 +1171,15 @@ export function renderPlanoHtml(plan) {
   const sequencial = plan.modo === 'sequencial';
   const codexHtml = plan.agent === 'codex';
   const cursorHtml = plan.agent === 'cursor';
-  const agenteRotulo = codexHtml ? 'Codex' : cursorHtml ? 'Cursor' : 'Claude Code';
+  const opencodeHtml = plan.agent === 'opencode';
+  const agenteRotulo = codexHtml ? 'Codex' : cursorHtml ? 'Cursor' : opencodeHtml ? 'opencode' : 'Claude Code';
   const cliRotulo = codexHtml
     ? '<code>codex exec</code>'
     : cursorHtml
       ? '<code>agent -p</code> (Cursor CLI)'
-      : '<code>claude -p</code>';
+      : opencodeHtml
+        ? '<code>opencode run</code>'
+        : '<code>claude -p</code>';
   const card = (t) => `
         <div class="tarefa">
           <span class="tid">${esc(t.id)}</span>

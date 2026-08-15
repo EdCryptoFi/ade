@@ -1,29 +1,29 @@
-# ADR-003 — Conciliação como job agendado + reconciliação por tripla de chaves
+# ADR-003 — Reconciliation as a scheduled job + matching by key triple
 
-- **Status:** Aceito
-- **Data:** 2026-08-12
-- **Domínio:** fintech / fiscal (transporte)
+- **Status:** Accepted
+- **Date:** 2026-08-12
+- **Domain:** fintech / fiscal (transportation)
 
-## Contexto
+## Context
 
-A descrição do produto inclui "conciliação de recebimentos": cruzar frete pago pelo contratante, comissão do motorista e taxa da plataforma com extratos bancários/PIX/boleto. Conciliação é processamento em lote, não transação interativa.
+The product description includes "payment reconciliation": matching the freight paid by the contracting party, the driver's commission and the platform fee against bank statements/PIX/boleto. Reconciliation is batch processing, not an interactive transaction.
 
-## Decisão
+## Decision
 
-Conciliação roda como **job agendado** (diário) cruzando três chaves:
+Reconciliation runs as a **scheduled job** (daily) matching three keys:
 
-- `NFe/CT-e` (identificador fiscal)
-- `payment reference` (PIX id / boleto line / webhook gateway id)
-- `freight id` (pedido de frete interno)
+- `NFe/CT-e` (fiscal identifier)
+- `payment reference` (PIX id / boleto line / gateway webhook id)
+- `freight id` (internal freight order)
 
-Resultados: geram lançamentos no ledger (ADR-001) e disparam `AlertsCenter` para divergências. Divergência = lançamento marcado `unmatched` + notificação.
+Results: generate ledger entries (ADR-001) and trigger `AlertsCenter` for discrepancies. A discrepancy = entry marked `unmatched` + notification.
 
-## Consequências
+## Consequences
 
-- **Prós:** divergências detectadas automaticamente; trilha de auditoria; rastreável por 3 vias.
-- **Contras:** exige padronização de chaves na emissão; matching imperfeito precisa de revisão manual.
-- **Componentes:** `ReconciliationView` / `PaymentsDashboard` + `AlertsCenter` + `CompliancePanel`.
+- **Pros:** discrepancies detected automatically; audit trail; traceable across 3 paths.
+- **Cons:** requires key standardization at issuance; imperfect matching needs manual review.
+- **Components:** `ReconciliationView` / `PaymentsDashboard` + `AlertsCenter` + `CompliancePanel`.
 
-## Reflexo no ADE
+## Impact on ADE
 
-- Categoria `fintech` inclui keyword `conciliação`; boj pipeline "reconciliation jobs" na recomendação de infraestrutura.
+- `fintech` category includes the `conciliação` keyword; background pipeline "reconciliation jobs" in the infrastructure recommendation.

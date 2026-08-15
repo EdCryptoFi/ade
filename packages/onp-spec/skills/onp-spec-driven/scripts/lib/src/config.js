@@ -5,6 +5,50 @@ import { readFileSync, existsSync } from 'fs';
 import path from 'path';
 import { LICOES_DEFAULTS } from './core/licoes.js';
 
+// 🔒 SECURITY: config values that build filesystem paths must stay inside the
+// project. We harden the two trust boundaries that flow into `path.join`
+// from `onpspec.config.json`:
+//   - specDir must be a relative, non-absolute sub path with no `..` segment
+//     (prevents spec reads/writes escaping rootDir);
+//   - testGlobs / srcGlobs / ignoreGlobs / glob of the constitution must stay
+//     in the project (prevents arbitrary file READ via `path.resolve`).
+export function normalizeSpecDir(specDirRaw, rootDir) {
+  let specDir = String(specDirRaw == null ? '.spec' : specDirRaw);
+  if (path.isAbsolute(specDir)) {
+    throw new Error(
+      `"specDir" must be relative inside the project (got absolute "${specDir}")`
+    );
+  }
+  const segs = specDir.split(/[\\/]+/).filter(Boolean);
+  if (segs.some((s) => s === '..')) {
+    throw new Error(
+      `"specDir" cannot contain ".." (got "${specDir}") — spec files must live inside the project`
+    );
+  }
+  const resolved = path.normalize(specDir).replace(/^\.\.(\/|$)/, '');
+  const contained = path.join(rootDir, resolved);
+  if (!contained.startsWith(`${path.resolve(rootDir)}${path.sep}`)) {
+    throw new Error(`"specDir" must resolve inside the project (got "${specDir}")`);
+  }
+  return resolved;
+}
+
+// 🔒 SECURITY: keep a single glob from the untrusted config inside the project
+// (or a sibling repo under the project's parent — the documented multi-root
+// feature audits adjacent repos). Absolute globs and escapes beyond the parent
+// are rejected: scanning arbitrary filesystem locations is never required.
+export function projectGlob(g, rootDir) {
+  const rootAbs = path.resolve(rootDir);
+  const parentAbs = path.dirname(rootAbs);
+  const globAbs = path.resolve(rootAbs, String(g));
+  if (globAbs === rootAbs || globAbs.startsWith(`${rootAbs}${path.sep}`) || globAbs.startsWith(`${parentAbs}${path.sep}`)) {
+    return String(g);
+  }
+  throw new Error(
+    `glob "${g}" escapes the project and its sibling repos — only ".." one level (adjacent repos) is allowed`
+  );
+}
+
 export const DEFAULT_CONFIG = {
   specDir: '.spec',
   // where to look for @spec/@principle tags
@@ -65,5 +109,17 @@ export function loadConfig(rootDir) {
     paralelo: { ...DEFAULT_CONFIG.paralelo, ...(raw.paralelo || {}) },
     rootDir,
     configPath,
+    // 🔒 SECURITY: re-derive the hardening-aware values instead of trusting
+    // raw spread (speeding through `...raw` earlier is fine — the caller
+    // reaches for the normalized forms below for anything path-like).
+    specDir: normalizeSpecDir(raw.specDir == null ? DEFAULT_CONFIG.specDir : raw.specDir, rootDir),
+    testGlobs: sanitizeGlobs(raw.testGlobs == null ? DEFAULT_CONFIG.testGlobs : raw.testGlobs, rootDir),
+    srcGlobs: sanitizeGlobs(raw.srcGlobs == null ? DEFAULT_CONFIG.srcGlobs : raw.srcGlobs, rootDir),
+    ignoreGlobs: sanitizeGlobs(raw.ignoreGlobs == null ? DEFAULT_CONFIG.ignoreGlobs : raw.ignoreGlobs, rootDir),
   };
+}
+
+function sanitizeGlobs(globs, rootDir) {
+  if (!Array.isArray(globs)) return DEFAULT_CONFIG.testGlobs;
+  return globs.map((g) => projectGlob(g, rootDir));
 }

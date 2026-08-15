@@ -118,7 +118,7 @@ test('huge project on disk: 120 features × 6 ACs — real audit turns into sign
   }
   const tAdd = performance.now() - t2;
 
-  assert.ok(promovida, 'a recorrência em features distintas tinha que promover');
+  assert.ok(promovida, 'recurrence in distinct features had to promote');
   assert.equal(promovida.status, 'confirmada');
   assert.equal(promovida.recorrencia, 40);
   assert.equal(promovida.evidencias.length, 5);
@@ -130,9 +130,9 @@ test('huge project on disk: 120 features × 6 ACs — real audit turns into sign
   const relido = carregarLicoes(specRoot);
   assert.equal(relido.licoes.length, 1);
 
-  assert.ok(tAudit < 15_000, `audit de ${FEATURES} features levou ${tAudit}ms`);
-  assert.ok(tSinais < 3_000, `registrar ${audit.findings.length} achados levou ${tSinais}ms`);
-  assert.ok(tAdd < 3_000, `40 adds com lastro levaram ${tAdd}ms`);
+  assert.ok(tAudit < 15_000, `audit of ${FEATURES} features took ${tAudit}ms`);
+  assert.ok(tSinais < 3_000, `registering ${audit.findings.length} findings took ${tSinais}ms`);
+  assert.ok(tAdd < 3_000, `40 adds with backing took ${tAdd}ms`);
 });
 
 test('thousands of signals and hundreds of lessons: listing with fixed cost and bounded files', () => {
@@ -161,7 +161,7 @@ test('thousands of signals and hundreds of lessons: listing with fixed cost and 
 
   const sinais = carregarSinais(specRoot);
   const entradas = Object.values(sinais.sinais);
-  assert.equal(entradas.length, FEATURES * 3, 'rodadas repetidas não podem duplicar chaves');
+  assert.equal(entradas.length, FEATURES * 3, 'repeated rounds must not duplicate keys');
   assert.ok(entradas.every((s) => s.ocorrencias === 3));
 
   const data = carregarLicoes(specRoot);
@@ -187,12 +187,12 @@ test('thousands of signals and hundreds of lessons: listing with fixed cost and 
   salvarLicoes(specRoot, data);
   const tamanhoLicoes = statSync(path.join(specRoot, 'licoes.json')).size;
   const tamanhoSinais = statSync(path.join(specRoot, 'verification', 'sinais.json')).size;
-  assert.ok(tamanhoLicoes < 512 * 1024, `licoes.json com ${tamanhoLicoes} bytes`);
-  assert.ok(tamanhoSinais < 2 * 1024 * 1024, `sinais.json com ${tamanhoSinais} bytes`);
+  assert.ok(tamanhoLicoes < 512 * 1024, `licoes.json at ${tamanhoLicoes} bytes`);
+  assert.ok(tamanhoSinais < 2 * 1024 * 1024, `sinais.json at ${tamanhoSinais} bytes`);
 
-  assert.ok(tRodadas < 6_000, `3 rodadas × ${achados.length} achados levaram ${tRodadas}ms`);
-  assert.ok(tAdds < 5_000, `300 adds levaram ${tAdds}ms`);
-  assert.ok(tList < 100, `list sobre 300 lições levou ${tList}ms`);
+  assert.ok(tRodadas < 6_000, `3 rounds × ${achados.length} findings took ${tRodadas}ms`);
+  assert.ok(tAdds < 5_000, `300 adds took ${tAdds}ms`);
+  assert.ok(tList < 100, `list over 300 lessons took ${tList}ms`);
 });
 
 test('the history cap holds the file even with tens of thousands of failure points', () => {

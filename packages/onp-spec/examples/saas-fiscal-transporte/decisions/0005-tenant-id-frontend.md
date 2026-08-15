@@ -1,28 +1,28 @@
-# ADR-005 — Token/ID de tenant nunca confiado pelo frontend
+# ADR-005 — Tenant token/ID never trusted from the frontend
 
-- **Status:** Aceito
-- **Data:** 2026-08-12
-- **Domínio:** fintech / fiscal (transporte)
-- **Referência:** evolve-se do achado de auditoria do ADE (`LAW-5` / `user ID from token`)
+- **Status:** Accepted
+- **Date:** 2026-08-12
+- **Domain:** fintech / fiscal (transportation)
+- **Reference:** evolves from the ADE audit finding (`LAW-5` / `user ID from token`)
 
-## Contexto
+## Context
 
-Na simulação, a auditoria do ADE emitiu 18 achados críticos incluindo "validar identidade a partir do token, não de campos do request". Em produto multi-tenant fiscal, o risco é paid-tenant-to-tenant (listar NFe de outra empresa trocando `tenant_id` no body).
+In the simulation, the ADE audit issued 18 critical findings including "validate identity from the token, not from request fields". In a fiscal multi-tenant product, the risk is paid tenant-to-tenant (listing another company's NFe by swapping `tenant_id` in the body).
 
-## Decisão
+## Decision
 
-O servidor é a única fonte de verdade para identidade do tenant:
+The server is the single source of truth for tenant identity:
 
-- `tenant_id` e `user_id` sempre derivados do **JWT verificado** (iss, aud, sub, tenant claim). Erros nesse caminho violam `LAW-1` e `LAW-5`.
-- Nenhuma rota aceita `tenant_id` no path/body/query para autorizar acesso; o valor do token é comparado com o da URL apenas para consistência, nunca para autorizar.
-- Frontend envia apenas referências de recursos (`nfe_id`, `freight_id`); escopos são resolvidos via RLS (ADR-004).
+- `tenant_id` and `user_id` are always derived from the **verified JWT** (iss, aud, sub, tenant claim). Errors on this path violate `LAW-1` and `LAW-5`.
+- No route accepts `tenant_id` in path/body/query to authorize access; the token value is compared against the one in the URL only for consistency, never to authorize.
+- The frontend only sends resource references (`nfe_id`, `freight_id`); scopes are resolved via RLS (ADR-004).
 
-## Consequências
+## Consequences
 
-- **Prós:** elimina classe de bugs de IDOR/tenant spoofing; RLS atua como segunda barreira.
-- **Contras:** exige cláusulas de escopo em toda query (trocável por RLS).
-- **Regressão reportada:** fix do `domain-analysis` (word-boundary `ai`/`ia`) não altera este comportamento; auditoria perene.
+- **Pros:** eliminates the class of IDOR/tenant-spoofing bugs; RLS acts as a second barrier.
+- **Cons:** requires scope clauses on every query (replaceable by RLS).
+- **Reported regression:** the `domain-analysis` fix (word-boundary `ai`/`ia`) does not change this behavior; auditing is evergreen.
 
-## Reflexo no ADE
+## Impact on ADE
 
 - `audit.json` (top actions): `LAW-1` server-side validation, `LAW-5` user ID from token, `LAW-6` auth ≠ authorization.

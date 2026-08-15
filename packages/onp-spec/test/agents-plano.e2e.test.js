@@ -38,7 +38,7 @@ test('init --agents invalid fails loud (exit 2), nothing installed', () => {
   );
 });
 
-test('init --agents claude instala a skill do Claude em .claude/skills/', () => {
+test('init --agents claude installs the Claude skill in .claude/skills/', () => {
   const { code, out } = cli('init', '--agents', 'claude');
   assert.equal(code, 0, out);
   const skillMd = path.join(root, '.claude', 'skills', 'onp-spec-driven', 'SKILL.md');
@@ -46,7 +46,7 @@ test('init --agents claude instala a skill do Claude em .claude/skills/', () => 
   assert.match(readFileSync(skillMd, 'utf-8'), /agent: claude/);
 });
 
-test('init --agents antigravity instala a skill do Antigravity em .agents/skills/', () => {
+test('init --agents antigravity installs the Antigravity skill in .agents/skills/', () => {
   const { code, out } = cli('init', '--agents', 'antigravity');
   assert.equal(code, 0, out);
   const skillMd = path.join(root, '.agents', 'skills', 'onp-spec-driven', 'SKILL.md');
@@ -234,7 +234,7 @@ test('plano --sequencial (claude): one task after another, valid sh, no lanes', 
 
   const shPath = path.join(dir, 'executar-tarefas.sh');
   const bashN = spawnSync('bash', ['-n', shPath], { encoding: 'utf-8' });
-  assert.equal(bashN.status, 0, `bash -n falhou: ${bashN.stderr}`);
+  assert.equal(bashN.status, 0, `bash -n failed: ${bashN.stderr}`);
   const listar = spawnSync('bash', [shPath, '--listar'], {
     cwd: root,
     encoding: 'utf-8',
@@ -244,7 +244,7 @@ test('plano --sequencial (claude): one task after another, valid sh, no lanes', 
   assert.match(listar.stdout, /seq\s+T-001/);
   assert.doesNotMatch(listar.stdout, /faixa-1/);
 
-  // volta o plano paralelo para os testes seguintes
+  // switch back to the parallel plan for the following tests
   assert.equal(cli('plano', 'pagamentos', '--agents', 'claude').code, 0);
 });
 

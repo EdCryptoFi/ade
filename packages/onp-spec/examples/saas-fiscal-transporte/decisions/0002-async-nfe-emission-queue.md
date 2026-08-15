@@ -1,28 +1,28 @@
-# ADR-002 — Emissão de NFe assíncrona com fila
+# ADR-002 — Async NFe emission with queue
 
-- **Status:** Aceito
-- **Data:** 2026-08-12
-- **Domínio:** fintech / fiscal (transporte)
+- **Status:** Accepted
+- **Date:** 2026-08-12
+- **Domain:** fintech / fiscal (transportation)
 
-## Contexto
+## Context
 
-Emissão de NFe envolve integração externa (SEFAZ/SEFAZ autorizadora). Não pode ser síncrona na request HTTP: tempo de resposta variável, retries, status polling (autorizada, denegada, em processamento). O sistema também emite CT-e (conhecimento de transporte) com a mesma característica.
+NFe issuance involves an external integration (SEFAZ/authorizing SEFAZ). It cannot be synchronous within the HTTP request: variable response time, retries, status polling (authorized, denied, processing). The system also issues CT-e (transport knowledge) with the same characteristic.
 
-## Decisão
+## Decision
 
-Emissão e consulta de status são **jobs assíncronos**:
+Issuance and status lookup are **async jobs**:
 
-- A request HTTP apenas enfileira (`enqueue nfe.emission`) e retorna `status: pending`.
-- O worker processa: monta XML, assina (certificado A1), transmite via webservice da SEFAZ, grava protocolo/status.
-- Polling de status e retries com backoff exponencial + dead-letter queue.
-- O `InfrastructureDecision` do ADE agora recomenda BullMQ/Inngest para domínios fiscais mesmo sem `backgroundJobs` explícito.
+- The HTTP request only enqueues (`enqueue nfe.emission`) and returns `status: pending`.
+- The worker processes: builds the XML, signs it (A1 certificate), transmits via the SEFAZ webservice, records the protocol/status.
+- Status polling and retries with exponential backoff + dead-letter queue.
+- The ADE `InfrastructureDecision` now recommends BullMQ/Inngest for fiscal domains even without explicit `backgroundJobs`.
 
-## Consequências
+## Consequences
 
-- **Prós:** UI não bloqueia; resiliente a falha da SEFAZ; rastreável via status do job.
-- **Contras:** estado eventualmente consistente; precisa de UI de status de NFe (`NfeStatusTracker`).
-- **Componentes:** `NfeEmissionForm`, `NfeStatus`, `NfeStatusTracker` (templates `fintech`/`transportation`).
+- **Pros:** UI does not block; resilient to SEFAZ failures; traceable via job status.
+- **Cons:** eventually consistent state; requires an NFe status UI (`NfeStatusTracker`).
+- **Components:** `NfeEmissionForm`, `NfeStatus`, `NfeStatusTracker` (`fintech`/`transportation` templates).
 
-## Reflexo no ADE
+## Impact on ADE
 
-- `infrastructure-decision.ts` / `settings.ts`: `isFiscal` → default de background jobs "NFe emission, SEFAZ status polling, reconciliation jobs".
+- `infrastructure-decision.ts` / `settings.ts`: `isFiscal` → default background jobs "NFe emission, SEFAZ status polling, reconciliation jobs".

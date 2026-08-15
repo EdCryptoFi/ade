@@ -74,8 +74,29 @@ export function lerEventos() {
   return out;
 }
 
+// 🔒 SECURITY: runId and stream keys flow from `onp-spec evento --run` /
+// `stream-resumo` (CLI values) into filesystem paths under ONP_SPEC_HOME.
+// Validate them so `..`, `/`, absolute paths, or blank strings can never
+// escape the ledger/painel directory (path traversal / rmSync deletion).
+const RUN_ID_RE = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
+const CHAVE_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
+export function validateRunId(runId) {
+  if (!RUN_ID_RE.test(String(runId ?? ''))) {
+    throw new Error(`invalid run id: "${runId}" — use [A-Za-z0-9_-] without path separators`);
+  }
+  return runId;
+}
+
+export function validateChave(chave) {
+  if (!CHAVE_RE.test(String(chave ?? ''))) {
+    throw new Error(`invalid stream key: "${chave}"`);
+  }
+  return chave;
+}
+
 export function caminhoStream(runId, chave) {
-  return path.join(caminhos().streams, runId, `${chave}.jsonl`);
+  return path.join(caminhos().streams, validateRunId(runId), `${validateChave(chave)}.jsonl`);
 }
 
 export function chaveStream(faixaOuSeq, tarefa) {
@@ -205,7 +226,17 @@ export function podarLedger(maxExecucoes = MAX_EXECUCOES) {
   const remover = new Set(ordem.slice(0, ordem.length - maxExecucoes));
   const mantidos = eventos.filter((e) => !remover.has(e.runId));
   writeFileSync(ledger, mantidos.map((e) => JSON.stringify(e)).join('\n') + (mantidos.length ? '\n' : ''));
-  for (const runId of remover) rmSync(path.join(streams, runId), { recursive: true, force: true });
+  for (const runId of remover) {
+    // 🔒 SECURITY: runId comes from untrusted `evento --run` events — re-validate
+    // before the recursive delete or a `..`/absolute runId would wipe arbitrary
+    // directories under ONP_SPEC_HOME (or worse). Invalid ids are skipped.
+    try {
+      validateRunId(runId);
+      rmSync(path.join(streams, runId), { recursive: true, force: true });
+    } catch {
+      // invalid run id that reached the ledger: leave it (do not delete)
+    }
+  }
   return { removidas: [...remover] };
 }
 
@@ -503,7 +534,7 @@ export function lerStream(runId, chave, { desde = 0 } = {}) {
 
 // streams recorded for an execution (diagnostic, even without events)
 export function streamsDaExecucao(runId) {
-  const dir = path.join(caminhos().streams, runId);
+  const dir = path.join(caminhos().streams, validateRunId(runId));
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
     .filter((f) => f.endsWith('.jsonl'))

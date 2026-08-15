@@ -35,8 +35,17 @@ function staticDirOf(glob) {
 }
 
 export function walkFiles(rootDir, { includeGlobs, ignoreGlobs }) {
-  const include = includeGlobs.map(globToRegExp);
-  const ignore = ignoreGlobs.map(globToRegExp);
+  // 🔒 SECURITY: globs come from untrusted config/constitution. They must
+  // resolve inside the project OR into a sibling directory under the project's
+  // parent (the documented multi-root feature audits adjacent repos). Absolute
+  // globs and escapes beyond the parent are rejected, so the walk can never
+  // read/annotate arbitrary filesystem locations (e.g. `/etc`, `$HOME`).
+  const contained = (globs) => globs.map((g) => safeProjectGlob(String(g), rootDir));
+
+  const includeGlobsSafe = contained(includeGlobs);
+  const ignoreGlobsSafe = contained(ignoreGlobs);
+  const include = includeGlobsSafe.map(globToRegExp);
+  const ignore = ignoreGlobsSafe.map(globToRegExp);
   const found = new Set();
 
   function walk(dir) {
@@ -48,8 +57,6 @@ export function walkFiles(rootDir, { includeGlobs, ignoreGlobs }) {
     }
     for (const entry of entries) {
       const full = path.join(dir, entry.name);
-      // path.relative returns the `../` back when `full` falls outside
-      // rootDir — this is how an external walk root matches a `../` glob.
       const rel = path.relative(rootDir, full).split(path.sep).join('/');
       if (anyGlobMatch(rel, ignore)) continue;
       if (entry.isDirectory()) {
@@ -60,10 +67,25 @@ export function walkFiles(rootDir, { includeGlobs, ignoreGlobs }) {
     }
   }
 
-  const walkRoots = new Set(includeGlobs.map((g) => path.resolve(rootDir, staticDirOf(g))));
+  const walkRoots = new Set(includeGlobsSafe.map((g) => path.resolve(rootDir, staticDirOf(g))));
   for (const root of walkRoots) walk(root);
 
   return [...found].sort();
+}
+
+// 🔒 SECURITY: contain a glob to the project (rootDir) or its sibling repos
+// under the project's parent directory. Sibling-repo audits (`../repo/src/**`)
+// keep working; anything deeper (`../../..`, absolute paths) is rejected.
+function safeProjectGlob(glob, rootDir) {
+  const rootAbs = path.resolve(rootDir);
+  const parentAbs = path.dirname(rootAbs);
+  const globAbs = path.resolve(rootAbs, glob);
+  if (globAbs === rootAbs) return glob;
+  if (globAbs.startsWith(`${rootAbs}${path.sep}`)) return glob;
+  if (globAbs.startsWith(`${parentAbs}${path.sep}`)) return glob;
+  throw new Error(
+    `glob "${glob}" escapes the project and its sibling repos — only ".." one level (adjacent repos) is allowed`
+  );
 }
 
 export function scanAnnotations(rootDir, files) {

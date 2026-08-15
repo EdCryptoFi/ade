@@ -1,29 +1,29 @@
-# ADR-004 — Multi-tenancy com RLS por tenant
+# ADR-004 — Multi-tenancy with per-tenant RLS
 
-- **Status:** Aceito
-- **Data:** 2026-08-12
-- **Domínio:** fintech / fiscal (transporte)
+- **Status:** Accepted
+- **Date:** 2026-08-12
+- **Domain:** fintech / fiscal (transportation)
 
-## Contexto
+## Context
 
-Produto SaaS com `multiTenant: true`: cada empresa de transporte vê apenas seus dados (frotas, fretes, NFe, pagamentos). Dados fiscais são sensíveis e regulados.
+SaaS product with `multiTenant: true`: each transportation company sees only its own data (fleets, freights, NFe, payments). Fiscal data is sensitive and regulated.
 
-## Decisão
+## Decision
 
-Isolamento por tenant via **RLS (Row Level Security)** no Supabase/PostgreSQL:
+Per-tenant isolation via **RLS (Row Level Security)** in Supabase/PostgreSQL:
 
-- Toda tabela de negócio tem `tenant_id` + policy `tenant_id = auth.jwt() ->> 'tenant_id'`.
-- Token JWT contém `tenant_id` emitido pelo servidor — **nunca** lido do payload do cliente (ver ADR-005).
-- Admin da plataforma usa role separada com permissão cross-tenant auditada.
-- Chaves criptográficas de certificado NFe por tenant, armazenadas isoladas.
+- Every business table has `tenant_id` + policy `tenant_id = auth.jwt() ->> 'tenant_id'`.
+- The JWT token carries `tenant_id` issued by the server — **never** read from the client payload (see ADR-005).
+- Platform admins use a separate role with audited cross-tenant permission.
+- NFe certificate cryptographic keys are per tenant, stored isolated.
 
-## Consequências
+## Consequences
 
-- **Prós:** isolamento garantido no banco (não só na API); policy é um ponto único.
-- **Contras:** precisa de políticas bem definidas por tabela; JWT precisa carregar tenant de forma segura.
-- **Componentes:** `TenantAdmin`, `TeamManagement`, `AuditLog`.
+- **Pros:** isolation guaranteed at the database level (not only the API); the policy is a single point of control.
+- **Cons:** requires well-defined policies per table; JWT must carry the tenant securely.
+- **Components:** `TenantAdmin`, `TeamManagement`, `AuditLog`.
 
-## Reflexo no ADE
+## Impact on ADE
 
-- `settings.ts` / `recommendSecurity`: recomendação de RLS disparada quando `multiTenant`.
-- `settings.ts` (`recommendInfrastructure`): `isSaaS` → backend `tRPC`; DB fiscal → `+ RLS`.
+- `settings.ts` / `recommendSecurity`: RLS recommendation triggered when `multiTenant`.
+- `settings.ts` (`recommendInfrastructure`): `isSaaS` → backend `tRPC`; fiscal DB → `+ RLS`.

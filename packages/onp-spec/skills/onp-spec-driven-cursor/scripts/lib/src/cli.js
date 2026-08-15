@@ -67,6 +67,7 @@ const SKILL_DIR_POR_AGENTE = {
   antigravity: 'onp-spec-driven-antigravity',
   codex: 'onp-spec-driven-codex',
   cursor: 'onp-spec-driven-cursor',
+  opencode: 'onp-spec-driven-opencode',
 };
 
 // skills directory each agent reads INSIDE the project (the installed skill
@@ -77,6 +78,7 @@ const SKILLS_DIR_PROJETO = {
   antigravity: '.agents',
   codex: '.agents',
   cursor: '.cursor',
+  opencode: '.opencode',
 };
 
 function resolveSkillDir(agent = 'claude') {
@@ -99,11 +101,11 @@ const HELP = `onp-spec — spec-anchored development (the specification that sta
 usage: onp-spec <command> [options]
 
 commands:
-  init [--preset base|lgpd-educacao] [--agents claude|antigravity|codex|cursor]
+  init [--preset base|lgpd-educacao] [--agents claude|antigravity|codex|cursor|opencode]
                       creates .spec/, constitution and config in the current
                       directory (--agents also installs the chosen agent's skill)
   new <feature>       creates .spec/features/<feature>/ with spec.md and tasks.md
-  plano <feature> [--agents claude|antigravity|codex|cursor] [--paralelizar T-xxx,T-yyy]
+  plano <feature> [--agents claude|antigravity|codex|cursor|opencode] [--paralelizar T-xxx,T-yyy]
                   [--sequencial] [--modelo <model>] [--esforco <level>]
                       execution plan. Default: groups tasks into PARALLEL lanes
                       (disjoint files → 1 worktree + 1 branch +
@@ -125,6 +127,9 @@ commands:
                         agent -p with --model per task, stream-json and
                         --force; effort goes into the model slug) +
                         plano-execucao.html (visual)
+                      · opencode: executar-tarefas.sh (opencode run headless
+                        with --model (provider/model) and --variant per task,
+                        --format json and --auto) + plano-execucao.html (visual)
                       · antigravity: ready-made prompts for the native agents
                         (no CLI dependency at all)
                       Cost is the USER's choice: --modelo/--esforco lock the
@@ -245,7 +250,7 @@ function cmdInit(rootDir, flags) {
       console.error(`unknown --agents: "${flags.agents}" (use: ${AGENTES.join(', ')})`);
       return 2;
     }
-    const rotulo = { claude: 'Claude Code', antigravity: 'Antigravity', codex: 'Codex', cursor: 'Cursor' }[agent];
+    const rotulo = { claude: 'Claude Code', antigravity: 'Antigravity', codex: 'Codex', cursor: 'Cursor', opencode: 'opencode' }[agent];
     // Each agent reads its skills directory inside the project (.claude, .cursor);
     // Codex and Antigravity read the SAME one (.agents/skills — the cross-agent
     // convention Codex adopts). The frontmatter `agent:` marker says who owns the
@@ -373,6 +378,8 @@ function detectarAgente(rootDir, flag) {
   // of Cursor's parallel agents, not a skill installation
   const iCursor = segmentos.indexOf('.cursor');
   if (iCursor !== -1 && segmentos[iCursor + 1] === 'skills') return { agent: 'cursor' };
+  const iOpencode = segmentos.indexOf('.opencode');
+  if (iOpencode !== -1 && segmentos[iOpencode + 1] === 'skills') return { agent: 'opencode' };
   if (segmentos.includes('.agents')) return { agent: 'antigravity' };
   if (segmentos.includes('.claude')) return { agent: 'claude' };
   const temClaude = existsSync(path.join(rootDir, '.claude', 'skills', 'onp-spec-driven'));
@@ -380,6 +387,8 @@ function detectarAgente(rootDir, flag) {
   if (AGENTES.includes(marcadorProjeto) && !temClaude) return { agent: marcadorProjeto };
   const marcadorCursor = skillAgentMarker(path.join(rootDir, '.cursor', 'skills', 'onp-spec-driven'));
   if (AGENTES.includes(marcadorCursor) && !temClaude) return { agent: marcadorCursor };
+  const marcadorOpencode = skillAgentMarker(path.join(rootDir, '.opencode', 'skills', 'onp-spec-driven'));
+  if (AGENTES.includes(marcadorOpencode) && !temClaude) return { agent: marcadorOpencode };
   const temAg = existsSync(path.join(rootDir, '.agents', 'skills', 'onp-spec-driven'));
   if (temAg && !temClaude) return { agent: 'antigravity' };
   return { agent: 'claude' };
@@ -479,7 +488,7 @@ function cmdStreamResumo(positional) {
 function cmdPlano(project, positional, flags) {
   const featureName = positional[0];
   if (!featureName) {
-    console.error('usage: onp-spec plano <feature> [--agents claude|antigravity|codex|cursor] [--paralelizar T-xxx,T-yyy] [--sequencial]');
+    console.error('usage: onp-spec plano <feature> [--agents claude|antigravity|codex|cursor|opencode] [--paralelizar T-xxx,T-yyy] [--sequencial]');
     return 2;
   }
   const det = detectarAgente(project.config.rootDir, flags.agents);
@@ -574,6 +583,15 @@ function cmdPlano(project, positional, flags) {
         `\n  per task: onp-spec tarefa ${featureName} T-xxx --modelo <m> (and regenerate the plan)`
     );
   }
+  if (det.agent === 'opencode') {
+    console.log('\nmodels and efforts for this plan — CONFIRM with the user before executing (the tokens are theirs):');
+    const todas = [...plan.faixas.flatMap((fx) => fx.tasks), ...plan.sequenciais];
+    for (const t of todas) console.log(`  · ${t.id} — ${t.model} · effort ${t.esforcoCli}`);
+    console.log(
+      `  want to spend less? everything: onp-spec plano ${featureName} --modelo openai/gpt-5.6-luna --esforco low` +
+        `\n  per task: onp-spec tarefa ${featureName} T-xxx --modelo <provider/model> --esforco <level> (and regenerate the plan)`
+    );
+  }
   console.log('\nnext step:');
   if (usaExecutorSh(plan.agent)) {
     console.log(`  · run: bash ${plan.baseDir}/executar-tarefas.sh`);
@@ -660,6 +678,35 @@ function definirCampoTarefa(linhas, taskId, matcher, rotulo, valor) {
   return true;
 }
 
+const FEATURE_NAME_RE = /^[a-z0-9][a-z0-9-]*$/;
+
+// 🔒 SECURITY: every CLI value that becomes a filesystem path must be
+// validated before joining. Allows kebab-case feature names and strict
+// T-xxx task ids (also renders the task regex a constant — no ReDoS / regex
+// injection through `taskId`).
+const FEATURE_NAME_HINT = 'kebab-case (lowercase letters, numbers and hyphen)';
+const TASK_ID_RE = /^T-\d{3,}$/;
+
+function validFeatureName(name) {
+  return typeof name === 'string' && FEATURE_NAME_RE.test(name);
+}
+
+function validTaskId(id) {
+  return typeof id === 'string' && TASK_ID_RE.test(id);
+}
+
+// 🔒 SECURITY: joins a user value into a path and verifies the result stays
+// inside `rootDir`. Throws on escape (absolute input, `..`, symlink-free
+// containment check on the resolved path).
+export function containedPath(rootDir, name, kind, segments) {
+  const base = path.resolve(rootDir);
+  const joined = path.resolve(base, ...segments);
+  if (joined !== base && !joined.startsWith(`${base}${path.sep}`)) {
+    throw new Error(`${kind} "${name}" escapes the project root`);
+  }
+  return joined;
+}
+
 function cmdTarefa(config, positional, flags = {}) {
   const [featureName, taskId, statusRaw] = positional;
   const modelo = typeof flags.modelo === 'string' ? flags.modelo : null;
@@ -668,6 +715,14 @@ function cmdTarefa(config, positional, flags = {}) {
     'usage: onp-spec tarefa <feature> <T-xxx> [pending|in-progress|done] [--modelo <model>] [--esforco low|medium|high|xhigh|max]';
   if (!featureName || !taskId || (!statusRaw && !modelo && !esforcoRaw) || flags.modelo === true || flags.esforco === true) {
     console.error(USO);
+    return 2;
+  }
+  if (!validFeatureName(featureName)) {
+    console.error(`invalid feature name: "${featureName}" — use ${FEATURE_NAME_HINT}`);
+    return 2;
+  }
+  if (!validTaskId(taskId)) {
+    console.error(`invalid task id: "${taskId}" — use T-xxx (e.g. T-004)`);
     return 2;
   }
   let status = null;
@@ -682,7 +737,7 @@ function cmdTarefa(config, positional, flags = {}) {
     console.error(`invalid effort: "${esforcoRaw}" (use: low|medium|high|xhigh|max)`);
     return 2;
   }
-  const tasksPath = path.join(config.rootDir, config.specDir, 'features', featureName, 'tasks.md');
+  const tasksPath = containedPath(config.rootDir, featureName, 'feature', [config.specDir, 'features', featureName, 'tasks.md']);
   if (!existsSync(tasksPath)) {
     console.error(`did not find ${config.specDir}/features/${featureName}/tasks.md`);
     return 2;
@@ -981,7 +1036,10 @@ export async function run(argv) {
     }
     if (flags.md) {
       const outPath = typeof flags.md === 'string' ? flags.md : '.spec/AUDITORIA.md';
-      writeFileSync(path.join(rootDir, outPath), renderMarkdown(audit));
+      // 🔒 SECURITY: constrain the report path inside rootDir — a `--md`
+      // with `../` / absolute would let the CLI write arbitrary files.
+      const reportPath = containedPath(project.config.rootDir, outPath, 'report', [outPath]);
+      writeFileSync(reportPath, renderMarkdown(audit));
       console.log(`report saved to ${outPath}`);
     }
     const registrados = registrarAchados(project.specRoot, audit.findings, {

@@ -225,6 +225,23 @@ test('pruning does nothing when within the limit', () => {
   assert.deepEqual(podarLedger(30).removidas, []);
 });
 
+test('pruning skips invalid/traversal runIds instead of deleting outside the streams dir', () => {
+  // an attacker-controlled `evento --run '../escaped'` reaches the ledger — pruning
+  // must NOT rmSync outside the streams directory (VULN fix: re-validate runId).
+  registrarEvento(planoDe('../escaped'));
+  registrarEvento(planoDe('run-ok'));
+  const dir = path.dirname(caminhoStream('run-ok', 'x'));
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(caminhoStream('run-ok', 'faixa-1--T-001'), '{}\n');
+  // force pruning below the ledger size
+  const { removidas } = podarLedger(1);
+  assert.deepEqual(removidas, ['../escaped']);
+  // the escaped stream dir was never created; nothing outside streams is touched
+  const guard = path.join(path.dirname(dir), 'escaped');
+  assert.ok(!existsSync(guard), 'traversal runId must not be rm -rf-d');
+  assert.ok(existsSync(caminhoStream('run-ok', 'faixa-1--T-001')), 'valid stream stays');
+});
+
 // ── model stream parser ──────────────────────────────────────────────────
 
 test('resumoFerramenta describes each tool by what matters to watch', () => {
@@ -238,7 +255,7 @@ test('resumoFerramenta describes each tool by what matters to watch', () => {
   assert.equal(resumoFerramenta('SemInput', {}), '');
 });
 
-// shapes REAIS capturados de `claude -p --output-format stream-json --verbose`
+// real shapes captured from `claude -p --output-format stream-json --verbose`
 const STREAM_REAL = [
   '{"type":"system","subtype":"init","session_id":"fd1b2f49-aaaa","model":"claude-sonnet-5","cwd":"/tmp/x"}',
   '{"type":"rate_limit_event","rate_limit_info":{}}',

@@ -1,13 +1,13 @@
-# SaaS Fiscal para Transportes — Exemplo de Simulação ADE
+# SaaS Fiscal for Transportation — ADE Simulation Example
 
-Exemplo end-to-end do motor `@ade/core` aplicado a um SaaS de **controle de pagamentos de fretes e emissão de notas fiscais eletrônicas (NFe)** para empresas de transporte.
+End-to-end example of the `@ade/core` engine applied to a SaaS for **freight payment control and electronic invoice (NFe) issuance** for transportation companies.
 
-## Input simulado
+## Simulated input
 
 ```json
 {
-  "description": "SaaS para empresas de transporte: controle de pagamentos de fretes e emissão de notas fiscais eletrônicas (NFe), gestão de motoristas e frotas, conciliação de recebimentos, relatórios financeiros e compliance fiscal",
-  "domain": "transportes",
+  "description": "SaaS for transportation companies: freight payment control and electronic invoice (NFe) issuance, driver and fleet management, payment reconciliation, financial reporting and fiscal compliance",
+  "domain": "transportation",
   "users": 5000,
   "auth": true,
   "payments": true,
@@ -18,29 +18,29 @@ Exemplo end-to-end do motor `@ade/core` aplicado a um SaaS de **controle de paga
   "notifications": true,
   "webhooks": true,
   "sso": true,
-  "features": ["nfe", "frotas", "fretes", "conciliação", "compliance"]
+  "features": ["nfe", "fleets", "freights", "reconciliation", "compliance"]
 }
 ```
 
-## Saída
+## Output
 
-| Artefato | Resultado |
+| Artifact | Result |
 |---|---|
-| Domínio classificado | `fintech` (antes do fix: `ai-agent` — falso positivo) |
-| Componentes | Accounts, Payments, Invoicing (NFe), Compliance, TeamManagement, TenantAdmin, AuditLog, SSOConfig |
+| Classified domain | `fintech` (before the fix: `ai-agent` — false positive) |
+| Components | Accounts, Payments, Invoicing (NFe), Compliance, TeamManagement, TenantAdmin, AuditLog, SSOConfig |
 | AI | `false` |
 | Database | Supabase PostgreSQL + ledger tables (payments/invoices) + RLS |
 | Background jobs | NFe emission, SEFAZ status polling, reconciliation |
 
-## Pontos de Arquitetura (ADRs)
+## Architecture Decisions (ADRs)
 
-- [ADR-001 — Ledger imutável com hash-chaining](decisions/0001-ledger-imutavel.md)
-- [ADR-002 — Emissão de NFe assíncrona com fila](decisions/0002-nfe-assincrono-fila.md)
-- [ADR-003 — Conciliação como job agendado + reconciliação por tripla de chaves](decisions/0003-conciliacao-job.md)
-- [ADR-004 — Multi-tenancy com RLS por tenant](decisions/0004-multitenancy-rls.md)
-- [ADR-005 — Token/ID de tenant nunca confiado pelo frontend](decisions/0005-tenant-id-frontend.md)
+- [ADR-001 — Immutable ledger with hash-chaining](decisions/0001-immutable-ledger.md)
+- [ADR-002 — Async NFe emission with queue](decisions/0002-async-nfe-emission-queue.md)
+- [ADR-003 — Reconciliation as a scheduled job + matching by key triple](decisions/0003-reconciliation-job.md)
+- [ADR-004 — Multi-tenancy with per-tenant RLS](decisions/0004-multitenancy-rls.md)
+- [ADR-005 — Tenant token/ID never trusted from the frontend](decisions/0005-tenant-id-frontend.md)
 
-## Como reproduzir
+## How to reproduce
 
 ```bash
 node --experimental-strip-types packages/ade-core/.sandbox/run.mjs

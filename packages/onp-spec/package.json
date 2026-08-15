@@ -4,7 +4,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "description": "Spec-anchored development: specs auditáveis contra o código, DoD executável, suposições explícitas e constituição verificável. Zero dependências.",
+  "description": "Spec-anchored development: specs auditable against the code, executable DoD, explicit assumptions and verifiable constitution. Zero dependencies.",
   "type": "module",
   "bin": {
     "onp-spec": "bin/onp-spec.js"
@@ -31,7 +31,7 @@
     "spec-driven",
     "spec-anchored",
     "sdd",
-    "rastreabilidade",
+    "traceability",
     "lgpd",
     "ai-coding",
     "claude-code",

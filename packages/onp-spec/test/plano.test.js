@@ -407,15 +407,15 @@ test('md (codex): codex exec section, sandbox, cost confirmation — no claude -
   assert.doesNotMatch(renderPlanoMd(planPadrao('claude')), /Cost confirmation/);
 });
 
-test('sh (codex): codex exec com --model e model_reasoning_effort por tarefa, --json, sandbox e --add-dir', () => {
+test('sh (codex): codex exec with --model and model_reasoning_effort per task, --json, sandbox and --add-dir', () => {
   const sh = renderPlanoSh(planPadrao('codex'));
   assert.match(sh, /^#!\/usr\/bin\/env bash/);
   assert.match(sh, /codex exec "\$3" --model "\$4" -c model_reasoning_effort="\$5" "\$\{STREAM_FLAGS\[@\]}" "\$\{CODEX_FLAGS\[@\]}" --add-dir "\$TOPLEVEL"/);
   assert.match(sh, /STREAM_FLAGS=\(--json\)/);
   assert.match(sh, /CODEX_FLAGS=\(--sandbox 'workspace-write'\)/);
   assert.match(sh, /command -v codex/);
-  assert.doesNotMatch(sh, /command -v claude/, 'executor do codex não exige o CLI do Claude');
-  assert.doesNotMatch(sh, /claude -p/, 'nenhuma invocação do claude no executor codex');
+  assert.doesNotMatch(sh, /command -v claude/, 'codex executor does not require the Claude CLI');
+  assert.doesNotMatch(sh, /claude -p/, 'no claude invocation in the codex executor');
   // prompts per task with model/effort resolved (config default → terra)
   assert.match(sh, /rodar_tarefa 'faixa-1' 'T-001' '[\s\S]*?' 'gpt-5.6-terra' medium/);
   assert.match(sh, /rodar_tarefa 'faixa-2' 'T-002' '[\s\S]*?' 'gpt-5.6-terra' high/);
@@ -440,6 +440,89 @@ test('sh (codex): --sem-gate NEVER announces alignment (parity with claude)', ()
   assert.match(semGate, /NOT proof of anything/);
   assert.doesNotMatch(semGate, /audit exit 0/);
   assert.match(semGate, /evento --tipo end --exit 1/);
+});
+
+// ── opencode: same artifacts, executor via opencode run ────────────────────
+
+test('effort and executor for opencode; bare claude model gets provider prefix', () => {
+  assert.equal(usaExecutorSh('opencode'), true);
+  assert.equal(esforcoParaAgente('max', 'opencode'), 'max');
+  const plan = montarPlano(
+    projeto({
+      tasks: [
+        t('T-001', { files: ['a'], line: 1 }), // config default (claude-sonnet-5) → anthropic/claude-sonnet-5
+        t('T-002', { files: ['b'], line: 5, model: 'anthropic/claude-opus-5' }), // already qualified
+        t('T-003', { files: ['c'], line: 9, model: 'openai/gpt-5.6-sol' }),
+      ],
+    }),
+    'pagamentos',
+    { agent: 'opencode', enginePath: '/tmp/repo-x/bin/onp-spec.js' }
+  );
+  assert.ok(!plan.erro, plan.erro);
+  assert.equal(plan.agent, 'opencode');
+  const [f1, f2, f3] = plan.faixas;
+  assert.equal(f1.tasks[0].model, 'anthropic/claude-sonnet-5', 'bare claude config default gets provider prefix');
+  assert.equal(f2.tasks[0].model, 'anthropic/claude-opus-5', 'qualified model passes intact');
+  assert.equal(f3.tasks[0].model, 'openai/gpt-5.6-sol', 'other providers pass intact');
+  // bare non-claude slug for opencode is rejected (provider/model required)
+  const ruim = montarPlano(
+    projeto({ tasks: [t('T-001', { files: ['a'], line: 1 })] }),
+    'pagamentos',
+    { agent: 'opencode', modelo: 'gpt-5.6-terra', enginePath: '/tmp/repo-x/bin/onp-spec.js' }
+  );
+  assert.match(ruim.erro, /provider\/model/);
+});
+
+test('md (opencode): opencode run section, model/effort confirmation — no claude -p', () => {
+  const md = renderPlanoMd(planPadrao('opencode'));
+  assert.match(md, /Execution — opencode headless \(opencode run\)/);
+  assert.match(md, /executar-tarefas\.sh/);
+  assert.match(md, /`opencode run`/);
+  assert.match(md, /--variant/);
+  assert.match(md, /general progress summary/i);
+  assert.match(md, /onp-spec resumo pagamentos/);
+  assert.match(md, /audit --ci/);
+  assert.doesNotMatch(md, /claude -p/, 'opencode plan cannot depend on the Claude CLI');
+  assert.doesNotMatch(md, /codex exec/, 'opencode plan cannot depend on the Codex CLI');
+  assert.match(md, /Cost confirmation — before executing/);
+  assert.match(md, /openai\/gpt-5\.6-luna --esforco baixo/);
+});
+
+test('sh (opencode): opencode run with --model and --variant per task, --format json and --auto', () => {
+  const sh = renderPlanoSh(planPadrao('opencode'));
+  assert.match(sh, /^#!\/usr\/bin\/env bash/);
+  assert.match(sh, /opencode run "\$3" --model "\$4" --variant "\$5" "\$\{STREAM_FLAGS\[@\]}" "\$\{OPENCODE_FLAGS\[@\]}"/);
+  assert.match(sh, /STREAM_FLAGS=\(--format json\)/);
+  assert.match(sh, /OPENCODE_FLAGS=\(--auto\)/);
+  assert.match(sh, /command -v opencode/);
+  assert.doesNotMatch(sh, /command -v claude/, 'opencode executor does not require the Claude CLI');
+  assert.doesNotMatch(sh, /claude -p/, 'no claude invocation in the opencode executor');
+  // config default model resolves to anthropic/claude-sonnet-5
+  assert.match(sh, /rodar_tarefa 'faixa-1' 'T-001' '[\s\S]*?' 'anthropic\/claude-sonnet-5' medium/);
+  assert.match(sh, /rodar_tarefa 'faixa-2' 'T-002' '[\s\S]*?' 'anthropic\/claude-sonnet-5' high/);
+  // summary: opencode run without --auto (read-only), cheap openai-qualified model
+  assert.match(sh, /RESUMO_MODEL='openai\/gpt-5\.6-luna'/);
+  assert.match(sh, /opencode run "You narrate[\s\S]*?--model "\$RESUMO_MODEL" --format default/);
+  // identical infrastructure: worktrees, merge, ledger, gate, dispatcher
+  assert.match(sh, /git worktree add "\$3" -b/);
+  assert.match(sh, /mesclar_faixa 'faixa-1'/);
+  assert.match(sh, /executar_seq_T_003/);
+  assert.match(sh, /audit --ci/);
+});
+
+test('sh (opencode): --sem-gate NEVER announces alignment (parity with the rest)', () => {
+  const sh = renderPlanoSh(planPadrao('opencode'));
+  const semGate = sh.slice(sh.indexOf('if [ "$COM_GATE" -eq 0 ]'), sh.indexOf('rodar_gate\n  local audit'));
+  assert.match(semGate, /NOT proof of anything/);
+});
+
+test('claude is untouched by the new agents (no regression)', () => {
+  const sh = renderPlanoSh(planPadrao('claude'));
+  assert.match(sh, /command -v claude/);
+  assert.match(sh, /claude -p "\$3" --model "\$4" --effort "\$5"/);
+  assert.match(sh, /CLAUDE_FLAGS=\(--permission-mode/);
+  assert.doesNotMatch(sh, /opencode run/, 'claude plan stays claude-only');
+  assert.doesNotMatch(sh, /codex exec/, 'claude plan stays claude-only');
 });
 
 test('html (codex): visual cites codex exec, no button and no claude', () => {
