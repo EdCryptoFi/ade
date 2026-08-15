@@ -3,37 +3,53 @@
 import type { Feature } from "../lib/features"
 
 interface Props {
+  step: 1 | 2 | 3
   description: string
   domain: string
   features: Feature[]
   toggles: Record<string, boolean>
+  users: string
   loading: boolean
   onDescription: (v: string) => void
   onDomain: (v: string) => void
   onToggle: (id: string) => void
-  onSubmit: () => void
+  onUsers: (v: string) => void
+  onNext: () => void
+  onBack: () => void
 }
 
 export function ProjectForm({
+  step,
   description,
   domain,
   features,
   toggles,
+  users,
   loading,
   onDescription,
   onDomain,
   onToggle,
-  onSubmit,
+  onUsers,
+  onNext,
+  onBack,
 }: Props) {
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault()
-        onSubmit()
+        onNext()
       }}
-      className="space-y-8"
+      className="max-w-3xl space-y-8 rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 md:p-8"
     >
-      <div className="space-y-4">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-zinc-500">
+        {["Describe", "Features", "Review"].map((label, index) => (
+          <span key={label} className={step === index + 1 ? "text-emerald-300" : ""}>
+            <span className={`grid size-6 place-items-center rounded-full border text-[10px] ${step === index + 1 ? "border-emerald-400 bg-emerald-400/10" : "border-zinc-700"}`}>{index + 1}</span>{label}{index < 2 ? <span className="mx-1 text-zinc-700">/</span> : ""}
+          </span>
+        ))}
+      </div>
+
+      {step === 1 && <div className="space-y-4">
         <div>
           <label htmlFor="description" className="block text-sm font-medium mb-2">
             Project description
@@ -61,9 +77,23 @@ export function ProjectForm({
             className="w-full px-4 py-3 rounded-lg bg-zinc-900 border border-zinc-800 focus:border-zinc-600 focus:outline-none text-sm"
           />
         </div>
-      </div>
+        <div>
+          <label htmlFor="users" className="block text-sm font-medium mb-2">
+            Expected users (optional)
+          </label>
+          <input
+            id="users"
+            type="number"
+            min="1"
+            value={users}
+            onChange={(e) => onUsers(e.target.value)}
+            placeholder="e.g. 10000"
+            className="w-full px-4 py-3 rounded-lg bg-zinc-900 border border-zinc-800 focus:border-emerald-600 focus:outline-none text-sm"
+          />
+        </div>
+      </div>}
 
-      <div className="space-y-3">
+      {step === 2 && <div className="space-y-3">
         <span className="text-sm font-medium">Additional features</span>
         <div className="flex flex-wrap gap-2">
           {features.map((f) => (
@@ -81,15 +111,24 @@ export function ProjectForm({
             </button>
           ))}
         </div>
-      </div>
+      </div>}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="px-6 py-3 rounded-lg bg-zinc-100 text-zinc-900 font-medium hover:bg-zinc-200 transition-colors disabled:opacity-50"
-      >
-        {loading ? "Analyzing..." : "Run ADE"}
-      </button>
+      {step === 3 && <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 space-y-3">
+        <h2 className="text-lg font-semibold">Review your architecture brief</h2>
+        <p className="text-sm text-zinc-400">ADE will use the description, domain, user estimate and selected features to generate the plan.</p>
+        <div className="grid gap-2 text-sm sm:grid-cols-2">
+          <div><span className="text-zinc-500">Domain:</span> {domain || "general"}</div>
+          <div><span className="text-zinc-500">Users:</span> {users || "not specified"}</div>
+          <div className="sm:col-span-2"><span className="text-zinc-500">Active features:</span> {features.filter((f) => toggles[f.id]).map((f) => f.label).join(", ") || "none selected"}</div>
+        </div>
+      </div>}
+
+      <div className="flex gap-3">
+        {step > 1 && <button type="button" onClick={onBack} className="px-5 py-3 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:border-zinc-500 transition-colors cursor-pointer">Back</button>}
+        <button type="submit" disabled={loading} className="px-6 py-3 rounded-lg bg-emerald-400 text-zinc-950 font-semibold hover:bg-emerald-300 transition-colors disabled:opacity-50 cursor-pointer">
+          {loading ? "Analyzing..." : step === 3 ? "Generate architecture" : "Continue"}
+        </button>
+      </div>
     </form>
   )
 }
