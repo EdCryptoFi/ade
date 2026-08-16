@@ -1,6 +1,6 @@
 "use client"
 
-import type { Feature } from "../lib/features"
+import type { Feature, ProductMode } from "../lib/features"
 
 interface Props {
   step: 1 | 2 | 3
@@ -16,6 +16,10 @@ interface Props {
   onUsers: (v: string) => void
   onNext: () => void
   onBack: () => void
+  mode: ProductMode
+  modes: Array<{ id: ProductMode; label: string; price: string; description: string }>
+  onMode: (mode: ProductMode) => void
+  onExample: () => void
 }
 
 export function ProjectForm({
@@ -32,6 +36,10 @@ export function ProjectForm({
   onUsers,
   onNext,
   onBack,
+  mode,
+  modes,
+  onMode,
+  onExample,
 }: Props) {
   return (
     <form
@@ -49,6 +57,8 @@ export function ProjectForm({
         ))}
       </div>
       <p className="-mt-4 text-xs text-zinc-600">All generated architecture artifacts are written in English.</p>
+
+      {step === 1 && <div className="space-y-3"><div className="flex items-center justify-between"><span className="text-sm font-medium">Choose a product</span><button type="button" onClick={onExample} className="text-xs text-emerald-300 hover:text-emerald-200">Use example project</button></div><div className="grid gap-2 md:grid-cols-3">{modes.map((item) => <button type="button" key={item.id} onClick={() => onMode(item.id)} className={`rounded-xl border p-4 text-left transition-colors ${mode === item.id ? "border-emerald-500 bg-emerald-950/30" : "border-zinc-800 bg-zinc-900/50 hover:border-zinc-600"}`}><div className="flex items-start justify-between gap-2"><span className="text-sm font-semibold">{item.label}</span><span className="text-xs text-emerald-300">{item.price}</span></div><p className="mt-2 text-xs leading-5 text-zinc-500">{item.description}</p></button>)}</div></div>}
 
       {step === 1 && <div className="space-y-4">
         <div>

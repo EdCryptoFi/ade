@@ -4,7 +4,7 @@
 export function flattenResult(obj: unknown, prefix = ""): Record<string, string> {
   const result: Record<string, string> = {}
   for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
-    if (key === "files" || key === "reasoning" || key === "_meta") continue
+    if (key === "files" || key === "artifacts" || key === "reasoning" || key === "securityRisks" || key === "_meta") continue
     if (typeof value === "string" || typeof value === "number" || value === null) {
       result[prefix + key] = String(value)
     } else if (Array.isArray(value)) {

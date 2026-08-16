@@ -25,6 +25,7 @@ export const ProjectInputSchema = z.object({
   search: z.boolean().optional().default(false),
   backgroundJobs: z.boolean().optional().default(false),
   cms: z.boolean().optional().default(false),
+  mode: z.enum(["analysis", "audit", "blueprint"]).optional().default("blueprint"),
 }).strict()
 
 export const PartialProjectInputSchema = z.object({
@@ -52,6 +53,7 @@ export const PartialProjectInputSchema = z.object({
   search: z.boolean().optional(),
   backgroundJobs: z.boolean().optional(),
   cms: z.boolean().optional(),
+  mode: z.enum(["analysis", "audit", "blueprint"]).optional(),
 }).strict()
 
 export function validate(input: unknown) {

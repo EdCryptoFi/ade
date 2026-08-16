@@ -1,0 +1,9 @@
+# ADE API
+
+ADE is an English-only architecture decision engine.
+
+Use `POST /analyze` for Architecture Analysis or the complete Architecture + Security Blueprint. Use `POST /audit` for a focused Security Audit. Successful responses include `engine`, `version`, `generatedAt`, `language`, and a structured `result`.
+
+The result contains `summary`, `architecture`, `technologyStack`, `dataModel`, `infrastructure`, `components`, `developmentPlan`, `securityRisks`, `assumptions`, `nextActions`, `decisions`, and `scope`.
+
+Recommendations require human review. Results depend on requirement quality. A security audit is not a security guarantee.

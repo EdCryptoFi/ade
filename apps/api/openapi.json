@@ -1,0 +1,9 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "ADE Architecture Decision Engine API", "version": "0.1.0" },
+  "description": "English-only architecture analysis, security audits, and implementation blueprints.",
+  "paths": {
+    "/analyze": { "post": { "summary": "Generate an architecture analysis or blueprint", "responses": { "200": { "description": "Structured result" }, "400": { "description": "Invalid input" }, "429": { "description": "Rate limit exceeded" }, "500": { "description": "Internal error" } } } },
+    "/audit": { "post": { "summary": "Generate a prioritized security audit", "responses": { "200": { "description": "Structured result" }, "400": { "description": "Invalid input" }, "429": { "description": "Rate limit exceeded" }, "500": { "description": "Internal error" } } } }
+  }
+}

@@ -15,7 +15,15 @@ export class ApiError extends Error {
 }
 
 export async function analyzeProject(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-  const res = await fetch(`${ADE_API_URL}/analyze`, {
+  return request("/analyze", payload)
+}
+
+export async function auditProject(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return request("/audit", payload)
+}
+
+async function request(path: string, payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const res = await fetch(`${ADE_API_URL}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

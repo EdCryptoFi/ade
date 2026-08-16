@@ -3,9 +3,9 @@
 import { useState } from "react"
 import { ProjectForm } from "./ProjectForm"
 import { ResultViewer } from "./ResultViewer"
-import { FEATURES, buildPayload } from "../lib/features"
+import { FEATURES, PRODUCT_MODES, EXAMPLE_PROJECT, buildPayload, type ProductMode } from "../lib/features"
 import { flattenResult } from "../lib/format"
-import { analyzeProject } from "../lib/api"
+import { analyzeProject, auditProject } from "../lib/api"
 
 // Container: owns state + data fetching + business transformations.
 // Presentation (form, tabs) is delegated to presentational components.
@@ -20,6 +20,8 @@ export default function PlaygroundContainer() {
   const [error, setError] = useState("")
   const [tab, setTab] = useState<"summary" | string>("summary")
   const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [mode, setMode] = useState<ProductMode>("blueprint")
+  const [rawResult, setRawResult] = useState<Record<string, unknown> | null>(null)
 
   async function handleSubmit() {
     setLoading(true)
@@ -27,14 +29,17 @@ export default function PlaygroundContainer() {
     setResult(null)
     setFiles(null)
     setTab("summary")
+    setRawResult(null)
 
-    const payload = buildPayload(description, domain, toggles, Number(users))
+    const payload = buildPayload(description, domain, toggles, Number(users), mode)
 
     try {
-      const data = await analyzeProject(payload)
-      const { files: f, ...rest } = data
-      setResult(flattenResult(rest))
-      setFiles(f as Record<string, string>)
+      const data = mode === "audit" ? await auditProject(payload) : await analyzeProject(payload)
+      const envelope = (data.result ?? data) as Record<string, unknown>
+      const artifacts = (envelope.artifacts ?? data.files) as Record<string, string> | undefined
+      setRawResult(data)
+      setResult(flattenResult(envelope))
+      setFiles(artifacts ?? {})
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error")
     } finally {
@@ -53,6 +58,16 @@ export default function PlaygroundContainer() {
 
   function toggleFeature(id: string) {
     setToggles((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  function loadExample() {
+    setDescription(EXAMPLE_PROJECT.description)
+    setDomain(EXAMPLE_PROJECT.domain)
+    setUsers(EXAMPLE_PROJECT.users)
+    setMode(EXAMPLE_PROJECT.mode)
+    setToggles(EXAMPLE_PROJECT.toggles)
+    setStep(1)
+    setError("")
   }
 
   return (
@@ -82,6 +97,10 @@ export default function PlaygroundContainer() {
           onUsers={setUsers}
           onNext={nextStep}
           onBack={() => setStep((step - 1) as 1 | 2 | 3)}
+          mode={mode}
+          modes={PRODUCT_MODES}
+          onMode={setMode}
+          onExample={loadExample}
         />
         }
 
@@ -91,8 +110,8 @@ export default function PlaygroundContainer() {
           </div>
         )}
 
-        {result && files && (
-          <ResultViewer result={result} files={files} activeTab={tab} onTab={setTab} />
+        {result && rawResult && files && (
+          <ResultViewer result={result} rawResult={rawResult} files={files} activeTab={tab} onTab={setTab} />
         )}
       </main>
     </div>

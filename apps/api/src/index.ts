@@ -1,6 +1,7 @@
 import { generateArchitecture } from "@ade/core/ade"
 import { validate } from "@ade/core/validation"
 import { runSecurityAudit } from "@ade/core/security-audit"
+import { OPENAPI_DOCUMENT, LLMS_DOCUMENT } from "./docs.ts"
 import { createRateLimiter, isAllowedOrigin, securityHeaders, logError, resolveRateLimitKey } from "./security.ts"
 
 interface Env {
@@ -21,6 +22,7 @@ interface Env {
 // Sensible defaults (LAW-3): 30 req / 60s per IP, 300 req / 60s per key.
 const PUBLIC_LIMIT = 30
 const WINDOW_MS = 60_000
+const ENGINE_VERSION = "0.1.0"
 const rateLimiter = createRateLimiter({ limit: PUBLIC_LIMIT, windowMs: WINDOW_MS })
 
 function json(body: unknown, status = 200, extra?: Record<string, string>) {
@@ -28,6 +30,10 @@ function json(body: unknown, status = 200, extra?: Record<string, string>) {
     status,
     headers: { ...securityHeaders(), ...extra },
   })
+}
+
+function envelope(result: unknown) {
+  return { engine: "ade", version: ENGINE_VERSION, generatedAt: new Date().toISOString(), language: "en-US", result }
 }
 
 function corsHeaders(request: Request, allowed: string[]): Record<string, string> {
@@ -88,7 +94,7 @@ export default {
     if (limited) return limited
 
     if (request.method === "GET" && path === "/health") {
-      return json({ status: "ok", engine: "ade", version: "0.1.0" }, 200, cors)
+      return json({ status: "ok", engine: "ade", version: ENGINE_VERSION, language: "en-US" }, 200, cors)
     }
 
     if (request.method === "POST" && path === "/analyze") {
@@ -96,7 +102,7 @@ export default {
         const body = await request.json()
         const input = validate(body)
         const result = generateArchitecture(input)
-        return json(result, 200, cors)
+        return json(envelope({ ...result.structured, artifacts: result.files }), 200, cors)
       } catch (err) {
         if (err instanceof Error && err.name === "ValidationError") {
           return json({ error: err.message, details: (err as any).errors }, 400, cors)
@@ -111,8 +117,9 @@ export default {
       try {
         const body = await request.json()
         const input = validate(body)
-        const result = runSecurityAudit(input)
-        return json(result, 200, cors)
+        const audit = runSecurityAudit(input)
+        const architecture = generateArchitecture({ ...input, mode: "audit" })
+        return json(envelope({ ...architecture.structured, summary: "Prioritized security audit for the supplied project.", securityRisks: audit, scope: { ...architecture.structured.scope, mode: "audit" }, artifacts: { "security-audit.md": architecture.files["security-audit.md"] } }), 200, cors)
       } catch (err) {
         if (err instanceof Error && err.name === "ValidationError") {
           return json({ error: err.message, details: (err as any).errors }, 400, cors)
@@ -133,6 +140,7 @@ export default {
         input: {
           description: "string (min 3, max 2000 chars)",
           domain: "string (min 2, max 100 chars)",
+          mode: "analysis | audit | blueprint (optional, default blueprint)",
           features: "string[] (min 1, max 50 items)",
           users: "number (optional, positive int)",
           blockchain: "boolean (optional)",
@@ -156,8 +164,12 @@ export default {
           backgroundJobs: "boolean (optional)",
           cms: "boolean (optional)",
         },
+        output: { language: "en-US", envelope: { engine: "ade", version: ENGINE_VERSION, generatedAt: "ISO timestamp", result: "structured English result" } },
       }, 200, cors)
     }
+
+    if (request.method === "GET" && path === "/openapi.json") return json(OPENAPI_DOCUMENT, 200, cors)
+    if (request.method === "GET" && path === "/llms.txt") return new Response(LLMS_DOCUMENT, { status: 200, headers: { ...securityHeaders(), ...cors, "Content-Type": "text/plain; charset=utf-8" } })
 
     return json({ error: "Not found" }, 404, cors)
   },

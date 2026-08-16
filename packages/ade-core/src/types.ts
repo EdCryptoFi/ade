@@ -25,7 +25,10 @@ export interface ProjectInput {
   search?: boolean
   backgroundJobs?: boolean
   cms?: boolean
+  mode?: ProductMode
 }
+
+export type ProductMode = "analysis" | "audit" | "blueprint"
 
 export type DomainCategory =
   | "marketplace"
@@ -130,6 +133,29 @@ export interface ArchitectureFiles {
   "tasks.md": string
 }
 
+export interface ArchitectureResponse {
+  summary: string
+  architecture: { domain: DomainCategory; label: string; rationale: string }
+  technologyStack: InfrastructureDecision
+  dataModel: DataDecision
+  infrastructure: InfrastructureDecision
+  components: ComponentDecision
+  developmentPlan: DevelopmentPlan
+  securityRisks: SecurityAuditResult
+  assumptions: string[]
+  nextActions: string[]
+  decisions: DecisionDetail[]
+  scope: { mode: ProductMode; estimatedWeeks: number; sprintCount: number; taskCount: number }
+}
+
+export interface DecisionDetail {
+  decision: string
+  reason: string
+  alternativesRejected: string[]
+  impact: string
+  confidence: "high" | "medium" | "low"
+}
+
 export interface DecisionRule {
   condition: (input: ProjectInput) => boolean
   then: string | string[]
@@ -211,8 +237,11 @@ export interface SecurityScorecard {
   high: number
   medium: number
   low: number
+  applicable: number
+  applicableAntiPatterns: string[]
   vibeAntiPatterns: string[]
-  grade: "A" | "B" | "C" | "D" | "F"
+  grade: "A" | "B" | "C" | "D" | "F" | "N/A"
+  assessment: "design-checklist" | "code-audit"
   summary: string
 }
 
