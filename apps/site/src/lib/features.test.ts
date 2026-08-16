@@ -15,10 +15,15 @@ test("extractFeatureList caps at 50 features (LAW-3)", () => {
   assert.equal(extractFeatureList(many).length, 50)
 })
 
-test("buildPayload uses fallback domain and merges active toggles", () => {
+test("buildPayload uses fallback domain and sends active toggles", () => {
   const payload = buildPayload("nft, marketplace", "", { auth: true, payments: false })
   assert.equal(payload.domain, "general")
-  assert.deepEqual(payload.features, ["nft", "marketplace"])
+  assert.deepEqual(payload.features, ["auth"])
   assert.equal(payload.auth, true)
   assert.equal(payload.payments, undefined)
+})
+
+test("buildPayload sends selected feature ids instead of briefing prose", () => {
+  const payload = buildPayload("A SaaS app with payments, charts and AI", "saas", { auth: true, payments: true })
+  assert.deepEqual(payload.features, ["auth", "payments"])
 })

@@ -76,14 +76,18 @@ export function buildPayload(
   users?: number,
   mode: ProductMode = "blueprint",
 ): Record<string, unknown> {
+  const activeFeatureIds = Object.entries(toggles)
+    .filter(([, enabled]) => enabled)
+    .map(([id]) => id)
+
   return {
     description,
     domain: domain || "general",
-    features: extractFeatureList(description),
+    features: activeFeatureIds.length > 0 ? activeFeatureIds : extractFeatureList(description),
     ...(users && users > 0 ? { users } : {}),
     mode,
     ...Object.fromEntries(
-      Object.entries(toggles).filter(([, v]) => v),
+      Object.entries(toggles).filter(([, enabled]) => enabled),
     ),
   }
 }
