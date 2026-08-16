@@ -41,13 +41,14 @@ export function ProjectForm({
       }}
       className="max-w-3xl space-y-8 rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 md:p-8"
     >
-      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-zinc-500">
+      <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.18em] text-zinc-500">
         {["Describe", "Features", "Review"].map((label, index) => (
           <span key={label} className={step === index + 1 ? "text-emerald-300" : ""}>
             <span className={`grid size-6 place-items-center rounded-full border text-[10px] ${step === index + 1 ? "border-emerald-400 bg-emerald-400/10" : "border-zinc-700"}`}>{index + 1}</span>{label}{index < 2 ? <span className="mx-1 text-zinc-700">/</span> : ""}
           </span>
         ))}
       </div>
+      <p className="-mt-4 text-xs text-zinc-600">All generated architecture artifacts are written in English.</p>
 
       {step === 1 && <div className="space-y-4">
         <div>

@@ -10,7 +10,7 @@ interface Props {
 export function ResultViewer({ result, files, activeTab, onTab }: Props) {
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between gap-4 border-b border-zinc-800 pb-4"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">Analysis complete</p><h1 className="mt-2 text-3xl font-bold tracking-tight">Your architecture brief</h1></div><a href="/playground" className="hidden text-sm text-zinc-500 hover:text-zinc-200 sm:block">Start over</a></div>
+      <div className="flex items-end justify-between gap-4 border-b border-zinc-800 pb-4"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">Analysis complete</p><h1 className="mt-2 text-3xl font-bold tracking-tight">Your architecture brief</h1><p className="mt-2 text-sm text-zinc-500">All recommendations and artifacts below are generated in English.</p></div><a href="/playground" className="hidden text-sm text-zinc-500 hover:text-zinc-200 sm:block">Start over</a></div>
       <div className="flex gap-2 overflow-x-auto border-b border-zinc-800 pb-2">
         {["summary", ...Object.keys(files)].map((key) => (
             <button
