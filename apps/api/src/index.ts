@@ -2,7 +2,7 @@ import { generateArchitecture } from "@ade/core/ade"
 import { validate } from "@ade/core/validation"
 import { runSecurityAudit } from "@ade/core/security-audit"
 import { OPENAPI_DOCUMENT, LLMS_DOCUMENT } from "./docs.ts"
-import { createRateLimiter, isAllowedOrigin, securityHeaders, logError, resolveRateLimitKey } from "./security.ts"
+import { createRateLimiter, corsHeaders, securityHeaders, logError, resolveRateLimitKey } from "./security.ts"
 
 interface Env {
   ENVIRONMENT?: string
@@ -34,16 +34,6 @@ function json(body: unknown, status = 200, extra?: Record<string, string>) {
 
 function envelope(result: unknown) {
   return { engine: "ade", version: ENGINE_VERSION, generatedAt: new Date().toISOString(), language: "en-US", result }
-}
-
-function corsHeaders(request: Request, allowed: string[]): Record<string, string> {
-  const origin = request.headers.get("Origin")
-  const ok = isAllowedOrigin(origin, allowed)
-  if (ok && origin) {
-    return { "Access-Control-Allow-Origin": origin, Vary: "Origin" }
-  }
-  // 🔒 SECURITY [LAW-4]: disallowed/absent origin → no CORS headers at all.
-  return {}
 }
 
 async function rateLimit(request: Request, env: Env): Promise<Response | null> {

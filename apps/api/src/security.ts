@@ -80,6 +80,18 @@ export function isAllowedOrigin(origin: string | null, allowed: string[]): boole
   }
 }
 
+export function corsHeaders(request: Request, allowed: string[]): Record<string, string> {
+  const origin = request.headers.get("Origin")
+  if (!isAllowedOrigin(origin, allowed) || !origin) return {}
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-API-Key",
+    "Access-Control-Max-Age": "86400",
+    Vary: "Origin",
+  }
+}
+
 function safeHostname(entry: string): string | null {
   try {
     return new URL(entry.startsWith("/") ? `https://${entry}` : entry).hostname.toLowerCase().replace(/^\./, "")

@@ -1,6 +1,6 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { createRateLimiter, isAllowedOrigin, securityHeaders, resolveRateLimitKey } from "./security.ts"
+import { createRateLimiter, corsHeaders, isAllowedOrigin, securityHeaders, resolveRateLimitKey } from "./security.ts"
 
 test("rate limiter allows requests under the limit", () => {
   const rl = createRateLimiter({ limit: 3, windowMs: 60_000 })
@@ -59,6 +59,16 @@ test("isAllowedOrigin allows only real subdomains, never localhost/IP suffix tri
   assert.equal(isAllowedOrigin("http://10.0.0.5:8080", allowed), true)
   assert.equal(isAllowedOrigin("http://evil.10.0.0.5:8080", allowed), false)
   assert.equal(isAllowedOrigin("https://evil.com/ignored/path?q=ade-vibe.vercel.app", allowed), false)
+})
+
+test("corsHeaders allows browser preflight headers for the public playground", () => {
+  const headers = corsHeaders(new Request("https://ade-api.cryptolairbr.workers.dev/analyze", {
+    method: "OPTIONS",
+    headers: { Origin: "https://ade-vibe.vercel.app", "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "content-type" },
+  }), ["https://ade-vibe.vercel.app"])
+  assert.equal(headers["Access-Control-Allow-Origin"], "https://ade-vibe.vercel.app")
+  assert.match(headers["Access-Control-Allow-Methods"], /POST/)
+  assert.match(headers["Access-Control-Allow-Headers"], /Content-Type/)
 })
 
 test("security headers include the mandatory set (LAW-15)", () => {
