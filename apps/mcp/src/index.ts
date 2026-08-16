@@ -4,7 +4,7 @@ import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js"
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs"
+import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync, unlinkSync } from "node:fs"
 import { join, dirname } from "node:path"
 import { fileURLToPath } from "node:url"
 import { randomUUID } from "node:crypto"
@@ -14,13 +14,22 @@ import { generateSettings } from "@ade/core/settings"
 import type { ProjectInput, ProjectSession } from "@ade/core/types"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const SESSIONS_PATH = join(__dirname, "..", "sessions.json")
+// MCP runs as a local stdio process. The file store is intentionally bounded
+// and atomic; distributed deployments must provide a shared session service.
+const SESSIONS_PATH = process.env.ADE_SESSIONS_PATH?.trim() || join(__dirname, "..", "sessions.json")
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000
+const MAX_SESSIONS = 1000
 
 function loadSessions(): Map<string, ProjectSession> {
   try {
     if (existsSync(SESSIONS_PATH)) {
-      const data = JSON.parse(readFileSync(SESSIONS_PATH, "utf-8"))
-      return new Map(Object.entries(data))
+      const data = JSON.parse(readFileSync(SESSIONS_PATH, "utf-8")) as Record<string, ProjectSession>
+      const now = Date.now()
+      const valid = Object.entries(data).filter(([, session]) => {
+        const updated = Date.parse(session.updatedAt)
+        return Number.isFinite(updated) && now - updated < SESSION_TTL_MS
+      })
+      return new Map(valid.slice(-MAX_SESSIONS))
     }
   } catch (e) {
     // 🔒 SECURITY [A6/LAW-14]: never swallow — log so corrupt/untrusted
@@ -33,15 +42,26 @@ function loadSessions(): Map<string, ProjectSession> {
 function saveSessions(sessions: Map<string, ProjectSession>) {
   try {
     mkdirSync(dirname(SESSIONS_PATH), { recursive: true })
-    writeFileSync(SESSIONS_PATH, JSON.stringify(Object.fromEntries(sessions), null, 2))
+    const tmp = `${SESSIONS_PATH}.${process.pid}.tmp`
+    writeFileSync(tmp, JSON.stringify(Object.fromEntries(sessions), null, 2), { mode: 0o600 })
+    renameSync(tmp, SESSIONS_PATH)
   } catch (e) {
+    const tmp = `${SESSIONS_PATH}.${process.pid}.tmp`
+    if (existsSync(tmp)) unlinkSync(tmp)
     console.error("Failed to save sessions:", e)
   }
 }
 
 const sessions = loadSessions()
 
-function persist() { saveSessions(sessions) }
+function persist() {
+  while (sessions.size > MAX_SESSIONS) {
+    const oldest = sessions.keys().next().value
+    if (!oldest) break
+    sessions.delete(oldest)
+  }
+  saveSessions(sessions)
+}
 
 function newId(): string {
   // 🔒 SECURITY [LAW-5]: crypto-grade session id — Math.random() is
@@ -455,11 +475,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 }))
 
 function buildInput(params: Record<string, unknown>): ProjectInput {
+  const users = typeof params.users === "number" && Number.isFinite(params.users)
+    ? Math.max(1, Math.min(Math.floor(params.users), 1_000_000_000))
+    : undefined
   return {
     description: clampText(params.description, MAX_DESCRIPTION),
     domain: clampText(params.domain, MAX_DOMAIN),
     features: clampFeatures(params.features),
-    users: typeof params.users === "number" && Number.isFinite(params.users) ? params.users : undefined,
+    users,
     blockchain: !!params.blockchain,
     auth: !!params.auth,
     upload: !!params.upload,
@@ -553,8 +576,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const id = newId()
         const session: ProjectSession = {
           id,
-          description: String(args.description ?? ""),
-          domain: String(args.domain ?? ""),
+          description: clampText(args.description, MAX_DESCRIPTION),
+          domain: clampText(args.domain, MAX_DOMAIN),
           features: [],
           confirmedSettings: {},
           wizardStep: "describe",

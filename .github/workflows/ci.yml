@@ -21,3 +21,5 @@ jobs:
       - run: pnpm --filter @ade/core test
       - run: pnpm --filter @ade/onp-spec test
       - run: pnpm --filter @ade/api test
+      - run: pnpm --filter @ade/site test
+      - run: pnpm --filter @ade/site build

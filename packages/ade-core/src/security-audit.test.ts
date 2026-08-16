@@ -66,10 +66,14 @@ describe("runSecurityAudit", () => {
     expect(law1?.applicable).toBe(true)
   })
 
-  it("scores zero when no sensitive features", () => {
+  it("does not claim vulnerabilities without inspecting code", () => {
     const result = runSecurityAudit(input())
-    expect(result.scorecard.grade).toBeDefined()
-    expect(result.scorecard.summary).toContain("grade")
+    expect(result.scorecard.grade).toBe("N/A")
+    expect(result.scorecard.assessment).toBe("design-checklist")
+    expect(result.scorecard.critical).toBe(0)
+    expect(result.scorecard.vibeAntiPatterns).toEqual([])
+    expect(result.scorecard.applicable).toBeGreaterThan(0)
+    expect(result.scorecard.summary).toContain("no code vulnerabilities")
   })
 
   it("produces top actions, red team and blue team", () => {

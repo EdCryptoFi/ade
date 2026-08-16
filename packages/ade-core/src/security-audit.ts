@@ -628,31 +628,20 @@ function evaluate(defs: CheckDef[], input: Partial<ProjectInput>): SecurityCheck
   }))
 }
 
-function gradeFor(score: number): SecurityAuditResult["scorecard"]["grade"] {
-  if (score >= 85) return "A"
-  if (score >= 70) return "B"
-  if (score >= 55) return "C"
-  if (score >= 40) return "D"
-  return "F"
-}
-
 export function runSecurityAudit(input: Partial<ProjectInput>): SecurityAuditResult {
   const laws = evaluate(LAW_DEFS, input)
   const attackVectors = evaluate(ATTACK_VECTOR_DEFS, input)
   const antiPatterns = evaluate(ANTI_PATTERN_DEFS, input)
 
   const applicable = [...laws, ...attackVectors, ...antiPatterns].filter((c) => c.applicable)
-  const critical = applicable.filter((c) => c.severity === "CRITICAL").length
-  const high = applicable.filter((c) => c.severity === "HIGH").length
-  const medium = applicable.filter((c) => c.severity === "MEDIUM").length
-  const low = applicable.filter((c) => c.severity === "LOW").length
-
-  const vibeAntiPatterns = antiPatterns.map((c) => c.id)
-  const score = Math.max(
-    0,
-    100 -
-      applicable.reduce((acc, c) => acc + severityScore[c.severity], 0),
-  )
+  // This function receives architecture intent, not source code. Applicable
+  // checks are requirements to verify, not confirmed vulnerabilities.
+  const critical = 0
+  const high = 0
+  const medium = 0
+  const low = 0
+  const applicableAntiPatterns = antiPatterns.filter((c) => c.applicable).map((c) => c.id)
+  const vibeAntiPatterns: string[] = []
 
   const ordered = [...applicable].sort(
     (a, b) => severityScore[b.severity] - severityScore[a.severity],
@@ -679,9 +668,12 @@ export function runSecurityAudit(input: Partial<ProjectInput>): SecurityAuditRes
       high,
       medium,
       low,
+      applicable: applicable.length,
+      applicableAntiPatterns,
       vibeAntiPatterns,
-      grade: gradeFor(score),
-      summary: `${critical} critical, ${high} high, ${medium} medium, ${low} low — grade ${gradeFor(score)}`,
+      grade: "N/A",
+      assessment: "design-checklist",
+      summary: `${applicable.length} checks applicable; no code vulnerabilities were confirmed — assessment N/A`,
     },
     topActions,
     redTeam,

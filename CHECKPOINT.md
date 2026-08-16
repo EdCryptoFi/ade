@@ -11,19 +11,19 @@
 
 Green suite across the whole monorepo after the full Zero-Trust audit.
 
-- **onp-spec** (`packages/onp-spec`, `@ade/onp-spec`, zero deps): spec-anchored engine 100% in English. **236/236 tests passing.** Typecheck clean.
+- **onp-spec** (`packages/onp-spec`, `@ade/onp-spec`, zero deps): spec-anchored engine 100% in English. **252/252 tests passing.** Typecheck clean.
 - **MCP** (`apps/mcp`): **19 tools** (16 ADE + 3 spec: `ade-spec-audit`, `ade-spec-status`, `ade-spec-scaffold`). Hardened (see below).
-- **Core** (`packages/ade-core`): **56/56 tests** (5 files), `strict` schemas + limits.
-- **API** (`apps/api`): **6/6 security tests** (rate limit, CORS, headers).
-- **Site** (`apps/site`): **10/10 tests** (features, format, api client), Next.js build ok, container/presentation.
-- Workspace suite: `pnpm -r typecheck` ok (tsc api/mcp/site + 242 onp-spec tests).
+- **Core** (`packages/ade-core`): **66/66 tests** (6 files), `strict` schemas + limits.
+- **API** (`apps/api`): **8/8 security tests** (rate limit, CORS, headers).
+- **Site** (`apps/site`): **10/10 tests** (features, format, api client), Next.js build ok, container/presentation and three-step wizard.
+- Workspace suite: `pnpm -r typecheck` ok (tsc api/mcp/site + 258 onp-spec checks).
 
 ## Security Phase — Hardening Applied (Zero-Trust Audit)
 
-- **API** (`apps/api/src/security.ts` new): sliding-window rate limiter 30 req/60s per IP + per API key (in-memory fallback; supports Workers `RATE_LIMITER` binding), 429 with `Retry-After`; CORS allowlist (`ALLOWED_ORIGINS`, default `https://ade-vibe.vercel.app,http://localhost:3000`); security headers (`nosniff`, `X-Frame-Options: DENY`, HSTS, Referrer-Policy, Permissions-Policy, no-store); generic 500 errors with full server-side logging; `/schema` endpoint.
+- **API** (`apps/api/src/security.ts` new): sliding-window rate limiter 30 req/60s per IP + per API key (production requires the Workers `RATE_LIMITER` binding; in-memory fallback is for local development), 429 with `Retry-After`; CORS allowlist (`ALLOWED_ORIGINS`, default `https://ade-vibe.vercel.app,http://localhost:3000`); security headers (`nosniff`, `X-Frame-Options: DENY`, HSTS, Referrer-Policy, Permissions-Policy, no-store); generic 500 errors with full server-side logging; `/schema` endpoint.
 - **Core** (`validation.ts`): `ProjectInputSchema` and `PartialProjectInputSchema` now `.strict()` (mass assignment rejected — LAW-2), `features` `max(50)` + items `min(1).max(200)`, `users` `max(1_000_000_000)` (LAW-3).
-- **MCP** (`apps/mcp/src/index.ts`): session ids via `randomUUID()` (`proj_<uuid>`, regex-validated); input clamps (`MAX_DESCRIPTION=2000`, `MAX_DOMAIN=100`, `MAX_FEATURE_LEN=200`, `MAX_FEATURES=50`); `sanitizeFeatureFlags` with whitelist (unknown feature → safe error); silent `catch {}` removed (structured logs `{scope, tool, error}`); tool errors return `{isError: true}` with safe message. `sessions.json` added to `.gitignore` (LAW-11).
-- **Site** (`apps/site`): refactored to container/presentation (`components/ProjectForm.tsx`, `ResultViewer.tsx`, `PlaygroundContainer.tsx`; pure logic in `lib/features.ts`, `lib/format.ts`, `lib/api.ts`); API URL via `NEXT_PUBLIC_ADE_API_URL` (no hardcoded host); security headers in `next.config.ts`.
+- **MCP** (`apps/mcp/src/index.ts`): session ids via `randomUUID()` (`proj_<uuid>`, regex-validated); input clamps (`MAX_DESCRIPTION=2000`, `MAX_DOMAIN=100`, `MAX_FEATURE_LEN=200`, `MAX_FEATURES=50`); `sanitizeFeatureFlags` with whitelist (unknown feature → safe error); sessions expire after 24 hours, are capped at 1000 and written atomically; `ADE_SESSIONS_PATH` allows an operator to place the local store explicitly. The stdio server remains process-local and must not be presented as a distributed session store.
+- **Site** (`apps/site`): refactored to container/presentation (`components/ProjectForm.tsx`, `ResultViewer.tsx`, `PlaygroundContainer.tsx`; pure logic in `lib/features.ts`, `lib/format.ts`, `lib/api.ts`); all 20 feature flags and a three-step wizard are available; API URL can be overridden with `NEXT_PUBLIC_ADE_API_URL`; security headers in `next.config.ts`.
 - No hardcoded secrets in the repo; `.env` gitignored; workflows use GitHub secrets.
 
 ## Decisions / Constraints Kept in the Translation
@@ -35,7 +35,7 @@ Green suite across the whole monorepo after the full Zero-Trust audit.
 
 ## Possible Next Steps
 
-1. **Add security tests to CI** — today CI runs only `pnpm turbo typecheck` + `pnpm --filter @ade/core test`; add api/site tests and onp-spec.
+1. **Configure the Cloudflare RATE_LIMITER binding in production** — the in-memory fallback is only for local development.
 2. **Publish to npm** — `@ade/onp-spec` and `@ade/ade-core`
 3. **More tradeoff categories** — mobile, analytics, messaging, cache
 4. **LLM-powered recommendations** — integrate OpenAI/Claude for contextual recommendations
@@ -48,9 +48,9 @@ Green suite across the whole monorepo after the full Zero-Trust audit.
 cd "$(git rev-parse --show-toplevel)"
 pnpm install
 pnpm turbo typecheck
-pnpm --filter @ade/onp-spec test        # 236 tests
-pnpm --filter @ade/core test            # 56 tests
-pnpm --filter @ade/api test             # 6 tests (security)
+pnpm --filter @ade/onp-spec test        # 252 tests
+pnpm --filter @ade/core test            # 66 tests
+pnpm --filter @ade/api test             # 8 tests (security)
 pnpm --filter @ade/site test            # 10 tests
 node packages/onp-spec/bin/onp-spec.js help
 pnpm --filter @ade/mcp start            # MCP server (stdio)
