@@ -73,4 +73,44 @@ describe("decideDataStructures", () => {
     expect(result.reasoning).toBeTruthy()
     expect(result.reasoning.split("; ").length).toBeGreaterThanOrEqual(2)
   })
+
+  // 🔍 QUALITY regression pins: segment-tree/disjoint-set/circular-buffer
+  // used to fire on single common business words present in almost any SaaS
+  // description ("dashboard", "role", "log"), so they showed up in nearly
+  // every report regardless of fit. They should now require a genuinely
+  // specific signal.
+  it("does not recommend segment-tree for a generic dashboard/analytics description", () => {
+    const result = decideDataStructures(
+      input({ domain: "saas", description: "A B2B SaaS with a dashboard, KPIs, and sales analytics." }),
+    )
+    expect(result.structures).not.toContain("segment-tree")
+  })
+
+  it("recommends segment-tree for genuine in-memory range-aggregation needs", () => {
+    const result = decideDataStructures(input({ features: ["time-series aggregation", "percentile queries"] }))
+    expect(result.structures).toContain("segment-tree")
+  })
+
+  it("does not recommend disjoint-set for generic roles/permissions/access language", () => {
+    const result = decideDataStructures(
+      input({ description: "Team members have roles and permissions, with access control per workspace." }),
+    )
+    expect(result.structures).not.toContain("disjoint-set")
+    expect(result.structures).toContain("set")
+  })
+
+  it("recommends disjoint-set for clustering / connected-components needs", () => {
+    const result = decideDataStructures(input({ features: ["social graph clustering", "connected components"] }))
+    expect(result.structures).toContain("disjoint-set")
+  })
+
+  it("does not recommend circular-buffer for generic logs/recent-activity language", () => {
+    const result = decideDataStructures(input({ description: "Shows recent activity logs and the latest events." }))
+    expect(result.structures).not.toContain("circular-buffer")
+  })
+
+  it("recommends circular-buffer for genuine streaming/telemetry needs", () => {
+    const result = decideDataStructures(input({ features: ["sensor telemetry streaming", "sliding window"] }))
+    expect(result.structures).toContain("circular-buffer")
+  })
 })

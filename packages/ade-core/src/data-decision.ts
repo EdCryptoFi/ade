@@ -17,9 +17,17 @@ export function decideDataStructures(input: ProjectInput): DataDecision {
     ["trie", /autocomplete|autocompletar|sugestão|suggestion|busca.texto|text.search|prefixo|prefix|busca.por.prefixo|search.suggest|palavra|word|dicionário|dictionary|routing|roteamento|url.match/i, "Prefix search and autocomplete"],
     ["bloom-filter", /spam|cache|dedup|deduplicação|filtro|filter|blockchain.light|light.client|probabilístico|probabilistic|membership|existe|exists|rapido|fast.lookup|prevenção|prevention/i, "Probabilistic membership test (fast and economical)"],
     ["lru-cache", /cache|lru|session|sessão|token.refresh|api.rate|rate.limit|thumbnail|miniatura|hot.data|dados.quentes|frequente|frequent|recursos.recentes|recent|temporary/i, "Cache of frequently accessed data"],
-    ["segment-tree", /range|intervalo|interval|analytics|métrica|metric|agregação|aggregation|sum|soma|média|average|mediana|median|percentil|percentile|dashboard|kpi|chart|gráfico|histograma|histogram/i, "Range queries and aggregation"],
-    ["disjoint-set", /permissão|permission|grupo|group|clustering|agrupamento|social.graph|rede.social|amigo|friend|conexão|connection|rbac|role|acesso|access|comunidade|community|componentes.conexos|connected.components/i, "Grouping and connectivity"],
-    ["circular-buffer", /log|logging|stream|evento|event|métrica|metric|tempo.real|realtime|telemetria|telemetry|sensor|analytics.tempo.real|rolling.window|janela.deslizante|buffer|recent|últimos|ultimos/i, "Circular buffers for streaming and logs"],
+    // 🔍 QUALITY: these three used to match on single common business words
+    // (e.g. "dashboard", "analytics", "role", "group", "log" — present in
+    // almost any SaaS description), so they fired on nearly every report
+    // regardless of whether the product actually needs the structure. A
+    // typical CRUD SaaS gets range aggregation from SQL, not a hand-rolled
+    // segment tree; gets grouping from a join table, not union-find; gets
+    // "recent activity" from a query with LIMIT, not a ring buffer. Narrowed
+    // to phrases that signal the structure is actually load-bearing.
+    ["segment-tree", /segment.tree|range.quer|percentil|percentile|histogram|histograma|time.series|série.temporal|serie.temporal|sliding.window.aggregat|rolling.window.aggregat|real.time.aggregat|agregação.em.tempo.real/i, "Range queries and aggregation kept in memory (most CRUD SaaS apps get this from SQL aggregates/window functions instead)"],
+    ["disjoint-set", /disjoint.set|union.find|clustering|agrupamento.social|social.graph|rede.social|componentes.conexos|connected.components|community.detection|detecção.de.comunidade|friend.network|rede.de.amigos/i, "Grouping and connectivity via union-find"],
+    ["circular-buffer", /circular.buffer|ring.buffer|streaming|stream.de.eventos|event.stream|telemetria|telemetry|sensor|sliding.window|janela.deslizante|rolling.window/i, "Fixed-size rolling window for streaming and telemetry"],
     ["merkle-tree", /blockchain|nft|integridade|integrity|verificação|verification|prova|proof|merkle|árvore.de.merkle|consistência|consistency|data.verification|versão|version|snapshot|sync|sincronização|file.integrity/i, "Data integrity verification"],
     ["skip-list", /leaderboard|ranking|ordenação|sorting|sorted|score|pontuação|nível|level|game|jogo|rank|classe|class|grade|tier|nível|level|concorrência|concurrency/i, "Concurrent sorted lists"],
   ]

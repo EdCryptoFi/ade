@@ -154,11 +154,29 @@ ${plan.data.structures.includes("graph") ? "- Entities are connected via edges\n
 `
 }
 
+// 🔍 QUALITY: every structure needs a real default — before this, 13 of the
+// 16 possible structures (everything but array/hash-map/graph) fell through
+// to the literal string "General purpose" in every report, for every
+// domain. That's not a description, it's a placeholder that shipped in the
+// paid output.
 function getDataModelDescription(structure: string, domain: string): string {
   const descriptions: Record<string, Record<string, string>> = {
-    array: { marketplace: "Product listings, search results", dashboard: "Metric history, event logs", default: "Ordered collections" },
-    "hash-map": { marketplace: "User sessions, product cache", dashboard: "User settings, metric cache", default: "Key-value lookups" },
-    graph: { marketplace: "Product recommendations, user graph", "ai-agent": "Knowledge graph, context chains", default: "Entity relationships" },
+    array: { marketplace: "Product listings, search results", dashboard: "Metric history, event logs", default: "Ordered collections — lists, feeds, history" },
+    "hash-map": { marketplace: "User sessions, product cache", dashboard: "User settings, metric cache", default: "Key-value lookups — users, sessions, config" },
+    graph: { marketplace: "Product recommendations, user graph", "ai-agent": "Knowledge graph, context chains", default: "Entity relationships — accounts, permissions, flows" },
+    tree: { default: "Hierarchical data — categories, navigation, nested comments" },
+    "stack-queue": { default: "Ordered processing — job queues, webhook delivery order, undo/redo history" },
+    set: { default: "Uniqueness guarantees — tags, permission sets, deduplication" },
+    heap: { default: "Priority ordering — scheduling, notification urgency, leaderboards" },
+    "linked-list": { default: "Frequent mid-sequence insert/remove — playlists, ordered steps" },
+    trie: { default: "Prefix search — autocomplete, search-as-you-type" },
+    "bloom-filter": { default: "Fast probabilistic existence checks — dedup, spam filtering" },
+    "lru-cache": { default: "Recently-used data caching — hot records, session data" },
+    "segment-tree": { dashboard: "In-memory range aggregation for high-frequency metric queries", default: "Range aggregation kept in memory (most CRUD apps get this from SQL aggregates/window functions instead)" },
+    "disjoint-set": { "social-network": "Friend clusters, connected-components detection", default: "Grouping and connectivity via union-find" },
+    "circular-buffer": { default: "Fixed-size rolling window — streaming telemetry, recent-event ring buffers" },
+    "merkle-tree": { default: "Integrity verification — content hashing, sync consistency checks" },
+    "skip-list": { game: "Live leaderboard ranking under concurrent updates", default: "Concurrent ordered access — rankings under frequent updates" },
   }
   return descriptions[structure]?.[domain] ?? descriptions[structure]?.default ?? "General purpose"
 }
@@ -349,8 +367,10 @@ function generateSecurityAudit(audit: SecurityAuditResult): string {
 | HIGH vulnerabilities | ${s.high} |
 | MEDIUM vulnerabilities | ${s.medium} |
 | LOW vulnerabilities | ${s.low} |
-| Vibe Coding anti-patterns | ${s.vibeAntiPatterns.join(", ") || "none"} |
-| Overall grade | **${s.grade}** |
+| Applicable checks | ${s.applicable} |
+| Confirmed Vibe Coding anti-patterns | ${s.vibeAntiPatterns.join(", ") || "none (code not inspected)"} |
+| Applicable anti-pattern checks | ${s.applicableAntiPatterns.join(", ") || "none"} |
+| Assessment | **${s.grade} — ${s.assessment}** |
 
 ${s.summary}
 
