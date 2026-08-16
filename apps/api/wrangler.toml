@@ -9,6 +9,15 @@ name = "ade-api-prod"
 ENVIRONMENT = "production"
 # Comma-separated CORS allowlist (LAW-4). The playground on Vercel + localhost.
 ALLOWED_ORIGINS = "https://ade-vibe.vercel.app,http://localhost:3000"
+# Not sensitive (a public price identifier) — safe to keep in [vars].
+# Currently pointed at the TEST-mode mirror price for end-to-end testing
+# (matches the sk_test_ secret currently set). Swap back to the live price
+# below once a test checkout has been verified working, and set
+# STRIPE_SECRET_KEY to the sk_live_ key at the same time — a live secret key
+# paired with a test price (or vice versa) fails with a Stripe "no such
+# price" error, it will not silently misbehave.
+STRIPE_PRICE_ID = "price_1U54vHLeGOC3ht4jTM4kof1K" # TEST — live price is price_1U53r2LeGOC3ht4jBKlXYNIu
+SITE_URL = "https://ade-vibe.vercel.app"
 
 # Optional: production-grade rate limiting (LAW-3). Uncomment and `wrangler deploy`
 # after creating the binding in the Cloudflare dashboard. When present, the Worker
@@ -18,3 +27,23 @@ ALLOWED_ORIGINS = "https://ade-vibe.vercel.app,http://localhost:3000"
 # name = "ade-api-rate-limit"
 # namespace_id = "<create via dashboard>"
 # simple = { limit = 30, period = 60 }
+
+# Backs POST /deliver + GET /report/:token (LAW-3: bounded lifetime — 90-day
+# TTL is set in code, not here).
+[[kv_namespaces]]
+binding = "REPORTS"
+id = "401b1d63755c46edba92289861a59cdb"
+preview_id = "80a85542d1dd4f4ba5510c0704f01953"
+
+# Backs POST /checkout — holds project input between "checkout started" and
+# "payment confirmed by webhook" (24h TTL, set in code).
+[[kv_namespaces]]
+binding = "CHECKOUTS"
+id = "b6246f0d9be849589b334bd5f6ddbf9a"
+preview_id = "0194e0294a75483888cda45363514693"
+
+# Stripe secrets (LAW-11: never in this file or the client bundle). Set with:
+#   wrangler secret put STRIPE_SECRET_KEY
+#   wrangler secret put STRIPE_WEBHOOK_SECRET
+# Run those two yourself, in your own terminal — the prompt is hidden and
+# nothing is echoed back, unlike pasting a value into chat.

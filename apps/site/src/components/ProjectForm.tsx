@@ -130,7 +130,7 @@ export function ProjectForm({
 
       {step === 3 && <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 space-y-3">
         <h2 className="text-lg font-semibold">Review your architecture brief</h2>
-        <p className="text-sm text-zinc-400">ADE will use the description, domain, user estimate and selected features to generate the plan.</p>
+        <p className="text-sm text-zinc-400">ADE will use the description, domain, user estimate and selected features to generate the plan after a one-time $5 checkout — you'll be redirected to Stripe, then back here with your report link.</p>
         <div className="grid gap-2 text-sm sm:grid-cols-2">
           <div><span className="text-zinc-500">Domain:</span> {domain || "general"}</div>
           <div><span className="text-zinc-500">Users:</span> {users || "not specified"}</div>
@@ -141,7 +141,7 @@ export function ProjectForm({
       <div className="flex gap-3">
         {step > 1 && <button type="button" onClick={onBack} className="px-5 py-3 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:border-zinc-500 transition-colors cursor-pointer">Back</button>}
         <button type="submit" disabled={loading} className="px-6 py-3 rounded-lg bg-emerald-400 text-zinc-950 font-semibold hover:bg-emerald-300 transition-colors disabled:opacity-50 cursor-pointer">
-          {loading ? "Analyzing..." : step === 3 ? "Generate architecture" : "Continue"}
+          {loading ? "Redirecting to checkout..." : step === 3 ? "Pay $5 & generate" : "Continue"}
         </button>
       </div>
     </form>

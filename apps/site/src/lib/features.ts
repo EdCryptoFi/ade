@@ -23,10 +23,15 @@ export const DOMAIN_OPTIONS = [
   "other",
 ] as const
 
+// Flat pricing: every mode is the same $5 Stripe Checkout — only the report
+// content differs. Keep the price in one place so the UI can't drift from
+// what /checkout actually charges.
+export const FLAT_PRICE = "$5.00"
+
 export const PRODUCT_MODES: Array<{ id: ProductMode; label: string; price: string; description: string }> = [
-  { id: "analysis", label: "Architecture Analysis", price: "$0.50", description: "Architecture, stack, data model, infrastructure, and delivery plan." },
-  { id: "audit", label: "Security Audit", price: "$1.00", description: "Prioritized risks, severity, evidence, mitigations, and tests." },
-  { id: "blueprint", label: "Architecture + Security Blueprint", price: "$5.00", description: "The complete architecture and security package." },
+  { id: "analysis", label: "Architecture Analysis", price: FLAT_PRICE, description: "Architecture, stack, data model, infrastructure, and delivery plan." },
+  { id: "audit", label: "Security Audit", price: FLAT_PRICE, description: "Prioritized risks, severity, evidence, mitigations, and tests." },
+  { id: "blueprint", label: "Architecture + Security Blueprint", price: FLAT_PRICE, description: "The complete architecture and security package." },
 ]
 
 export const EXAMPLE_PROJECT = {
