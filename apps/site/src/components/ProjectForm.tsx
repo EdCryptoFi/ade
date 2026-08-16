@@ -18,6 +18,7 @@ interface Props {
   onBack: () => void
   mode: ProductMode
   modes: Array<{ id: ProductMode; label: string; price: string; description: string }>
+  domainOptions: readonly string[]
   onMode: (mode: ProductMode) => void
   onExample: () => void
 }
@@ -38,6 +39,7 @@ export function ProjectForm({
   onBack,
   mode,
   modes,
+  domainOptions,
   onMode,
   onExample,
 }: Props) {
@@ -78,15 +80,17 @@ export function ProjectForm({
 
         <div>
           <label htmlFor="domain" className="block text-sm font-medium mb-2">
-            Domain (optional)
+            Domain or product category (optional)
           </label>
           <input
             id="domain"
             value={domain}
             onChange={(e) => onDomain(e.target.value)}
             placeholder="Ex: marketplace, dashboard, saas, ai-agent..."
+            list="domain-options"
             className="w-full px-4 py-3 rounded-lg bg-zinc-900 border border-zinc-800 focus:border-zinc-600 focus:outline-none text-sm"
           />
+          <datalist id="domain-options">{domainOptions.map((option) => <option key={option} value={option} />)}</datalist>
         </div>
         <div>
           <label htmlFor="users" className="block text-sm font-medium mb-2">

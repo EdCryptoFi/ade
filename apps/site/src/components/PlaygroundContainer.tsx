@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { ProjectForm } from "./ProjectForm"
 import { ResultViewer } from "./ResultViewer"
-import { FEATURES, PRODUCT_MODES, EXAMPLE_PROJECT, buildPayload, type ProductMode } from "../lib/features"
+import { FEATURES, PRODUCT_MODES, DOMAIN_OPTIONS, EXAMPLE_PROJECT, buildPayload, type ProductMode } from "../lib/features"
 import { flattenResult } from "../lib/format"
 import { analyzeProject, auditProject } from "../lib/api"
 
@@ -99,6 +99,7 @@ export default function PlaygroundContainer() {
           onBack={() => setStep((step - 1) as 1 | 2 | 3)}
           mode={mode}
           modes={PRODUCT_MODES}
+          domainOptions={DOMAIN_OPTIONS}
           onMode={setMode}
           onExample={loadExample}
         />

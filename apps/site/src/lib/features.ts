@@ -9,6 +9,20 @@ export interface Feature {
 
 export type ProductMode = "analysis" | "audit" | "blueprint"
 
+export const DOMAIN_OPTIONS = [
+  "marketplace",
+  "dashboard",
+  "saas",
+  "crm",
+  "ai-agent",
+  "landing-page",
+  "game",
+  "social-network",
+  "transportation",
+  "fintech",
+  "other",
+] as const
+
 export const PRODUCT_MODES: Array<{ id: ProductMode; label: string; price: string; description: string }> = [
   { id: "analysis", label: "Architecture Analysis", price: "$0.50", description: "Architecture, stack, data model, infrastructure, and delivery plan." },
   { id: "audit", label: "Security Audit", price: "$1.00", description: "Prioritized risks, severity, evidence, mitigations, and tests." },
