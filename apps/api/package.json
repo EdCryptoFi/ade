@@ -14,7 +14,7 @@
     "@ade/core": "workspace:*"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260728.1",
+    "@cloudflare/workers-types": "^5.20260818.1",
     "@types/node": "^26.1.2",
     "typescript": "^5.8.0",
     "wrangler": "^4.115.0"
